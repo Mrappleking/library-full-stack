@@ -24,9 +24,9 @@
 ### 4. 文档体系
 | 文件 | 行数 | 内容 |
 |------|------|------|
-| README.md | 708 | 18章：架构+API+前端+迭代蓝图+SDUST联动 |
-| AGENTS.md | 185 | 14条架构决策 + 完整路由表 + 核心服务 |
-| TODO.md | 115 | 7类共45条未完成事项 |
+| README.md | 711 | 18章：架构+API+前端+迭代蓝图+SDUST联动 |
+| AGENTS.md | 395 | 22条架构决策 + 完整路由表 + 错误处理规范 |
+| TODO.md | 74 | Phase 1/2 对齐清单 |
 | resources/sdust-library/README.md | — | 图片资源说明 |
 
 ### 5. 迭代蓝图（README.md 第十四-十八章）

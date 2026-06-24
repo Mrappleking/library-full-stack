@@ -8,7 +8,7 @@
 - **规则引擎：** CirculationRule 矩阵（读者类型 × 资料类型 → 借阅天数/上限/续借/罚款）
 
 - **语言：** TypeScript 全栈
-- **运行时：** Node.js（开发）/ Bun（可选）
+- **运行时：** Node.js + tsx（TypeScript ESM 直接运行）
 - **前端：** Vue 3 + Vite + Naive UI 2.x（暗色主题）
 - **后端：** Fastify（ESM）+ Prisma 5 ORM
 - **数据库：** MySQL 8（WSL 本机 127.0.0.1:3306）
@@ -79,11 +79,21 @@ library-full-stack/
 │   │   │   ├── fines.ts         # 罚款管理（查询+缴费）
 │   │   │   └── rules.ts         # 借阅规则 CRUD + 类型查询
 │   │   ├── services/
+│   │   │   ├── auth.service.ts
+│   │   │   ├── book.service.ts
+│   │   │   ├── borrow.service.ts
+│   │   │   ├── category.service.ts
+│   │   │   ├── user.service.ts
+│   │   │   ├── stats.service.ts
+│   │   │   ├── fine.service.ts
+│   │   │   ├── rule.service.ts
+│   │   │   ├── cover.service.ts
 │   │   │   ├── rules.ts         # 规则查询引擎（getRule / checkBorrowLimit）
 │   │   │   └── fines.ts         # 罚款计算（createFine / calcOverdueFine）
-│   │   └── middleware/          # 自定义中间件
+│   │   ├── middleware/
+│   │   │   └── requireAdmin.ts  # 管理员权限中间件
 │   ├── prisma/
-│   │   ├── schema.prisma        # 数据模型定义（10 表）
+│   │   ├── schema.prisma        # 数据模型定义（9 表）
 │   │   ├── seed.ts              # 种子数据脚本
 │   │   └── migrations/          # 迁移文件
 │   ├── tsconfig.json
@@ -95,7 +105,7 @@ library-full-stack/
 
 ---
 
-## 四、数据库模型（10 张表）
+## 四、数据库模型（9 张表）
 
 ### 4.1 枚举
 

@@ -110,7 +110,7 @@ frontend/src/
         └── ...
 ```
 
-## Data Model (10 Tables)
+## Data Model (9 Tables)
 
 ```
 PatronCategory ──┐
@@ -128,13 +128,13 @@ Key constraints:
 - `CirculationRule`: unique on (patronCategoryId, itemTypeId)
 - All borrow/return operations wrapped in `prisma.$transaction`
 
-## API Routes (35 Endpoints)
+## API Routes (38 Endpoints)
 
 | Prefix | Count | Public | Auth |
 |--------|-------|--------|------|
 | /api/health | 1 | ✓ | - |
 | /api/auth | 5 | 2 | 3 |
-| /api/books | 8 | 6 | 2 |
+| /api/books | 7 | 4 | 3 |
 | /api/categories | 4 | 1 | 3 |
 | /api/borrows | 6 | - | 6 |
 | /api/readers | 4 | - | 4 |

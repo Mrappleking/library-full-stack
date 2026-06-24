@@ -108,7 +108,7 @@
 
 | Metric | Value |
 |--------|-------|
-| Total commits | 10 on main |
+| Total commits | 27 on main |
 | 分支策略 | feature → main merged |
 | Commit 规范 | ✅ Conventional Commits |
 | pre-commit hook | ✅ ESLint + Prettier 自动拦截 |

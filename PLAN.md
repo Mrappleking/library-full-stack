@@ -795,7 +795,7 @@ time curl /api/books/facets  # P95 < 150ms
 
 ```
 ✅ 四层架构 (routes/services/Prisma/MySQL)
-✅ 43 单元测试 + 24 集成测试 = 67 测试
+✅ 49 集成测试 + 43 单元测试 = 92 测试
 ✅ CI/CD 绿灯 (lint → test → build)
 ✅ 安全头 + 速率限制
 ✅ MySQL 索引
