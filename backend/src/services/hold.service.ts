@@ -151,34 +151,40 @@ export async function getMyHolds(
  */
 export async function listHolds(
   prisma: PrismaClient,
-  filters?: { status?: string; bookId?: number }
-): Promise<HoldResponse[]> {
+  filters?: { status?: string; bookId?: number },
+  page = 1,
+  limit = 20,
+): Promise<{ holds: HoldResponse[]; total: number }> {
   await expireReadyHolds(prisma)
   const where: Record<string, unknown> = {}
   if (filters?.status) where.status = filters.status
   if (filters?.bookId) where.bookId = filters.bookId
 
-  const holds = await prisma.hold.findMany({
-    where,
-    include: {
-      book: { select: { id: true, title: true, author: true, isbn: true } },
-      user: { select: { id: true, username: true, name: true } },
-    },
-    orderBy: { requestDate: 'desc' },
-  })
+  const [holds, total] = await Promise.all([
+    prisma.hold.findMany({
+      where,
+      include: {
+        book: { select: { id: true, title: true, author: true, isbn: true } },
+        user: { select: { id: true, username: true, name: true } },
+      },
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { requestDate: 'desc' },
+    }),
+    prisma.hold.count({ where }),
+  ])
 
-  return holds.map(h => ({
-    id: h.id,
-    userId: h.userId,
-    bookId: h.bookId,
-    bookItemId: h.bookItemId,
-    status: h.status,
-    requestDate: h.requestDate.toISOString(),
-    expiryDate: h.expiryDate?.toISOString() ?? null,
-    fulfilledAt: h.fulfilledAt?.toISOString() ?? null,
-    book: h.book,
-    user: h.user,
-  }))
+  return {
+    holds: holds.map(h => ({
+      id: h.id, userId: h.userId, bookId: h.bookId, bookItemId: h.bookItemId,
+      status: h.status,
+      requestDate: h.requestDate.toISOString(),
+      expiryDate: h.expiryDate?.toISOString() ?? null,
+      fulfilledAt: h.fulfilledAt?.toISOString() ?? null,
+      book: h.book, user: h.user,
+    })),
+    total,
+  }
 }
 
 /**

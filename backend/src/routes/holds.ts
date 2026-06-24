@@ -26,8 +26,10 @@ export async function holdRoutes(app: FastifyInstance) {
     holdService.getMyHolds(app.prisma, request.user.id))
 
   // Admin: list all holds
-  app.get('/', { onRequest: [app.authenticate, requireAdmin] }, async (request: any) =>
-    holdService.listHolds(app.prisma, request.query))
+  app.get('/', { onRequest: [app.authenticate, requireAdmin] }, async (request: any) => {
+    const { page = 1, limit = 20 } = request.query;
+    return holdService.listHolds(app.prisma, request.query, parseInt(page as string), parseInt(limit as string));
+  })
 
   // Admin: fulfill hold
   app.post('/:id/fulfill', { onRequest: [app.authenticate, requireAdmin] }, async (request: any) =>

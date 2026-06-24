@@ -22,10 +22,13 @@ const app = Fastify({ logger: true });
 // Decorate prisma
 app.decorate('prisma', prisma);
 
-// JWT
-app.register(fastifyJwt, {
-  secret: process.env.JWT_SECRET || 'dev-secret-change-in-production',
-});
+// JWT — secret must be set in env
+const jwtSecret = process.env.JWT_SECRET;
+if (!jwtSecret || jwtSecret.length < 32) {
+  console.error('FATAL: JWT_SECRET must be at least 32 characters. Set it in backend/.env');
+  process.exit(1);
+}
+app.register(fastifyJwt, { secret: jwtSecret });
 
 // CORS — whitelist local development origins
 app.register(fastifyCors, {
@@ -113,7 +116,7 @@ app.decorate('authenticate', async (request: any, reply: any) => {
   try {
     await request.jwtVerify();
   } catch {
-    reply.status(401).send({ error: 'Unauthorized' });
+    throw Object.assign(new Error('Unauthorized'), { statusCode: 401 });
   }
 });
 
@@ -125,19 +128,19 @@ app.register(borrowRoutes, { prefix: '/api/borrows' });
 app.register(readerRoutes, { prefix: '/api/readers' });
 app.register(statsRoutes, { prefix: '/api/stats' });
 app.register(finesRoutes, { prefix: '/api/fines' });
-app.register(rulesRoutes, { prefix: '/api/admin/rules' });
+app.register(rulesRoutes, { prefix: '/api/rules' });
 app.register(holdRoutes, { prefix: '/api/holds' });
 
 // Health check
 app.get('/api/health', async () => ({ status: 'ok' }));
 
 // Barcode lookup (Module F)
-app.get('/api/book-items/:barcode', async (request: any, reply: any) => {
+app.get('/api/book-items/:barcode', async (request: any) => {
   const item = await prisma.bookItem.findUnique({
     where: { barcode: request.params.barcode },
     include: { book: true },
   });
-  if (!item) return reply.status(404).send({ error: 'Item not found' });
+  if (!item) throw Object.assign(new Error('Item not found'), { statusCode: 404 });
   const currentBorrow = await prisma.borrowRecord.findFirst({
     where: { bookItemId: item.id, status: 'active' },
   });
@@ -150,10 +153,6 @@ const start = async () => {
     // Validate required env vars
     if (!process.env.DATABASE_URL) {
       console.error('FATAL: DATABASE_URL is not set. Copy backend/.env.example to backend/.env and fill in values.');
-      process.exit(1);
-    }
-    if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
-      console.error('FATAL: JWT_SECRET must be at least 32 characters. Set it in backend/.env');
       process.exit(1);
     }
 

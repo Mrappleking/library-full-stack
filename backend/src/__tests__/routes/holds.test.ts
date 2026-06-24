@@ -99,6 +99,8 @@ describe('Holds Integration', () => {
       headers: authHeaders(adminToken),
     })
     expect(res.statusCode).toBe(200)
-    expect(Array.isArray(res.json())).toBe(true)
+    const data = res.json();
+    expect(data.holds).toBeDefined();
+    expect(Array.isArray(data.holds)).toBe(true)
   })
 })

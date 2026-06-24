@@ -110,8 +110,8 @@ describe('hold.service', () => {
   })
 
   it('listHolds with status filter', async () => {
-    const holds = await holdService.listHolds(prisma, { status: 'cancelled' })
-    expect(Array.isArray(holds)).toBe(true)
-    expect(holds.every((h) => h.status === 'cancelled')).toBe(true)
+    const result = await holdService.listHolds(prisma, { status: 'cancelled' })
+    expect(Array.isArray(result.holds)).toBe(true)
+    expect(result.holds.every((h) => h.status === 'cancelled')).toBe(true)
   })
 })

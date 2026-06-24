@@ -131,7 +131,9 @@ describe('Borrows Integration', () => {
     const token = login.json().token;
     const res = await app.inject({ method: 'GET', url: '/api/borrows', headers: authHeaders(token) });
     expect(res.statusCode).toBe(200);
-    expect(Array.isArray(res.json())).toBe(true);
+    const data = res.json();
+    expect(data.borrows).toBeDefined();
+    expect(Array.isArray(data.borrows)).toBe(true);
   });
 
   it('GET /api/borrows/history — reader can see borrow history', async () => {

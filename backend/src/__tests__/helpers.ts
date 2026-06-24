@@ -44,7 +44,7 @@ export async function buildApp(prisma: PrismaClient) {
   await app.register(readerRoutes, { prefix: '/api/readers' });
   await app.register(statsRoutes, { prefix: '/api/stats' });
   await app.register(finesRoutes, { prefix: '/api/fines' });
-  await app.register(rulesRoutes, { prefix: '/api/admin/rules' });
+  await app.register(rulesRoutes, { prefix: '/api/rules' });
   await app.register(holdRoutes, { prefix: '/api/holds' });
 
   app.get('/api/health', async () => ({ status: 'ok' }));

@@ -19,22 +19,22 @@ afterAll(async () => {
 });
 
 describe('Rules Integration', () => {
-  it('GET /api/admin/rules — returns rules list (public)', async () => {
-    const res = await app.inject({ method: 'GET', url: '/api/admin/rules' });
+  it('GET /api/rules — returns rules list (public)', async () => {
+    const res = await app.inject({ method: 'GET', url: '/api/rules' });
     expect(res.statusCode).toBe(200);
   });
 
-  it('GET /api/admin/rules/patron-categories — returns types', async () => {
-    const res = await app.inject({ method: 'GET', url: '/api/admin/rules/patron-categories' });
+  it('GET /api/rules/patron-categories — returns types', async () => {
+    const res = await app.inject({ method: 'GET', url: '/api/rules/patron-categories' });
     expect(res.statusCode).toBe(200);
   });
 
-  it('GET /api/admin/rules/item-types — returns types', async () => {
-    const res = await app.inject({ method: 'GET', url: '/api/admin/rules/item-types' });
+  it('GET /api/rules/item-types — returns types', async () => {
+    const res = await app.inject({ method: 'GET', url: '/api/rules/item-types' });
     expect(res.statusCode).toBe(200);
   });
 
-  it('PUT /api/admin/rules — admin can upsert rule', async () => {
+  it('PUT /api/rules — admin can upsert rule', async () => {
     // Need an admin token
     const r = await app.inject({ method: 'POST', url: '/api/auth/register', payload: { username: 'it_ruleadm', password: 'admin123', name: 'Rule Admin' } });
     expect(r.statusCode).toBe(200)
@@ -45,7 +45,7 @@ describe('Rules Integration', () => {
     const token = login.json().token;
 
     const res = await app.inject({
-      method: 'PUT', url: '/api/admin/rules',
+      method: 'PUT', url: '/api/rules',
       headers: authHeaders(token),
       payload: { patronCategoryId: 1, itemTypeId: 1, maxBorrows: 10, loanDays: 30, renewals: 2, renewalDays: 15, finePerDay: 0.2 },
     });

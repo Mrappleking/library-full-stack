@@ -24,16 +24,26 @@ export async function getMyBorrows(
   }) as unknown as BorrowRecordResponse[];
 }
 
-export async function listBorrows(prisma: PrismaClient): Promise<BorrowRecordResponse[]> {
-  return prisma.borrowRecord.findMany({
-    include: {
-      user: { select: { id: true, name: true, username: true } },
-      book: { select: { id: true, title: true, author: true, isbn: true } },
-      bookItem: { select: { id: true, barcode: true, callNumber: true } },
-      fines: { select: { id: true, amount: true, type: true, paid: true } },
-    },
-    orderBy: { borrowDate: 'desc' },
-  }) as unknown as BorrowRecordResponse[];
+export async function listBorrows(
+  prisma: PrismaClient,
+  page = 1,
+  limit = 20,
+): Promise<{ borrows: BorrowRecordResponse[]; total: number }> {
+  const [borrows, total] = await Promise.all([
+    prisma.borrowRecord.findMany({
+      include: {
+        user: { select: { id: true, name: true, username: true } },
+        book: { select: { id: true, title: true, author: true, isbn: true } },
+        bookItem: { select: { id: true, barcode: true, callNumber: true } },
+        fines: { select: { id: true, amount: true, type: true, paid: true } },
+      },
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { borrowDate: 'desc' },
+    }),
+    prisma.borrowRecord.count(),
+  ]);
+  return { borrows: borrows as unknown as BorrowRecordResponse[], total };
 }
 
 export async function borrow(

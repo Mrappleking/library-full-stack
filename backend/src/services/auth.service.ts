@@ -63,18 +63,24 @@ export async function getMe(prisma: PrismaClient, userId: number): Promise<UserP
   return user as unknown as UserProfile;
 }
 
-export async function listUsers(prisma: PrismaClient): Promise<UserProfile[]> {
-  return prisma.user.findMany({
-    select: {
-      id: true,
-      username: true,
-      name: true,
-      role: true,
-      phone: true,
-      email: true,
-      createdAt: true,
-    },
-  }) as unknown as UserProfile[];
+export async function listUsers(
+  prisma: PrismaClient,
+  page = 1,
+  limit = 20,
+): Promise<{ users: UserProfile[]; total: number }> {
+  const [users, total] = await Promise.all([
+    prisma.user.findMany({
+      select: {
+        id: true, username: true, name: true, role: true,
+        phone: true, email: true, createdAt: true,
+      },
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.user.count(),
+  ]);
+  return { users: users as unknown as UserProfile[], total };
 }
 
 export async function createAdmin(

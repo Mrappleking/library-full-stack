@@ -43,7 +43,8 @@ export async function authRoutes(app: FastifyInstance) {
   });
 
   app.get('/users', { onRequest: [app.authenticate, requireAdmin] }, async (request: any) => {
-    return authService.listUsers(app.prisma);
+    const { page = 1, limit = 20 } = request.query;
+    return authService.listUsers(app.prisma, parseInt(page as string), parseInt(limit as string));
   });
 
   app.post('/admin/create', { onRequest: [app.authenticate, requireAdmin] }, async (request: any) => {

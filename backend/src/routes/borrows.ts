@@ -12,8 +12,10 @@ export async function borrowRoutes(app: FastifyInstance) {
   app.get('/my', { onRequest: [app.authenticate] }, async (request: any) =>
     borrowService.getMyBorrows(app.prisma, request.user.id));
 
-  app.get('/', { onRequest: [app.authenticate, requireAdmin] }, async (request: any) =>
-    borrowService.listBorrows(app.prisma));
+  app.get('/', { onRequest: [app.authenticate, requireAdmin] }, async (request: any) => {
+    const { page = 1, limit = 20 } = request.query;
+    return borrowService.listBorrows(app.prisma, parseInt(page as string), parseInt(limit as string));
+  });
 
   app.post('/borrow', { onRequest: [app.authenticate] }, async (request: any) => {
     const parsed = borrowSchema.safeParse(request.body);

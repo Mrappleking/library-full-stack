@@ -72,9 +72,9 @@ onMounted(async () => {
   loading.value = true
   try {
     const [r, p, i] = await Promise.all([
-      api.get('/admin/rules'),
-      api.get('/admin/rules/patron-categories'),
-      api.get('/admin/rules/item-types')
+      api.get('/rules'),
+      api.get('/rules/patron-categories'),
+      api.get('/rules/item-types')
     ])
     rules.value = r
     patronCategories.value = p
