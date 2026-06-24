@@ -55,7 +55,7 @@ export async function bookRoutes(app: FastifyInstance) {
   });
 
   app.delete('/:id', { onRequest: [app.authenticate, requireAdmin] }, async (request: any) => {
-    await bookService.deleteBook(app.prisma, parseInt(request.params.id));
+    await bookService.remove(app.prisma, parseInt(request.params.id));
     return { success: true };
   });
 }

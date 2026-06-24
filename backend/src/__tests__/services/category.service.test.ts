@@ -36,14 +36,14 @@ describe('delete', () => {
   it('有图书时拒绝删除', async () => {
     const prisma = mockPrisma();
     prisma.book.count.mockResolvedValue(3);
-    await expect(categoryService.deleteCategory(prisma, 1)).rejects.toThrow('has 3 books');
+    await expect(categoryService.remove(prisma, 1)).rejects.toThrow('has 3 books');
   });
 
   it('无图书时成功删除', async () => {
     const prisma = mockPrisma();
     prisma.book.count.mockResolvedValue(0);
     prisma.category.delete.mockResolvedValue({});
-    await categoryService.deleteCategory(prisma, 1);
+    await categoryService.remove(prisma, 1);
     expect(prisma.category.delete).toHaveBeenCalled();
   });
 });

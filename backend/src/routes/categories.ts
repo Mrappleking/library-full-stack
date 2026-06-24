@@ -23,7 +23,7 @@ export async function categoryRoutes(app: FastifyInstance) {
   });
 
   app.delete('/:id', { onRequest: [app.authenticate, requireAdmin] }, async (request: any) => {
-    await categoryService.deleteCategory(app.prisma, parseInt(request.params.id));
+    await categoryService.remove(app.prisma, parseInt(request.params.id));
     return { success: true };
   });
 }

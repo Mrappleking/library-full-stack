@@ -7,7 +7,7 @@ export async function readerRoutes(app: FastifyInstance) {
     userService.listReaders(app.prisma));
 
   app.get('/:id', { onRequest: [app.authenticate, requireAdmin] }, async (request: any) => {
-    const reader = await userService.getReader(app.prisma, parseInt(request.params.id));
+    const reader = await userService.getReaderDetail(app.prisma, parseInt(request.params.id));
     if (!reader) throw Object.assign(new Error('Reader not found'), { statusCode: 404 });
     return reader;
   });
