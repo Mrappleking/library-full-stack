@@ -23,9 +23,9 @@
 ### Module I: 安全加固
 | # | 任务 | 归属 |
 |---|------|------|
-| 1 | @fastify/helmet 安全头 | I |
-| 2 | @fastify/rate-limit 速率限制 | I |
-| 3 | CORS 白名单 (禁止 origin: true) | I |
+| 1 | @fastify/helmet 安全头 | I | ✅ |
+| 2 | @fastify/rate-limit 速率限制 | I | ✅ |
+| 3 | CORS 白名单 (禁止 origin: true) | I | ✅ |
 
 ### Module J: CI + 集成测试
 | # | 任务 | 归属 |

@@ -1,6 +1,8 @@
 import Fastify from 'fastify';
 import fastifyJwt from '@fastify/jwt';
 import fastifyCors from '@fastify/cors';
+import fastifyHelmet from '@fastify/helmet';
+import fastifyRateLimit from '@fastify/rate-limit';
 import { PrismaClient } from '@prisma/client';
 import { authRoutes } from './routes/auth.js';
 import { bookRoutes } from './routes/books.js';
@@ -22,10 +24,34 @@ app.register(fastifyJwt, {
   secret: process.env.JWT_SECRET || 'dev-secret-change-in-production',
 });
 
-// CORS
+// CORS — whitelist local development origins
 app.register(fastifyCors, {
-  origin: true,
+  origin: (origin, cb) => {
+    const allowed = [
+      'http://localhost:5173',
+      'http://127.0.0.1:5173',
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+    ];
+    // Allow same-origin (null origin) and whitelisted origins
+    if (!origin || allowed.includes(origin)) {
+      cb(null, true);
+    } else {
+      cb(null, false);
+    }
+  },
   credentials: true,
+});
+
+// Helmet — security headers
+app.register(fastifyHelmet, {
+  contentSecurityPolicy: false, // Vite HMR needs inline scripts
+});
+
+// Rate limiting — 100 requests/min per IP
+app.register(fastifyRateLimit, {
+  max: 100,
+  timeWindow: '1 minute',
 });
 
 // Auth decorator
