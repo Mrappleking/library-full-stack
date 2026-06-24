@@ -1,8 +1,10 @@
 # Library Full-Stack System — AGENTS.md
 
 ## 项目概述
-图书馆全栈管理系统。前端 Vue 3 + Naive UI，后端 Fastify on Bun，ORM Prisma，数据库 MySQL（WSL 3306）。
-TypeScript 全栈。
+图书馆全栈管理系统，四层架构（前端→路由→服务→数据）。三层业务深度（书目→复本→规则引擎）。前端 Vue 3 + Naive UI，后端 Fastify，ORM Prisma 5，数据库 MySQL（WSL 3306）。TypeScript 全栈。
+
+**实施计划**: `PLAN.md` — 7 模块分步，每步验收通过才进下一步。
+**OPAC 参考**: `resources/opac-data-collection.md` — 仅供设计参考，不集成外部 API。
 
 ## 角色与权限
 - 管理员（admin）：全部管理权限，可管理图书/读者/借阅/统计
@@ -51,6 +53,12 @@ TypeScript 全栈。
 | 2026-06-24 | 用 Naive UI 暗黑主题替代自定义 CSS | 降低样式维护成本，统一组件行为 |
 | 2026-06-24 | Prisma 5 非 7，放弃 engineType/client 引擎 | Prisma 7 不支持 MySQL 直连，需不存在 Adapter |
 | 2026-06-24 | 项目移回 WSL 原生路径 ~/workplace/ | /mnt/d 的 node_modules 无法正常安装和删除 |
+| 2026-06-24 | 四层架构：前端→路由(Routes)→服务(Services)→数据(Prisma) | routes 只做 HTTP 分发，业务逻辑进 services |
+| 2026-06-24 | Services 用纯函数，不用 class | 与已有 rules.ts/fines.ts 风格一致，prisma 第一参数 |
+| 2026-06-24 | 前端 typed API + Pinia stores + composables | 不再裸调 `api.get()`，类型全 |
+| 2026-06-24 | 零外部 API 依赖（学生项目） | 超星/豆瓣需授权，用 OpenLibrary + CSS 占位 |
+| 2026-06-24 | 7 模块分步实施，每步验收不进下一步 | 见 PLAN.md |
+| 2026-06-24 | 分面搜索用 MySQL GROUP BY，不调外部 OPAC | findsdust.libsp.cn 封闭系统 |
 
 ## 环境变量
 ### 必需变量（backend/.env）
@@ -115,8 +123,11 @@ TypeScript 全栈。
 ### 图书
 | 方法 | 路径 | 权限 | 说明 |
 |------|------|------|------|
-| GET | /api/books | public | 列表（分页+搜索） |
-| GET | /api/books/:id | public | 详情 |
+| GET | /api/books | public | 列表（分页+搜索+分面过滤） |
+| GET | /api/books/facets | public | 分面计数（Module C 新增） |
+| GET | /api/books/:id | public | 详情（含 holdings + cover） |
+| GET | /api/books/:id/items | public | 复本列表 |
+| GET | /api/book-items/:barcode | public | 按条码查复本（Module F 新增，5行） |
 | POST | /api/books | admin | 新增 |
 | PUT | /api/books/:id | admin | 更新 |
 | DELETE | /api/books/:id | admin | 删除 |
@@ -285,24 +296,73 @@ TypeScript 全栈。
 11. 提交前检查：无 console.log、无硬编码 IP/密码、.env 不在 git diff 中
 12. 借书/还书操作必须用 prisma.$transaction，不得用 Promise.all
 
+## 测试规范
+
+### 测试技术栈
+- 后端：vitest + Fastify inject() + vi.mock（纯 ESM，零配置）
+- 前端：vitest + @vue/test-utils + @pinia/testing
+- 回归：curl + diff + jq（对比 Step 0 基线）
+- 不做 Playwright/Cypress E2E（学生项目太重）
+
+### 测试文件规则
+- 测试文件放在 `__tests__/` 下，与被测代码同级
+- 命名：`<filename>.test.ts`
+- 每个 service 必须有对应的测试文件
+- 每个 route 必须有对应的集成测试
+- borrow.service 测试用例 ≥ 10 个（涉及金钱和库存）
+
+### 测试数据库
+- 测试用例运行在独立数据库 `library_test`
+- `__tests__/setup.ts` 负责：建库→ db push → seed → 提供 helpers
+- 每个 test suite 结束后清理数据
+
+### 跑测命令
+```bash
+cd backend && npx vitest run                        # 全部
+cd backend && npx vitest run <file>                 # 单个
+cd backend && npx vitest run --coverage             # 覆盖率
+cd frontend && npx vitest run                       # 前端
+```
+
+### 覆盖率要求
+| 层级 | 最低 | 重点 |
+|------|------|------|
+| services/ | 80% | borrow.service ≥ 90% |
+| routes/ | 60% | auth, borrows |
+| components/ | 50% | BookCard, HoldingsTable |
+| stores/ | 80% | auth, books |
+
+### 评估标准（每模块后）
+| 维度 | 权重 | 通过条件 |
+|------|------|---------|
+| 测试通过 | 40% | 100% pass |
+| tsc | 20% | 零错误 |
+| 基线 diff | 20% | 零差异 |
+| 代码质量 | 10% | 路由≤60行, 零裸调 prisma |
+| 覆盖率 | 10% | 达标 |
+
 ## 项目目录结构
 ```
 Library Full-Stack Project/
 ├── frontend/              # Vue 3 + Vite
 │   ├── src/
-│   │   ├── components/
+│   │   ├── components/    # 可复用 UI 组件（11个）
 │   │   ├── views/
-│   │   │   ├── admin/     # 管理员页面
-│   │   │   └── reader/    # 读者页面
-│   │   ├── api/           # API 调用 + 类型
+│   │   │   ├── admin/     # 管理员页面（含流通台）
+│   │   │   ├── reader/    # 读者页面
+│   │   │   └── public/    # 公共页面（搜索+详情）
+│   │   ├── stores/        # Pinia 状态管理
+│   │   ├── composables/   # 组合函数
+│   │   ├── api/           # typed API 函数
+│   │   ├── types/         # 前端类型定义
 │   │   └── router/
 │   ├── dist/              # 编译产物（不入库）
 │   └── package.json
-├── backend/               # Fastify on Bun
+├── backend/               # Fastify
 │   ├── src/
-│   │   ├── routes/        # 路由处理
-│   │   ├── services/      # 业务逻辑
-│   │   └── middleware/    # 中间件
+│   │   ├── routes/        # 路由层（thin, ≤30行/handler）
+│   │   ├── services/      # 业务层（纯函数）
+│   │   └── types/         # DTO 类型（api.types.ts）
 │   ├── prisma/
 │   │   ├── schema.prisma
 │   │   ├── migrations/    # 迁移文件（入库）
@@ -310,9 +370,12 @@ Library Full-Stack Project/
 │   ├── dist/              # 编译产物（不入库）
 │   ├── .env.example       # 环境变量模板（入库）
 │   └── package.json
-├── docker-compose.yml     # 容器化（入库）
-├── release/               # 交付物
+├── resources/             # 设计参考
+│   ├── opac-data-collection.md
+│   └── opac-screenshots/
+├── PLAN.md                # 实施计划（7模块）
 ├── AGENTS.md              # 本文件
+├── TODO.md                # 未完成清单
 └── README.md              # 项目说明
 ```
 

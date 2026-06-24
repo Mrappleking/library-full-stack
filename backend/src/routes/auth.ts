@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify'
-import bcrypt from 'bcryptjs'
 import { z } from 'zod'
+import * as authService from '../services/auth.service.js'
 
 const registerSchema = z.object({
   username: z.string().min(3).max(50),
@@ -10,115 +10,47 @@ const registerSchema = z.object({
   email: z.string().email().optional()
 })
 
-const loginSchema = z.object({
-  username: z.string(),
-  password: z.string()
-})
-
 export async function authRoutes(app: FastifyInstance) {
-  // Register (readers only)
   app.post('/register', async (request, reply) => {
     const parsed = registerSchema.safeParse(request.body)
-    if (!parsed.success) {
-      return reply.status(400).send({ error: 'Validation failed', details: parsed.error.flatten() })
+    if (!parsed.success) return reply.status(400).send({ error: 'Validation failed', details: parsed.error.flatten() })
+    try {
+      return await authService.register(app.prisma, app.jwt, parsed.data)
+    } catch (e: any) {
+      return reply.status(e.statusCode || 500).send({ error: e.message })
     }
-
-    const { username, password, name, phone, email } = parsed.data
-    const prisma = app.prisma
-
-    // Check duplicate
-    const existing = await prisma.user.findUnique({ where: { username } })
-    if (existing) {
-      return reply.status(409).send({ error: 'Username already exists' })
-    }
-
-    const hashed = await bcrypt.hash(password, 10)
-    const user = await prisma.user.create({
-      data: { username, password: hashed, name, phone, email, role: 'reader' },
-      select: { id: true, username: true, name: true, role: true }
-    })
-
-    const token = app.jwt.sign({ id: user.id, role: user.role })
-    return { user, token }
   })
 
-  // Login
   app.post('/login', async (request, reply) => {
-    const parsed = loginSchema.safeParse(request.body)
-    if (!parsed.success) {
-      return reply.status(400).send({ error: 'Invalid credentials' })
-    }
-
-    const { username, password } = parsed.data
-    const prisma = app.prisma
-
-    const user = await prisma.user.findUnique({ where: { username } })
-    if (!user) {
-      return reply.status(401).send({ error: 'Invalid credentials' })
-    }
-
-    const valid = await bcrypt.compare(password, user.password)
-    if (!valid) {
-      return reply.status(401).send({ error: 'Invalid credentials' })
-    }
-
-    const token = app.jwt.sign({ id: user.id, role: user.role })
-    return {
-      user: { id: user.id, username: user.username, name: user.name, role: user.role },
-      token
+    const { username, password } = request.body as any
+    try {
+      return await authService.login(app.prisma, app.jwt, username, password)
+    } catch (e: any) {
+      return reply.status(e.statusCode || 401).send({ error: e.message })
     }
   })
 
-  // Get current user
-  app.get('/me', {
-    onRequest: [app.authenticate]
-  }, async (request: any) => {
-    const prisma = app.prisma
-    const user = await prisma.user.findUnique({
-      where: { id: request.user.id },
-      select: { id: true, username: true, name: true, role: true, phone: true, email: true, createdAt: true }
-    })
-    if (!user) {
-      throw { statusCode: 404, message: 'User not found' }
+  app.get('/me', { onRequest: [app.authenticate] }, async (request: any, reply: any) => {
+    try {
+      return await authService.getMe(app.prisma, request.user.id)
+    } catch (e: any) {
+      return reply.status(e.statusCode || 404).send({ error: e.message })
     }
-    return user
   })
 
-  // Admin: list all users
-  app.get('/users', {
-    onRequest: [app.authenticate]
-  }, async (request: any, reply: any) => {
-    if (request.user.role !== 'admin') {
-      return reply.status(403).send({ error: 'Admin only' })
-    }
-    const prisma = app.prisma
-    return prisma.user.findMany({
-      select: { id: true, username: true, name: true, role: true, phone: true, email: true, createdAt: true }
-    })
+  app.get('/users', { onRequest: [app.authenticate] }, async (request: any, reply: any) => {
+    if (request.user.role !== 'admin') return reply.status(403).send({ error: 'Admin only' })
+    return authService.listUsers(app.prisma)
   })
 
-  // Admin: create admin user
-  app.post('/admin/create', {
-    onRequest: [app.authenticate]
-  }, async (request: any, reply) => {
-    if (request.user.role !== 'admin') {
-      return reply.status(403).send({ error: 'Admin only' })
-    }
+  app.post('/admin/create', { onRequest: [app.authenticate] }, async (request: any, reply: any) => {
+    if (request.user.role !== 'admin') return reply.status(403).send({ error: 'Admin only' })
     const parsed = registerSchema.safeParse(request.body)
-    if (!parsed.success) {
-      return reply.status(400).send({ error: 'Validation failed' })
+    if (!parsed.success) return reply.status(400).send({ error: 'Validation failed' })
+    try {
+      return await authService.createAdmin(app.prisma, parsed.data)
+    } catch (e: any) {
+      return reply.status(e.statusCode || 409).send({ error: e.message })
     }
-    const { username, password, name, phone, email } = parsed.data
-    const prisma = app.prisma
-    const existing = await prisma.user.findUnique({ where: { username } })
-    if (existing) {
-      return reply.status(409).send({ error: 'Username exists' })
-    }
-    const hashed = await bcrypt.hash(password, 10)
-    const user = await prisma.user.create({
-      data: { username, password: hashed, name, phone, email, role: 'admin' },
-      select: { id: true, username: true, name: true, role: true }
-    })
-    return user
   })
 }

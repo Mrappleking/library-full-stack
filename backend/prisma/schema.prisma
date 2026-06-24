@@ -34,6 +34,7 @@ enum ItemStatus {
   repairing
   lost
   withdrawn
+  on_hold
 }
 
 enum FineType {
@@ -138,6 +139,10 @@ model Book {
   location   String?    @db.VarChar(100)
   cover      String?    @db.VarChar(500)
   desc       String?    @db.Text
+  clcNumber    String?    @db.VarChar(50)  // 中图法分类号 TP36
+  physicalDesc String?    @db.VarChar(200) // 载体形态 "169页"
+  language     String?    @db.VarChar(10)  // chi/eng/jpn
+  country      String?    @db.VarChar(10)  // CN/US/JP
   createdAt  DateTime   @default(now()) @map("created_at")
   updatedAt  DateTime   @updatedAt @map("updated_at")
 
@@ -160,6 +165,8 @@ model BookItem {
   price        Decimal?     @db.Decimal(10, 2)             // 购入价格
   acquiredAt   DateTime?    @map("acquired_at")             // 入藏日期
   notes        String?      @db.VarChar(500)               // 备注
+  campus       String?      @db.VarChar(50)                // 校区 (青岛/泰安/济南)
+  requests     Int          @default(0)                    // 当前请求数
   createdAt    DateTime     @default(now()) @map("created_at")
   updatedAt    DateTime     @updatedAt @map("updated_at")
 
