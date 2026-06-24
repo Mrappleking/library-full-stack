@@ -1,6 +1,18 @@
 import { PrismaClient } from '@prisma/client';
 import type { FineListParams, FineResponse, FinePayResult } from '../types/api.types.js';
 
+async function audit(
+  prisma: PrismaClient,
+  userId: number,
+  action: string,
+  target: string,
+  detail?: string,
+) {
+  await prisma.auditLog.create({
+    data: { userId, action, target, detail },
+  }).catch(() => {});
+}
+
 export async function listFines(
   prisma: PrismaClient,
   filters: FineListParams,
@@ -44,6 +56,7 @@ export async function payFine(prisma: PrismaClient, fineId: number): Promise<Fin
       data: { totalFines: { decrement: fine.amount } },
     }),
   ]);
+  audit(prisma, fine.userId, 'fine_pay', `fine:${fineId}`, `¥${fine.amount}`);
   return updated as unknown as FinePayResult;
 }
 

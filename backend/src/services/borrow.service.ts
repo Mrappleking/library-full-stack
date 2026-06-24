@@ -9,6 +9,18 @@ import { getRule } from './rules.js'
 import { createFine, calcOverdueFine } from './fine.service.js'
 import { getNextPendingHold } from './hold.service.js'
 
+async function audit(
+  prisma: PrismaClient,
+  userId: number,
+  action: string,
+  target: string,
+  detail?: string,
+) {
+  await prisma.auditLog.create({
+    data: { userId, action, target, detail },
+  }).catch(() => {}); // fire-and-forget, don't block on audit failure
+}
+
 export async function getMyBorrows(
   prisma: PrismaClient,
   userId: number,
@@ -122,6 +134,7 @@ export async function borrow(
       ? [prisma.bookItem.update({ where: { id: targetItemId }, data: { status: 'borrowed' } })]
       : []),
   ]);
+  audit(prisma, userId, 'borrow', `book:${targetBookId}`, item ? `item:${targetItemId}` : void 0);
   return record as unknown as BorrowRecordResponse;
 }
 
@@ -209,6 +222,7 @@ export async function returnBook(
       ? { holdId: nextHold.id, userId: nextHold.userId }
       : null,
   };
+  audit(prisma, userId, 'return', `record:${recordId}`, isOverdue ? 'overdue' : void 0);
 }
 
 export async function renew(
@@ -248,6 +262,7 @@ export async function renew(
     renewed: true,
     renewedDays: rule.renewalDays,
   };
+  audit(prisma, userId, 'renew', `record:${recordId}`, `${rule.renewalDays}d`);
 }
 
 export async function getHistory(

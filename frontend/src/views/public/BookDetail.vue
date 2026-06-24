@@ -34,7 +34,7 @@
             </n-descriptions>
             <n-divider />
             <h3>馆藏信息</h3>
-            <HoldingsTable :items="items" />
+            <HoldingsTable :items="book?.items || []" />
           </div>
         </div>
       </n-spin>
@@ -48,11 +48,10 @@ import { useRoute } from 'vue-router'
 import { NLayout, NLayoutHeader, NLayoutContent, NButton, NSpace, NSpin, NDivider, NDescriptions, NDescriptionsItem } from 'naive-ui'
 import HoldingsTable from '../../components/HoldingsTable.vue'
 import { api, request } from '../../api'
-import type { BookDetail, BookItemSummary, BookItemsResponse } from '../../types/api'
+import type { BookDetail, BookItemSummary } from '../../types/api'
 
 const route = useRoute()
 const book = ref<BookDetail | null>(null)
-const items = ref<BookItemSummary[]>([])
 const loading = ref(true)
 const holdCount = ref(0)
 const token = !!localStorage.getItem('token')
@@ -60,12 +59,7 @@ const token = !!localStorage.getItem('token')
 onMounted(async () => {
   const id = Number(route.params.id)
   try {
-    const [detailRes, itemsRes] = await Promise.all([
-      request<BookDetail>(`/books/${id}`),
-      request<BookItemsResponse>(`/books/${id}/items`)
-    ])
-    book.value = detailRes
-    items.value = itemsRes.items || []
+    book.value = await request<BookDetail>(`/books/${id}`)
     // Fetch hold count
     if (book.value && book.value.available === 0) {
       try {

@@ -57,7 +57,14 @@ export async function list(
 export async function getById(prisma: PrismaClient, id: number): Promise<BookDetail | null> {
   return prisma.book.findUnique({
     where: { id },
-    include: { category: true, _count: { select: { items: true } } },
+    include: {
+      category: true,
+      _count: { select: { items: true } },
+      items: {
+        include: { itemType: true, borrowRecords: { where: { status: 'active' }, take: 1 } },
+        orderBy: { barcode: 'asc' },
+      },
+    },
   }) as unknown as BookDetail | null;
 }
 

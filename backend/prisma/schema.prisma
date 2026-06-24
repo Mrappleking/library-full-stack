@@ -254,3 +254,19 @@ model Hold {
   @@index([bookItemId, status])
   @@map("holds")
 }
+
+// ============ 审计日志 ============
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  action    String   @db.VarChar(50)  // borrow/return/renew/fine_pay/hold_create/hold_cancel
+  target    String   @db.VarChar(100) // e.g. "book:123", "hold:45"
+  detail    String?  @db.VarChar(500)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
