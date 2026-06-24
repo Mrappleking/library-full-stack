@@ -26,11 +26,12 @@ const facetLabels: Record<string, string> = {
   campus: '校区', location: '馆藏地', language: '语种', subject: '分类', yearRange: '出版年代'
 }
 
-const facetGroups = computed(() =>
-  Object.entries(props.facets).map(([key, items]) => ({
+const facetGroups = computed(() => {
+  if (!props.facets) return []
+  return Object.entries(props.facets).map(([key, items]) => ({
     key, label: facetLabels[key] || key, items: items.slice(0, 10)
   }))
-)
+})
 
 function isActive(key: string, value: string) { return props.active[key] === value }
 </script>

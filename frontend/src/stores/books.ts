@@ -33,8 +33,12 @@ export const useBookStore = defineStore('books', () => {
   }
 
   async function updateFacets(search?: string) {
-    const res = await bookApi.getFacets(search)
-    facets.value = res.facets
+    try {
+      const res = await bookApi.getFacets(search)
+      facets.value = res.facets
+    } catch {
+      facets.value = null
+    }
   }
 
   async function getBook(id: number) {
