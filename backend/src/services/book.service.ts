@@ -194,3 +194,42 @@ export async function getFacets(
     },
   };
 }
+
+// ===== BookItem status machine =====
+
+const STATUS_TRANSITIONS: Record<string, string[]> = {
+  available: ['borrowed', 'on_hold', 'repairing', 'lost', 'withdrawn'],
+  borrowed: ['available', 'lost'],
+  on_hold: ['available', 'borrowed', 'expired'],
+  repairing: ['available', 'lost', 'withdrawn'],
+  lost: ['available', 'withdrawn'],
+  withdrawn: [],
+};
+
+export function validateItemStatus(current: string, next: string): void {
+  const allowed = STATUS_TRANSITIONS[current];
+  if (!allowed || !allowed.includes(next)) {
+    throw Object.assign(
+      new Error(`Invalid status transition: ${current} → ${next}`),
+      { statusCode: 400 },
+    );
+  }
+}
+
+export async function reconcileBookAvailable(
+  prisma: PrismaClient,
+  bookId: number,
+): Promise<{ available: number; was: number }> {
+  const book = await prisma.book.findUnique({ where: { id: bookId } });
+  if (!book) throw Object.assign(new Error('Book not found'), { statusCode: 404 });
+  const actual = await prisma.bookItem.count({
+    where: { bookId, status: 'available' },
+  });
+  if (actual !== book.available) {
+    await prisma.book.update({
+      where: { id: bookId },
+      data: { available: actual },
+    });
+  }
+  return { available: actual, was: book.available };
+}
