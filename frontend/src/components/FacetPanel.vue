@@ -43,11 +43,18 @@ function isActive(key: string, value: string) { return props.active[key] === val
 <style scoped>
 .facet-panel { width: 100%; }
 .facet-header { font-size: 13px; font-weight: 600; }
-.facet-item { display: flex; justify-content: space-between; align-items: center; padding: 5px 10px;
-  cursor: pointer; border-radius: 5px; font-size: 13px; transition: background 0.12s; }
-.facet-item:hover { background: rgba(255,255,255,0.04); }
-.facet-item.active { background: rgba(94,106,210,0.12); color: var(--accent); }
-.facet-item.active .facet-count { background: rgba(94,106,210,0.2); }
+.facet-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 10px; cursor: pointer; border-radius: 6px;
+  font-size: 13px; transition: all 0.12s ease;
+}
+.facet-item:hover { background: rgba(94,106,210,0.06); }
+.facet-item.active { background: rgba(94,106,210,0.1); color: var(--n-primary-color); font-weight: 600; }
+.facet-item.active .facet-count { background: rgba(94,106,210,0.15); color: var(--n-primary-color); }
 .facet-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
-.facet-count { font-size: 11px; padding: 1px 7px; border-radius: 10px; background: rgba(255,255,255,0.05); color: var(--n-text-color-3); min-width: 28px; text-align: center; }
+.facet-count {
+  font-size: 11px; padding: 1px 8px; border-radius: 10px;
+  background: rgba(0,0,0,0.04); color: var(--n-text-color-3);
+  min-width: 28px; text-align: center;
+}
 </style>

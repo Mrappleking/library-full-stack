@@ -3,7 +3,13 @@
     <n-layout-header bordered class="header">
       <div class="header-inner">
         <div class="brand" @click="$router.push('/books')">
-          <span class="brand-icon">📚</span>
+          <!-- Library SVG icon -->
+          <svg class="brand-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            <line x1="8" y1="7" x2="16" y2="7"/>
+            <line x1="8" y1="11" x2="14" y2="11"/>
+          </svg>
           <div>
             <h2>山东科技大学图书馆</h2>
             <span class="brand-sub">Shandong University of Science and Technology</span>
@@ -96,12 +102,17 @@ function onPage(p: number) { store.goTo(p) }
 
 <style scoped>
 .search-page { min-height: 100vh; background: var(--n-color-body); }
-.header { padding: 0 28px; height: 64px; display: flex; align-items: center; }
+.header {
+  padding: 0 28px; height: 64px; display: flex; align-items: center;
+  background: linear-gradient(135deg, #5e6ad2 0%, #7c6fdb 100%);
+}
 .header-inner { display: flex; align-items: center; justify-content: space-between; width: 100%; }
 .brand { display: flex; align-items: center; gap: 12px; cursor: pointer; }
-.brand-icon { font-size: 32px; line-height: 1; }
-.brand h2 { margin: 0; font-size: 18px; font-weight: 600; }
-.brand-sub { font-size: 11px; color: var(--n-text-color-3); letter-spacing: 0.5px; }
+.brand-icon { width: 28px; height: 28px; color: rgba(255,255,255,0.85); flex-shrink: 0; }
+.brand h2 { margin: 0; font-size: 18px; font-weight: 600; color: #fff; }
+.brand-sub { font-size: 11px; color: rgba(255,255,255,0.7); letter-spacing: 0.5px; }
+.header :deep(.n-button) { color: rgba(255,255,255,0.85) !important; }
+.header :deep(.n-button:hover) { color: #fff !important; }
 .content { display: flex; padding: 24px 28px; gap: 24px; max-width: 1400px; margin: 0 auto; }
 .sidebar { flex-shrink: 0; width: 220px; }
 .sidebar-title { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; padding-left: 4px; }

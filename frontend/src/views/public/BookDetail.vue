@@ -105,8 +105,13 @@ async function handleHold() {
 
 <style scoped>
 .detail-page { min-height: 100vh; background: var(--n-color-body); }
-.header { padding: 0 28px; height: 56px; display: flex; align-items: center; }
+.header {
+  padding: 0 28px; height: 56px; display: flex; align-items: center;
+  background: linear-gradient(135deg, #5e6ad2 0%, #7c6fdb 100%);
+}
 .header-inner { display: flex; justify-content: space-between; width: 100%; }
+.header :deep(.n-button) { color: rgba(255,255,255,0.85) !important; }
+.header :deep(.n-button:hover) { color: #fff !important; }
 .content { display: flex; gap: 40px; padding: 32px 28px; max-width: 1100px; margin: 0 auto; }
 .cover-section { flex-shrink: 0; width: 240px; }
 .cover-img { width: 240px; height: 340px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }

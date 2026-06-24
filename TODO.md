@@ -1,6 +1,6 @@
 # Library Full-Stack System — TODO
 
-> 2026-06-24 · 13 轮审计完成 · 82 fixes · 零待办
+> 2026-06-24 · 13 轮审计完成 · 82 fixes · 前端视觉重设计完成
 
 ## 已完成全部
 
@@ -10,6 +10,7 @@
 | Phase 2 (H-L) | ESLint/安全/CI/索引/错误处理/types | ✅ |
 | M1-M3 | BarcodeLabel + Hold 预约 + 组件测试 | ✅ |
 | R1-R13 | 十三轮全代码审计 (82 fixes) | ✅ |
+| 前端视觉重设计 | 亮色主题+暗色侧边栏+登录页重构+视觉优化 | ✅ |
 
 ## 当前度量
 
@@ -19,7 +20,7 @@
 | 后端服务测试 | 52/52 PASS (10 files) |
 | 前端测试 | 18/18 PASS (4 files) |
 | ESLint | 0 errors, 95 warnings |
-| TSC errors | 10 (test mock + Prisma 类型桥接) |
+| 主题模式 | 亮色 + 暗色侧边栏 |
 
 ## 不做
 

@@ -33,7 +33,8 @@ const routes = [
       { path: 'my-borrows', component: () => import('../views/reader/MyBorrows.vue') },
       { path: 'profile', component: () => import('../views/reader/Profile.vue') }
     ]
-  }
+  },
+  { path: '/:pathMatch(.*)*', redirect: '/books' }
 ]
 
 const router = createRouter({
@@ -43,7 +44,6 @@ const router = createRouter({
 
 router.beforeEach((to, _from, next) => {
   const user = getUser()
-  // Public routes — no auth required
   if (to.path === '/login' || to.path === '/books' || to.path.startsWith('/books/')) {
     if (to.path === '/login' && user) {
       next(user.role === 'admin' ? '/admin/dashboard' : '/reader/books')

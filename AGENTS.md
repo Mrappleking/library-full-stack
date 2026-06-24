@@ -22,10 +22,11 @@
 | 统计报表 | 借阅量/热门图书/逾期统计/读者数 | 查看 | 不可见 |
 
 ## 设计规范
-- 全局暗色主题（Linear 风格）
+- 亮色主题（默认 light），暗色侧边栏（admin/reader Layout）
 - 主色 Indigo-Violet (#5e6ad2 / #7170ff)
 - 字体 Inter，无 Google Fonts 依赖（系统字体栈）
-- 未定设计点用 `[DESIGN-TODO: 说明]` 标记保留在 UI 上
+- 登录页：山科校徽 + AI 生成/实景图书馆照片 + 毛玻璃 blur(28px) + 云动画
+- 禁止使用 emoji（如 📚），全部替换为 SVG 线条图标
 
 ## 错误区（先读，按时间倒序）
 | # | 错误操作 | 后果 | 正确做法 |
@@ -81,7 +82,12 @@
 | 2026-06-24 | 第十轮收尾 | reconcileBookAvailable → POST /:id/reconcile route |
 | 2026-06-24 | 第十一轮竞态修复 | borrow() 交互式 $transaction 防最后一册并发, holds POST Zod 校验 |
 | 2026-06-24 | 第十二轮数据防护 | book.remove() copies+borrows 双重防护, Hold FK onDelete SetNull, 错误消息中→英统一 |
-| 2026-06-24 | 第十三轮缺失端点 | /api/book-items/:barcode 路由——流通台扫码从未实现 |
+|| 2026-06-24 | 第十三轮缺失端点 | /api/book-items/:barcode 路由——流通台扫码从未实现 |
+|| 2026-06-24 | 前端视觉重构——亮色主题+暗色侧边栏 | 用户要求白色主界面，侧边栏保持暗色；App.vue 移除 darkTheme，侧边栏用 inverted menu + 硬编码背景 |
+|| 2026-06-24 | 登录页重设计 | 山科校徽(官网原图) + CogView-3 生成图书馆照片 + 毛玻璃 backdrop-filter + 云动画 |
+|| 2026-06-24 | 移除 Vue `<transition>` 动画 | 导致双层渲染 bug；改为直接路由切换 |
+|| 2026-06-24 | 添加 catch-all 路由 `/:pathMatch(.*)*` | 未定义路径(如 /logi)直接重定向到 /books，避免路由守卫多重重叠 |
+|| 2026-06-24 | 禁止 emoji 图标 | 全部替换为 @vicons/ionicons5 SVG 图标或自定义 SVG |
 
 ## 环境变量
 ### 必需变量（backend/.env）
@@ -204,14 +210,16 @@
 
 ## 前端规范
 - 组件库：Naive UI 2.x（已安装，必须使用）
-- 必须注册 `n-config-provider`，暗色主题，themeOverrides 含 brandColor #5e6ad2
+- App.vue 注册 `n-config-provider`，亮色主题（无 darkTheme），themeOverrides 含 brandColor #5e6ad2
+- 侧边栏用 inverted menu + 硬编码暗色背景 (#16161e)
+- 登录页局部包裹 `<n-config-provider :theme="darkTheme">` 保持暗色玻璃卡片外观
 - 常用组件：NDataTable、NForm、NButton、NInput、NSelect、NModal、NMessage、NCard、NPagination、NBadge、NSpin
-- 样式覆盖：组件级用 Naive UI props，全局用 CSS 变量（`:root` 已在 index.html 定义）
+- 样式覆盖：组件级用 Naive UI props，全局用 CSS 变量
 - 禁止直接用 inline style，特殊情况用 `<style scoped>`
 - Visual 设计改动先输出 TEMPLATE / SYSTEM / LAYOUT 三行
 - Vite 开发代理已配：`/api` → `http://127.0.0.1:3000`
 - 前端禁止写死 `localhost:3000`，统一走 `/api` 前缀
-- 类型共享：API 响应的 interface 定义在 `frontend/src/api/types.ts`
+- 类型共享：API 响应的 interface 定义在 `frontend/src/types/api.ts`
 
 ## Git 分支规范
 - 格式：`<type>/<YYYYMMDD>-<description>`
