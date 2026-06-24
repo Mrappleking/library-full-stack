@@ -59,6 +59,9 @@
 | 2026-06-24 | 零外部 API 依赖（学生项目） | 超星/豆瓣需授权，用 OpenLibrary + CSS 占位 |
 | 2026-06-24 | 7 模块分步实施，每步验收不进下一步 | 见 PLAN.md |
 | 2026-06-24 | 分面搜索用 MySQL GROUP BY，不调外部 OPAC | findsdust.libsp.cn 封闭系统 |
+| 2026-06-24 | 43 单元测试覆盖全部 services | 9 文件, vitest + vi.mock |
+| 2026-06-24 | Phase 2: 工程卓越六维度补全 | PLAN.md H-L 模块: lint/安全/CI/索引/收尾 |
+| 2026-06-24 | ASSESSMENT.md — 代码质量量化评估 | 加权总分 6.0/10, 骨架完整血肉待补 |
 
 ## 环境变量
 ### 必需变量（backend/.env）
