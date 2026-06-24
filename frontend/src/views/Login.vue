@@ -1,5 +1,6 @@
 <template>
   <div class="login-wrapper">
+    <AnimatedBackground />
     <div class="login-card">
       <div class="logo-area">
         <div class="logo-icon">📚</div>
@@ -56,6 +57,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage, NIcon } from 'naive-ui'
 import { PersonOutline, LockClosedOutline } from '@vicons/ionicons5'
+import AnimatedBackground from '../components/AnimatedBackground.vue'
 import { api, setAuth } from '../api'
 
 const router = useRouter()
@@ -113,11 +115,11 @@ async function handleRegister() {
 
 <style scoped>
 .login-wrapper {
-  display: flex; align-items: center; justify-content: center; min-height: 100vh;
-  background: linear-gradient(135deg, #0a0b0f 0%, #13151d 50%, #191c26 100%);
+  position: relative; display: flex; align-items: center; justify-content: center;
+  min-height: 100vh; overflow: hidden;
 }
 .login-card {
-  width: 400px; padding: 40px 36px 32px;
+  position: relative; z-index: 1; width: 400px; padding: 40px 36px 32px;
   background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
   border-radius: 16px; backdrop-filter: blur(20px);
 }
