@@ -6,7 +6,10 @@ export async function resolveCover(isbn: string): Promise<string | null> {
   // 1. OpenLibrary Covers API (free, no auth required)
   const olUrl = `https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg`;
   try {
-    const resp = await fetch(olUrl, { signal: AbortSignal.timeout(5000) });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const resp = await fetch(olUrl, { signal: controller.signal });
+    clearTimeout(timeoutId);
     if (resp.ok) {
       const contentType = resp.headers.get('content-type') || '';
       if (contentType.includes('image')) return olUrl;

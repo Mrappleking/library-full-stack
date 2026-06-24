@@ -5,7 +5,7 @@ export async function listFines(
   prisma: PrismaClient,
   filters: FineListParams,
 ): Promise<FineResponse[]> {
-  const where: any = {};
+  const where: Record<string, unknown> = {};
   if (filters.type) where.type = filters.type;
   if (filters.paid !== undefined) where.paid = filters.paid;
   return prisma.fine.findMany({
@@ -33,13 +33,16 @@ export async function payFine(prisma: PrismaClient, fineId: number): Promise<Fin
   const fine = await prisma.fine.findUnique({ where: { id: fineId } });
   if (!fine) throw Object.assign(new Error('Fine not found'), { statusCode: 404 });
   if (fine.paid) throw Object.assign(new Error('Already paid'), { statusCode: 400 });
-  const updated = await prisma.fine.update({
-    where: { id: fineId },
-    data: { paid: true, paidAt: new Date() },
-  });
-  await prisma.user.update({
-    where: { id: fine.userId },
-    data: { totalFines: { decrement: fine.amount } },
-  });
-  return updated as FinePayResult;
+
+  const [updated] = await prisma.$transaction([
+    prisma.fine.update({
+      where: { id: fineId },
+      data: { paid: true, paidAt: new Date() },
+    }),
+    prisma.user.update({
+      where: { id: fine.userId },
+      data: { totalFines: { decrement: fine.amount } },
+    }),
+  ]);
+  return updated as unknown as FinePayResult;
 }

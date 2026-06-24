@@ -1,13 +1,20 @@
 import { FastifyInstance } from 'fastify';
+import { z } from 'zod';
 import * as fineService from '../services/fine.service.js';
 import { requireAdmin } from '../middleware/requireAdmin.js';
 
+const fineQuerySchema = z.object({
+  type: z.string().optional(),
+  paid: z.enum(['true', 'false']).optional(),
+});
+
 export async function finesRoutes(app: FastifyInstance) {
   app.get('/', { onRequest: [app.authenticate, requireAdmin] }, async (request: any) => {
-    const { type, paid } = request.query;
+    const q = fineQuerySchema.safeParse(request.query);
+    const filters = q.success ? q.data : {};
     return fineService.listFines(app.prisma, {
-      type,
-      paid: paid !== undefined ? paid === 'true' : undefined,
+      type: filters.type,
+      paid: filters.paid !== undefined ? filters.paid === 'true' : undefined,
     });
   });
 

@@ -47,8 +47,8 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { NLayout, NLayoutHeader, NLayoutContent, NButton, NSpace, NSpin, NDivider, NDescriptions, NDescriptionsItem } from 'naive-ui'
 import HoldingsTable from '../../components/HoldingsTable.vue'
-import { api } from '../../api'
-import type { BookDetail, BookItemSummary } from '../../types/api'
+import { api, request } from '../../api'
+import type { BookDetail, BookItemSummary, BookItemsResponse } from '../../types/api'
 
 const route = useRoute()
 const book = ref<BookDetail | null>(null)
@@ -61,12 +61,11 @@ onMounted(async () => {
   const id = Number(route.params.id)
   try {
     const [detailRes, itemsRes] = await Promise.all([
-      fetch(`/api/books/${id}`),
-      fetch(`/api/books/${id}/items`)
+      request<BookDetail>(`/books/${id}`),
+      request<BookItemsResponse>(`/books/${id}/items`)
     ])
-    book.value = await detailRes.json()
-    const itemsData = await itemsRes.json()
-    items.value = itemsData.items || []
+    book.value = detailRes
+    items.value = itemsRes.items || []
     // Fetch hold count
     if (book.value && book.value.available === 0) {
       try {

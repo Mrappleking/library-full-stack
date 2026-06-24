@@ -27,7 +27,11 @@ export async function bookRoutes(app: FastifyInstance) {
   });
 
   app.get('/facets', async (request: any) => {
-    return bookService.getFacets(app.prisma, { search: request.query.search });
+    const q = request.query;
+    return bookService.getFacets(app.prisma, {
+      search: q.search,
+      categoryId: q.categoryId ? parseInt(q.categoryId) : undefined,
+    });
   });
 
   app.get('/:id/items', async (request: any) => {

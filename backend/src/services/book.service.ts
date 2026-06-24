@@ -28,7 +28,6 @@ export async function list(
   }
   if (params.categoryId) where.categoryId = params.categoryId;
   if (params.campus) where.items = { some: { campus: params.campus } };
-  if (params.location) where.location = params.location;
   if (params.yearMin || params.yearMax) {
     where.year = {};
     if (params.yearMin) where.year.gte = params.yearMin;

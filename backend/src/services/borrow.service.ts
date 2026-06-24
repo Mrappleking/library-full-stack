@@ -129,7 +129,7 @@ export async function returnBook(
     record.bookItem?.itemTypeId ?? null,
   );
 
-  let fineResult: any = null;
+  let fineResult: Record<string, unknown> | null = null;
   if (isOverdue) {
     const fineAmount = calcOverdueFine(record.dueDate, now, rule.finePerDay);
     fineResult = await createFine(prisma, {
@@ -139,6 +139,29 @@ export async function returnBook(
       type: 'overdue',
     });
   }
+
+  // Check for pending hold BEFORE transaction (read-only, safe)
+  const nextHold = await getNextPendingHold(prisma, record.bookId);
+  const holdOps = nextHold && record.bookItemId
+    ? [
+        prisma.hold.update({
+          where: { id: nextHold.id },
+          data: {
+            status: 'ready',
+            bookItemId: record.bookItemId,
+            expiryDate: new Date(Date.now() + 3 * 86400000),
+          },
+        }),
+        prisma.bookItem.update({
+          where: { id: record.bookItemId },
+          data: { status: 'on_hold' },
+        }),
+        prisma.book.update({
+          where: { id: record.bookId },
+          data: { available: { decrement: 1 } },
+        }),
+      ]
+    : [];
 
   const [updated] = await prisma.$transaction([
     prisma.borrowRecord.update({
@@ -154,6 +177,7 @@ export async function returnBook(
           }),
         ]
       : []),
+    ...holdOps,
   ]);
 
   return {
@@ -161,38 +185,10 @@ export async function returnBook(
     status: isOverdue ? 'overdue' : 'returned',
     returnDate: now.toISOString(),
     fine: fineResult ? { amount: fineResult.amount, type: fineResult.type } : null,
-    holdPromoted: await notifyNextHold(prisma, record.bookId, record.bookItemId),
+    holdPromoted: nextHold && record.bookItemId
+      ? { holdId: nextHold.id, userId: nextHold.userId }
+      : null,
   };
-}
-
-async function notifyNextHold(
-  prisma: PrismaClient,
-  bookId: number,
-  bookItemId: number | null,
-): Promise<{ holdId: number; userId: number } | null> {
-  const nextHold = await getNextPendingHold(prisma, bookId)
-  if (!nextHold || !bookItemId) return null
-
-  const expiry = new Date()
-  expiry.setDate(expiry.getDate() + 3) // 3-day pickup window
-
-  await prisma.hold.update({
-    where: { id: nextHold.id },
-    data: { status: 'ready', bookItemId, expiryDate: expiry },
-  })
-
-  // Set item to on_hold status and keep book.available unchanged
-  // (returnBook already incremented available; we net it to zero for this held copy)
-  await prisma.bookItem.update({
-    where: { id: bookItemId },
-    data: { status: 'on_hold' },
-  })
-  await prisma.book.update({
-    where: { id: bookId },
-    data: { available: { decrement: 1 } },
-  })
-
-  return { holdId: nextHold.id, userId: nextHold.userId }
 }
 
 export async function renew(
