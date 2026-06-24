@@ -35,11 +35,11 @@
 import { onMounted, computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { NLayout, NLayoutHeader, NLayoutContent, NButton, NSpace, NSpin, NDivider, NPagination } from 'naive-ui'
-import SearchBar from '../components/SearchBar.vue'
-import FacetPanel from '../components/FacetPanel.vue'
-import BookGrid from '../components/BookGrid.vue'
-import { useBookStore } from '../stores/books'
-import type { FacetValue } from '../types/api'
+import SearchBar from '../../components/SearchBar.vue'
+import FacetPanel from '../../components/FacetPanel.vue'
+import BookGrid from '../../components/BookGrid.vue'
+import { useBookStore } from '../../stores/books'
+import type { FacetValue } from '../../types/api'
 
 const router = useRouter()
 const store = useBookStore()

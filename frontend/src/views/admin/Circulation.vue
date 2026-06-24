@@ -45,9 +45,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { NH2, NGrid, NGridItem, NCard, NDescriptions, NDescriptionsItem, NButton, NSpace, NTag, NList, NListItem, NDivider, useMessage } from 'naive-ui'
-import BarcodeInput from '../components/BarcodeInput.vue'
-import StatusBadge from '../components/StatusBadge.vue'
-import { request } from '../api'
+import BarcodeInput from '../../components/BarcodeInput.vue'
+import StatusBadge from '../../components/StatusBadge.vue'
+import { request } from '../../api'
 
 const message = useMessage()
 const currentItem = ref<any>(null)

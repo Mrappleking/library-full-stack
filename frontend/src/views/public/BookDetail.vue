@@ -43,8 +43,8 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { NLayout, NLayoutHeader, NLayoutContent, NButton, NSpace, NSpin, NDivider, NDescriptions, NDescriptionsItem } from 'naive-ui'
-import HoldingsTable from '../components/HoldingsTable.vue'
-import type { BookDetail, BookItemSummary } from '../types/api'
+import HoldingsTable from '../../components/HoldingsTable.vue'
+import type { BookDetail, BookItemSummary } from '../../types/api'
 
 const route = useRoute()
 const book = ref<BookDetail | null>(null)
