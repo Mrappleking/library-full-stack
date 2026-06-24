@@ -5,8 +5,8 @@
       <n-input v-model:value="query" placeholder="搜索书名/作者/ISBN" clearable @keyup.enter="doSearch" @clear="doSearch" />
       <n-button type="primary" @click="doSearch" size="small">搜索</n-button>
     </div>
-    <n-space v-if="filters.campus" size="small">
-      <n-tag closable @close="clearFilter('campus')">校区: {{ filters.campus }}</n-tag>
+    <n-space v-if="filters?.campus" size="small">
+      <n-tag closable @close="clearFilter('campus')">校区: {{ filters?.campus }}</n-tag>
     </n-space>
   </n-space>
 </template>
