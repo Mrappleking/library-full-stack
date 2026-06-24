@@ -111,54 +111,58 @@ export async function borrow(
 
   if (!targetBookId) throw Object.assign(new Error('Book not found'), { statusCode: 404 });
 
-  const existing = await prisma.borrowRecord.findFirst({
-    where: { userId, bookId: targetBookId!, status: 'active' },
-  });
-  if (existing)
-    throw Object.assign(new Error('You already borrowed this book'), { statusCode: 400 });
-
   const user = await prisma.user.findUnique({ where: { id: userId } });
   const item = targetItemId
     ? await prisma.bookItem.findUnique({ where: { id: targetItemId }, include: { itemType: true } })
     : null;
 
-  // Fetch rule once for both borrow limit check and loanDays
   const rule = await getRule(prisma, user?.patronCategoryId ?? null, item?.itemTypeId ?? null);
-
-  if (targetItemId) validateItemStatus('available', 'borrowed');
-
-  // Borrow limit check (inline, no second getRule call)
-  const currentCount = await prisma.borrowRecord.count({
-    where: { userId, status: 'active' },
-  });
-  if (currentCount >= rule.maxBorrows) {
-    throw Object.assign(
-      new Error(`已达到借阅上限 ${rule.maxBorrows} 册`),
-      { statusCode: 400 },
-    );
-  }
   const dueDate = new Date();
   dueDate.setDate(dueDate.getDate() + rule.loanDays);
 
-  const [record] = await prisma.$transaction([
-    prisma.borrowRecord.create({
-      data: {
-        userId,
-        bookId: targetBookId!,
-        bookItemId: targetItemId ?? null,
-        dueDate,
-        status: 'active',
-      },
+  // Interactive transaction: re-verify item availability + borrow limit atomically
+  const record = await prisma.$transaction(async (tx) => {
+    // Re-check: no duplicate active borrow
+    const existing = await tx.borrowRecord.findFirst({
+      where: { userId, bookId: targetBookId!, status: 'active' },
+    });
+    if (existing)
+      throw Object.assign(new Error('You already borrowed this book'), { statusCode: 400 });
+
+    // Re-check: borrow limit (count + enforce inside tx)
+    const currentCount = await tx.borrowRecord.count({
+      where: { userId, status: 'active' },
+    });
+    if (currentCount >= rule.maxBorrows) {
+      throw Object.assign(
+        new Error(`已达到借阅上限 ${rule.maxBorrows} 册`),
+        { statusCode: 400 },
+      );
+    }
+
+    // Re-verify item is still available (guards last-copy race)
+    if (targetItemId) {
+      const itemCheck = await tx.bookItem.findUnique({ where: { id: targetItemId } });
+      if (!itemCheck || itemCheck.status !== 'available')
+        throw Object.assign(new Error('Copy no longer available'), { statusCode: 400 });
+      validateItemStatus('available', 'borrowed');
+    }
+
+    // All checks passed — atomic writes
+    const created = await tx.borrowRecord.create({
+      data: { userId, bookId: targetBookId!, bookItemId: targetItemId ?? null, dueDate, status: 'active' },
       include: {
         book: { select: { id: true, title: true, author: true, isbn: true } },
         bookItem: { select: { id: true, barcode: true } },
       },
-    }),
-    prisma.book.update({ where: { id: targetBookId! }, data: { available: { decrement: 1 } } }),
-    ...(targetItemId
-      ? [prisma.bookItem.update({ where: { id: targetItemId }, data: { status: 'borrowed' } })]
-      : []),
-  ]);
+    });
+    await tx.book.update({ where: { id: targetBookId! }, data: { available: { decrement: 1 } } });
+    if (targetItemId) {
+      await tx.bookItem.update({ where: { id: targetItemId }, data: { status: 'borrowed' } });
+    }
+    return created;
+  });
+
   audit(prisma, userId, 'borrow', `book:${targetBookId}`, item ? `item:${targetItemId}` : void 0);
   return record as unknown as BorrowRecordResponse;
 }
@@ -244,7 +248,7 @@ export async function returnBook(
     id: updated.id,
     status: isOverdue ? 'overdue' : 'returned',
     returnDate: now.toISOString(),
-    fine: fineResult ? { amount: fineResult.amount, type: fineResult.type } : null,
+    fine: fineResult ? { amount: Number(fineResult.amount), type: String(fineResult.type) } : null,
     holdPromoted: nextHold && record.bookItemId
       ? { holdId: nextHold.id, userId: nextHold.userId }
       : null,

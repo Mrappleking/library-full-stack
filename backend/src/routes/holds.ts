@@ -1,11 +1,19 @@
 import { FastifyInstance } from 'fastify'
+import { z } from 'zod'
 import * as holdService from '../services/hold.service.js'
 import { requireAdmin } from '../middleware/requireAdmin.js'
 
+const holdSchema = z.object({
+  bookId: z.number().int().positive(),
+})
+
 export async function holdRoutes(app: FastifyInstance) {
   // Create hold
-  app.post('/', { onRequest: [app.authenticate] }, async (request: any) =>
-    holdService.createHold(app.prisma, request.user.id, request.body.bookId))
+  app.post('/', { onRequest: [app.authenticate] }, async (request: any) => {
+    const parsed = holdSchema.safeParse(request.body)
+    if (!parsed.success) throw Object.assign(new Error('Validation failed'), { statusCode: 400 })
+    return holdService.createHold(app.prisma, request.user.id, parsed.data.bookId)
+  })
 
   // Public: count pending holds for a book
   app.get('/count', async (request: any) => {

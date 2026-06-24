@@ -31,10 +31,16 @@ function mockPrisma(overrides: Record<string, any> = {}) {
       count: vi.fn(),
     },
     user: { findUnique: vi.fn() },
-    $transaction: vi.fn((ops: any[]) => Promise.all(ops)),
+    $transaction: vi.fn(),
     auditLog: { create: vi.fn().mockResolvedValue({}) },
   };
-  return { ...defaults, ...overrides } as any;
+  const mock = { ...defaults, ...overrides };
+  // Make $transaction handle both array and interactive (callback) modes
+  mock.$transaction = vi.fn((fn: any) => {
+    if (typeof fn === 'function') return fn(mock as any);
+    return Promise.all(fn);
+  });
+  return mock as any;
 }
 
 beforeEach(() => {
@@ -84,8 +90,9 @@ describe('borrow', () => {
     const result = await borrowService.borrow(prisma, 1, { bookId: 10, bookItemId: 1 });
     expect(result.id).toBe(100);
     expect(result.status).toBe('active');
-    const txn = prisma.$transaction.mock.calls[0][0];
-    expect(txn.length).toBe(3);
+    // Interactive transaction: first arg is a callback function
+    const txnFn = prisma.$transaction.mock.calls[0][0];
+    expect(typeof txnFn).toBe('function');
   });
 
   it('2. 读者已有此书 — 返回错误 "already borrowed"', async () => {
@@ -274,10 +281,8 @@ describe('transaction', () => {
       });
     prisma.user.findUnique = vi.fn().mockResolvedValue({ id: 1, patronCategoryId: 1 });
     await borrowService.borrow(prisma, 1, { bookItemId: 1 });
-    const txnArgs = prisma.$transaction.mock.calls[0][0];
-    // Verify all 3 operations exist: create record, decrement available, update item status
-    expect(txnArgs).toHaveLength(3);
-    // Verify transaction was actually called (not Promise.all)
+    const txnFn = prisma.$transaction.mock.calls[0][0];
+    expect(typeof txnFn).toBe('function');
     expect(prisma.$transaction).toHaveBeenCalledTimes(1);
   });
 });
