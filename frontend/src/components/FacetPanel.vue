@@ -1,13 +1,15 @@
 <template>
   <div class="facet-panel">
-    <h4>聚类条件</h4>
-    <n-collapse>
-      <n-collapse-item v-for="group in facetGroups" :key="group.key" :title="group.label">
+    <n-collapse :default-expanded-names="['campus','subject']">
+      <n-collapse-item v-for="group in facetGroups" :key="group.key" :name="group.key">
+        <template #header>
+          <span class="facet-header">{{ group.label }}</span>
+        </template>
         <div v-for="item in group.items" :key="item.value" class="facet-item"
           :class="{ active: isActive(group.key, item.value) }"
           @click="$emit('select', group.key, item.value)">
           <span class="facet-label">{{ item.value }}</span>
-          <n-tag size="tiny" :bordered="false">{{ item.count }}</n-tag>
+          <span class="facet-count">{{ item.count }}</span>
         </div>
       </n-collapse-item>
     </n-collapse>
@@ -16,7 +18,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { NCollapse, NCollapseItem, NTag } from 'naive-ui'
+import { NCollapse, NCollapseItem } from 'naive-ui'
 import type { FacetValue } from '../types/api'
 
 const props = defineProps<{ facets: Record<string, FacetValue[]> | null; active: Record<string, string> }>()
@@ -28,20 +30,24 @@ const facetLabels: Record<string, string> = {
 
 const facetGroups = computed(() => {
   if (!props.facets) return []
-  return Object.entries(props.facets).map(([key, items]) => ({
-    key, label: facetLabels[key] || key, items: items.slice(0, 10)
-  }))
+  return Object.entries(props.facets)
+    .filter(([, items]) => items && items.length > 0)
+    .map(([key, items]) => ({
+      key, label: facetLabels[key] || key, items: items.slice(0, 10)
+    }))
 })
 
 function isActive(key: string, value: string) { return props.active[key] === value }
 </script>
 
 <style scoped>
-.facet-panel { width: 240px; padding: 12px; }
-.facet-panel h4 { margin: 0 0 8px; font-size: 15px; }
-.facet-item { display: flex; justify-content: space-between; align-items: center; padding: 4px 8px;
-  cursor: pointer; border-radius: 4px; font-size: 13px; }
-.facet-item:hover { background: var(--n-color-hover); }
-.facet-item.active { background: var(--n-color-pressed); }
-.facet-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.facet-panel { width: 100%; }
+.facet-header { font-size: 13px; font-weight: 600; }
+.facet-item { display: flex; justify-content: space-between; align-items: center; padding: 5px 10px;
+  cursor: pointer; border-radius: 5px; font-size: 13px; transition: background 0.12s; }
+.facet-item:hover { background: rgba(255,255,255,0.04); }
+.facet-item.active { background: rgba(94,106,210,0.12); color: var(--accent); }
+.facet-item.active .facet-count { background: rgba(94,106,210,0.2); }
+.facet-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.facet-count { font-size: 11px; padding: 1px 7px; border-radius: 10px; background: rgba(255,255,255,0.05); color: var(--n-text-color-3); min-width: 28px; text-align: center; }
 </style>

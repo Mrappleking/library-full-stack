@@ -1,47 +1,66 @@
 <template>
   <div>
-    <n-h1 prefix="bar" style="margin-bottom: 20px;"><n-text type="primary">我的借阅</n-text></n-h1>
+    <h1 class="page-title">我的借阅</h1>
 
-    <n-alert v-if="totalFines > 0" type="error" :bordered="false" style="margin-bottom: 16px;">
-      <n-text depth="2">欠费总额：</n-text><n-text type="error" strong>¥{{ totalFines.toFixed(2) }}</n-text>
+    <n-alert v-if="totalFines > 0" type="error" :bordered="false" style="margin-bottom: 20px; border-radius: 10px;">
+      <template #header>
+        <span style="font-size:15px;font-weight:600">欠费提醒</span>
+      </template>
+      <n-text depth="2">您有未缴罚款：</n-text>
+      <n-text type="error" strong style="font-size:18px">¥{{ totalFines.toFixed(2) }}</n-text>
     </n-alert>
 
-    <n-data-table
-      :columns="columns"
-      :data="records"
-      :loading="loading"
-      :row-key="(r: DataRow) => r.id"
-    />
+    <n-tabs type="line" animated default-value="borrows" style="margin-bottom: 16px;">
+      <n-tab-pane name="borrows" tab="当前借阅">
+        <n-data-table
+          :columns="columns"
+          :data="records"
+          :loading="loading"
+          :row-key="(r: DataRow) => r.id"
+        >
+          <template #empty><n-empty description="暂无借阅记录" /></template>
+        </n-data-table>
+      </n-tab-pane>
 
-    <!-- Fines Section -->
-    <n-card v-if="fines.length > 0" title="欠费明细" style="margin-top: 24px;">
-      <n-data-table
-        :columns="fineColumns"
-        :data="fines"
-        size="small"
-        :row-key="(r: DataRow) => r.id"
-      />
-    </n-card>
+      <n-tab-pane name="holds" tab="我的预约">
+        <n-data-table
+          :columns="holdColumns"
+          :data="holds"
+          size="small"
+          :row-key="(r: DataRow) => r.id"
+        >
+          <template #empty>
+            <n-empty description="暂无预约记录">
+              <template #extra><n-button size="small" @click="$router.push('/reader/books')">去浏览图书</n-button></template>
+            </n-empty>
+          </template>
+        </n-data-table>
+      </n-tab-pane>
 
-    <!-- Holds Section -->
-    <n-card v-if="holds.length > 0" title="我的预约" style="margin-top: 24px;">
-      <n-data-table
-        :columns="holdColumns"
-        :data="holds"
-        size="small"
-        :row-key="(r: DataRow) => r.id"
-      />
-    </n-card>
+      <n-tab-pane name="fines" tab="罚款明细">
+        <n-data-table
+          :columns="fineColumns"
+          :data="fines"
+          size="small"
+          :row-key="(r: DataRow) => r.id"
+        >
+          <template #empty><n-empty description="暂无罚款" /></template>
+        </n-data-table>
+      </n-tab-pane>
+    </n-tabs>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, h, computed } from 'vue'
-import { useMessage, NTag, NButton } from 'naive-ui'
+import { useMessage, NTag, NButton, NIcon } from 'naive-ui'
+import { RefreshOutline } from '@vicons/ionicons5'
+import { useRouter } from 'vue-router'
 import { api } from '../../api'
 import type { BorrowRecordResponse, FineResponse, HoldResponse, DataRow } from '../../types/api'
 import type { DataTableColumns } from 'naive-ui'
 
+const router = useRouter()
 const message = useMessage()
 const records = ref<BorrowRecordResponse[]>([])
 const fines = ref<FineResponse[]>([])
@@ -107,20 +126,16 @@ async function fetchRecords() {
   try { records.value = (await api.get<{ borrows: any[]; total: number }>('/borrows/my')).borrows } catch (e) { console.error('fetchRecords failed:', e) }
   loading.value = false
 }
-
 async function fetchFines() {
   try { fines.value = await api.get('/fines/my') } catch (e) { console.error('fetchFines failed:', e) }
 }
-
 async function handleRenew(id: number) {
   try { await api.post(`/borrows/renew/${id}`); message.success('续借成功'); fetchRecords() }
   catch (e: unknown) { message.error((e as Error).message) }
 }
-
 async function fetchHolds() {
   try { holds.value = await api.get<HoldResponse[]>('/holds/my') } catch (e) { console.error('fetchHolds failed:', e) }
 }
-
 async function handleCancelHold(id: number) {
   try { await api.delete(`/holds/${id}`); message.success('已取消预约'); fetchHolds() }
   catch (e: unknown) { message.error((e as Error).message) }
@@ -128,3 +143,7 @@ async function handleCancelHold(id: number) {
 
 onMounted(() => { fetchRecords(); fetchFines(); fetchHolds() })
 </script>
+
+<style scoped>
+.page-title { font-size: 20px; font-weight: 600; margin: 0 0 20px; }
+</style>
