@@ -29,7 +29,7 @@ export async function update(
   return category as CategoryResponse;
 }
 
-export async function remove(prisma: PrismaClient, id: number): Promise<void> {
+export async function deleteCategory(prisma: PrismaClient, id: number): Promise<void> {
   const count = await prisma.book.count({ where: { categoryId: id } });
   if (count > 0) throw Object.assign(new Error(`Category has ${count} books`), { statusCode: 400 });
   await prisma.category.delete({ where: { id } });

@@ -26,52 +26,36 @@ export async function bookRoutes(app: FastifyInstance) {
     });
   });
 
-  app.get('/:id/items', async (request: any, reply: any) => {
+  app.get('/facets', async (request: any) => {
+    return bookService.getFacets(app.prisma, { search: request.query.search });
+  });
+
+  app.get('/:id/items', async (request: any) => {
     const result = await bookService.getItems(app.prisma, parseInt(request.params.id));
-    if (!result) return reply.status(404).send({ error: 'Book not found' });
+    if (!result) throw Object.assign(new Error('Book not found'), { statusCode: 404 });
     return result;
   });
 
-  // Facets — Module C 新增
-  app.get('/facets', async (request: any) => {
-    const q = request.query;
-    return bookService.getFacets(app.prisma, {
-      search: q.search,
-      categoryId: q.categoryId ? parseInt(q.categoryId) : undefined,
-    });
-  });
-
-  app.get('/:id', async (request: any, reply: any) => {
+  app.get('/:id', async (request: any) => {
     const book = await bookService.getById(app.prisma, parseInt(request.params.id));
-    if (!book) return reply.status(404).send({ error: 'Book not found' });
+    if (!book) throw Object.assign(new Error('Book not found'), { statusCode: 404 });
     return book;
   });
 
-  app.post('/', { onRequest: [app.authenticate, requireAdmin] }, async (request: any, reply: any) => {
+  app.post('/', { onRequest: [app.authenticate, requireAdmin] }, async (request: any) => {
     const parsed = createSchema.safeParse(request.body);
-    if (!parsed.success)
-      return reply
-        .status(400)
-        .send({ error: 'Validation failed', details: parsed.error.flatten() });
+    if (!parsed.success) throw Object.assign(new Error('Validation failed'), { statusCode: 400 });
     return bookService.create(app.prisma, parsed.data);
   });
 
-  app.put('/:id', { onRequest: [app.authenticate, requireAdmin] }, async (request: any, reply: any) => {
+  app.put('/:id', { onRequest: [app.authenticate, requireAdmin] }, async (request: any) => {
     const parsed = createSchema.partial().safeParse(request.body);
-    if (!parsed.success) return reply.status(400).send({ error: 'Validation failed' });
-    try {
-      return await bookService.update(app.prisma, parseInt(request.params.id), parsed.data);
-    } catch (e: any) {
-      return reply.status(e.statusCode || 404).send({ error: e.message });
-    }
+    if (!parsed.success) throw Object.assign(new Error('Validation failed'), { statusCode: 400 });
+    return bookService.update(app.prisma, parseInt(request.params.id), parsed.data);
   });
 
-  app.delete('/:id', { onRequest: [app.authenticate, requireAdmin] }, async (request: any, reply: any) => {
-    try {
-      await bookService.remove(app.prisma, parseInt(request.params.id));
-      return { success: true };
-    } catch {
-      return reply.status(404).send({ error: 'Book not found' });
-    }
+  app.delete('/:id', { onRequest: [app.authenticate, requireAdmin] }, async (request: any) => {
+    await bookService.deleteBook(app.prisma, parseInt(request.params.id));
+    return { success: true };
   });
 }

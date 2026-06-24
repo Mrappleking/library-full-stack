@@ -17,49 +17,34 @@ const loginSchema = z.object({
 });
 
 export async function authRoutes(app: FastifyInstance) {
-  app.post('/register', async (request, reply) => {
+  app.post('/register', async (request) => {
     const parsed = registerSchema.safeParse(request.body);
     if (!parsed.success)
-      return reply
-        .status(400)
-        .send({ error: 'Validation failed', details: parsed.error.flatten() });
-    try {
-      return await authService.register(app.prisma, app.jwt, parsed.data);
-    } catch (e: any) {
-      return reply.status(e.statusCode || 500).send({ error: e.message });
-    }
+      throw Object.assign(new Error('Validation failed'), {
+        statusCode: 400,
+        issues: parsed.error.flatten(),
+      });
+    return authService.register(app.prisma, app.jwt, parsed.data);
   });
 
-  app.post('/login', async (request, reply) => {
+  app.post('/login', async (request) => {
     const parsed = loginSchema.safeParse(request.body);
-    if (!parsed.success) return reply.status(400).send({ error: 'Validation failed' });
+    if (!parsed.success) throw Object.assign(new Error('Validation failed'), { statusCode: 400 });
     const { username, password } = parsed.data;
-    try {
-      return await authService.login(app.prisma, app.jwt, username, password);
-    } catch (e: any) {
-      return reply.status(e.statusCode || 401).send({ error: e.message });
-    }
+    return authService.login(app.prisma, app.jwt, username, password);
   });
 
-  app.get('/me', { onRequest: [app.authenticate] }, async (request: any, reply: any) => {
-    try {
-      return await authService.getMe(app.prisma, request.user.id);
-    } catch (e: any) {
-      return reply.status(e.statusCode || 404).send({ error: e.message });
-    }
+  app.get('/me', { onRequest: [app.authenticate] }, async (request: any) => {
+    return authService.getMe(app.prisma, request.user.id);
   });
 
   app.get('/users', { onRequest: [app.authenticate, requireAdmin] }, async (request: any) => {
     return authService.listUsers(app.prisma);
   });
 
-  app.post('/admin/create', { onRequest: [app.authenticate, requireAdmin] }, async (request: any, reply: any) => {
+  app.post('/admin/create', { onRequest: [app.authenticate, requireAdmin] }, async (request: any) => {
     const parsed = registerSchema.safeParse(request.body);
-    if (!parsed.success) return reply.status(400).send({ error: 'Validation failed' });
-    try {
-      return await authService.createAdmin(app.prisma, parsed.data);
-    } catch (e: any) {
-      return reply.status(e.statusCode || 409).send({ error: e.message });
-    }
+    if (!parsed.success) throw Object.assign(new Error('Validation failed'), { statusCode: 400 });
+    return authService.createAdmin(app.prisma, parsed.data);
   });
 }

@@ -96,7 +96,7 @@ describe('delete', () => {
     const prisma = mockPrisma();
     prisma.book.delete.mockResolvedValue({});
 
-    await bookService.remove(prisma, 1);
+    await bookService.deleteBook(prisma, 1);
     expect(prisma.book.delete).toHaveBeenCalledWith({ where: { id: 1 } });
   });
 });

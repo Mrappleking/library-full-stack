@@ -4,9 +4,8 @@ import { beforeAll, afterAll } from 'vitest';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
-// Load test env from backend/.env.test
 const __dirname = dirname(fileURLToPath(import.meta.url));
-config({ path: ***.test' });
+config({ path: resolve(__dirname, '../../.env.test') });
 
 const DB = process.env.DATABASE_URL;
 
@@ -17,7 +16,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await prisma?.\();
+  await prisma?.$disconnect();
 });
 
 export { prisma, DB };

@@ -16,7 +16,7 @@ describe('listReaders', () => {
   });
 });
 
-describe('getReaderDetail', () => {
+describe('getReader', () => {
   it('返回读者详情', async () => {
     const prisma = mockPrisma();
     prisma.user.findFirst.mockResolvedValue({
@@ -25,13 +25,13 @@ describe('getReaderDetail', () => {
       name: 'Alice',
       borrowRecords: [],
     });
-    const result = await userService.getReaderDetail(prisma, 1);
+    const result = await userService.getReader(prisma, 1);
     expect(result?.username).toBe('20230001');
   });
   it('不存在返回 null', async () => {
     const prisma = mockPrisma();
     prisma.user.findFirst.mockResolvedValue(null);
-    const result = await userService.getReaderDetail(prisma, 999);
+    const result = await userService.getReader(prisma, 999);
     expect(result).toBeNull();
   });
 });

@@ -17,7 +17,7 @@ export async function listReaders(prisma: PrismaClient): Promise<ReaderSummary[]
   }) as unknown as ReaderSummary[];
 }
 
-export async function getReaderDetail(
+export async function getReader(
   prisma: PrismaClient,
   id: number,
 ): Promise<ReaderDetail | null> {

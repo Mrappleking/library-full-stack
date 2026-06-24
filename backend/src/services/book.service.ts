@@ -113,7 +113,7 @@ export async function update(
   }) as unknown as BookSummary;
 }
 
-export async function remove(prisma: PrismaClient, id: number): Promise<void> {
+export async function deleteBook(prisma: PrismaClient, id: number): Promise<void> {
   await prisma.book.delete({ where: { id } });
 }
 

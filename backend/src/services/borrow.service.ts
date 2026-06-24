@@ -23,7 +23,7 @@ export async function getMyBorrows(
   }) as unknown as BorrowRecordResponse[];
 }
 
-export async function getAllBorrows(prisma: PrismaClient): Promise<BorrowRecordResponse[]> {
+export async function listBorrows(prisma: PrismaClient): Promise<BorrowRecordResponse[]> {
   return prisma.borrowRecord.findMany({
     include: {
       user: { select: { id: true, name: true, username: true } },

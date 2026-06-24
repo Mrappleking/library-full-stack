@@ -4,43 +4,20 @@ import { requireAdmin } from '../middleware/requireAdmin.js';
 
 export async function borrowRoutes(app: FastifyInstance) {
   app.get('/my', { onRequest: [app.authenticate] }, async (request: any) =>
-    borrowService.getMyBorrows(app.prisma, request.user.id),
-  );
+    borrowService.getMyBorrows(app.prisma, request.user.id));
 
-  app.get('/', { onRequest: [app.authenticate, requireAdmin] }, async (request: any) => {
-    return borrowService.getAllBorrows(app.prisma);
-  });
+  app.get('/', { onRequest: [app.authenticate, requireAdmin] }, async (request: any) =>
+    borrowService.listBorrows(app.prisma));
 
-  app.post('/borrow', { onRequest: [app.authenticate] }, async (request: any, reply: any) => {
-    try {
-      return await borrowService.borrow(app.prisma, request.user.id, request.body);
-    } catch (e: any) {
-      return reply.status(e.statusCode || 400).send({ error: e.message });
-    }
-  });
+  app.post('/borrow', { onRequest: [app.authenticate] }, async (request: any) =>
+    borrowService.borrow(app.prisma, request.user.id, request.body));
 
-  app.post('/return/:id', { onRequest: [app.authenticate] }, async (request: any, reply: any) => {
-    try {
-      return await borrowService.returnBook(
-        app.prisma,
-        parseInt(request.params.id),
-        request.user.id,
-        request.user.role === 'admin',
-      );
-    } catch (e: any) {
-      return reply.status(e.statusCode || 404).send({ error: e.message });
-    }
-  });
+  app.post('/return/:id', { onRequest: [app.authenticate] }, async (request: any) =>
+    borrowService.returnBook(app.prisma, parseInt(request.params.id), request.user.id, request.user.role === 'admin'));
 
-  app.post('/renew/:id', { onRequest: [app.authenticate] }, async (request: any, reply: any) => {
-    try {
-      return await borrowService.renew(app.prisma, parseInt(request.params.id), request.user.id);
-    } catch (e: any) {
-      return reply.status(e.statusCode || 400).send({ error: e.message });
-    }
-  });
+  app.post('/renew/:id', { onRequest: [app.authenticate] }, async (request: any) =>
+    borrowService.renew(app.prisma, parseInt(request.params.id), request.user.id));
 
   app.get('/history', { onRequest: [app.authenticate] }, async (request: any) =>
-    borrowService.getHistory(app.prisma, request.user.id),
-  );
+    borrowService.getHistory(app.prisma, request.user.id));
 }

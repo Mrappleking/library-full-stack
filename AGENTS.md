@@ -276,8 +276,8 @@
 ## 技术栈明细
 
 ### 运行时
-- Bun（替代 Node.js，运行 backend）
-- 版本锁定：bun.lock 入版本库
+- Node.js + tsx（TypeScript ESM 直接运行）
+- 版本锁定：package-lock.json 入版本库
 
 ### 后端（backend/）
 - Fastify（TypeScript，ESM）

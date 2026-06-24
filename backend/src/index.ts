@@ -3,6 +3,8 @@ import fastifyJwt from '@fastify/jwt';
 import fastifyCors from '@fastify/cors';
 import fastifyHelmet from '@fastify/helmet';
 import fastifyRateLimit from '@fastify/rate-limit';
+import fastifySwagger from '@fastify/swagger';
+import fastifySwaggerUi from '@fastify/swagger-ui';
 import { PrismaClient } from '@prisma/client';
 import { authRoutes } from './routes/auth.js';
 import { bookRoutes } from './routes/books.js';
@@ -54,6 +56,57 @@ app.register(fastifyRateLimit, {
   timeWindow: '1 minute',
 });
 
+// Swagger — API documentation
+app.register(fastifySwagger, {
+  openapi: {
+    info: {
+      title: 'Library Full-Stack API',
+      version: '1.0.0',
+    },
+  },
+});
+app.register(fastifySwaggerUi, {
+  routePrefix: '/docs',
+});
+
+// setErrorHandler — unified error interception
+app.setErrorHandler((error: any, _request: any, reply: any) => {
+  const statusCode = error.statusCode || 500;
+  const message = error.message || 'Internal Server Error';
+
+  // Zod validation errors → 400
+  if (error.name === 'ZodError' || error.validation) {
+    return reply.status(400).send({ error: 'Validation failed', details: error.issues || error.validation });
+  }
+
+  // Prisma known request errors
+  if (error.code) {
+    switch (error.code) {
+      case 'P2025': // NotFoundError
+        return reply.status(404).send({ error: message });
+      case 'P2002': // Unique constraint
+        return reply.status(409).send({ error: 'Resource already exists' });
+      default:
+        break;
+    }
+  }
+
+  // JWT / Auth errors
+  if (statusCode === 401 || error.status === 401) {
+    return reply.status(401).send({ error: 'Unauthorized' });
+  }
+
+  // Don't expose stack traces in production
+  if (process.env.NODE_ENV === 'production') {
+    return reply.status(statusCode).send({ error: message });
+  }
+
+  return reply.status(statusCode).send({
+    error: message,
+    ...(process.env.NODE_ENV !== 'production' && { stack: error.stack }),
+  });
+});
+
 // Auth decorator
 app.decorate('authenticate', async (request: any, reply: any) => {
   try {
@@ -92,6 +145,16 @@ app.get('/api/book-items/:barcode', async (request: any, reply: any) => {
 // Start
 const start = async () => {
   try {
+    // Validate required env vars
+    if (!process.env.DATABASE_URL) {
+      console.error('FATAL: DATABASE_URL is not set. Copy backend/.env.example to backend/.env and fill in values.');
+      process.exit(1);
+    }
+    if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+      console.error('FATAL: JWT_SECRET must be at least 32 characters. Set it in backend/.env');
+      process.exit(1);
+    }
+
     const port = parseInt(process.env.PORT || '3000');
     await app.listen({ port, host: '0.0.0.0' });
     console.log(`Server running on http://localhost:${port}`);
