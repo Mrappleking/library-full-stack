@@ -12,11 +12,11 @@
 
     <n-space vertical :size="24">
       <n-card title="热门图书 Top 20">
-        <n-data-table :columns="popularColumns" :data="popularBooks" :loading="loading" size="small" :row-key="(r: any) => r.id" />
+        <n-data-table :columns="popularColumns" :data="popularBooks" :loading="loading" size="small" :row-key="(r: DataRow) => r.id" />
       </n-card>
 
       <n-card title="月度借阅量（近 12 个月）">
-        <n-data-table :columns="monthlyColumns" :data="monthlyData" size="small" :row-key="(r: any) => r.month" />
+        <n-data-table :columns="monthlyColumns" :data="monthlyData" size="small" :row-key="(r: { month: string }) => r.month" />
       </n-card>
     </n-space>
   </div>
@@ -25,6 +25,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { api } from '../../api'
+import type { StatsOverviewResponse, PopularBook, MonthlyStat } from '../../types/api'
 import type { DataTableColumns } from 'naive-ui'
 
 const statCards = ref([
@@ -39,22 +40,22 @@ const popularBooks = ref<any[]>([])
 const monthlyData = ref<any[]>([])
 const loading = ref(false)
 
-const popularColumns: DataTableColumns<any> = [
+const popularColumns: DataTableColumns<Record<string, unknown>> = [
   { title: '书名', key: 'title', ellipsis: { tooltip: true } },
   { title: '作者', key: 'author', width: 100 },
   { title: '分类', key: 'category.name', width: 100 },
   { title: '借阅次数', key: '_count.borrowRecords', width: 90 }
 ]
 
-const monthlyColumns: DataTableColumns<any> = [
+const monthlyColumns: DataTableColumns<Record<string, unknown>> = [
   { title: '月份', key: 'month', width: 100 },
   { title: '借阅量', key: 'count', width: 100 }
 ]
 
 onMounted(async () => {
   try {
-    const [stats, popular, monthly]: any[] = await Promise.all([
-      api.get('/stats'),
+    const [stats, popular, monthly] = await Promise.all([
+      api.get<StatsOverviewResponse>('/stats'),
       api.get('/stats/popular'),
       api.get('/stats/monthly')
     ])

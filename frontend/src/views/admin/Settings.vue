@@ -10,7 +10,7 @@
           :data="rules"
           :loading="loading"
           size="small"
-          :row-key="(r: any) => r.id"
+          :row-key="(r: DataRow) => r.id"
         />
       </n-card>
 
@@ -20,7 +20,7 @@
           :columns="patronColumns"
           :data="patronCategories"
           size="small"
-          :row-key="(r: any) => r.id"
+          :row-key="(r: DataRow) => r.id"
         />
       </n-card>
 
@@ -30,7 +30,7 @@
           :columns="itemTypeColumns"
           :data="itemTypes"
           size="small"
-          :row-key="(r: any) => r.id"
+          :row-key="(r: DataRow) => r.id"
         />
       </n-card>
     </n-space>
@@ -41,13 +41,14 @@
 import { ref, onMounted } from 'vue'
 import type { DataTableColumns } from 'naive-ui'
 import { api } from '../../api'
+import type { CirculationRuleResponse, PatronCategoryResponse, ItemTypeResponse } from '../../types/api'
 
 const rules = ref<any[]>([])
 const patronCategories = ref<any[]>([])
 const itemTypes = ref<any[]>([])
 const loading = ref(false)
 
-const ruleColumns: DataTableColumns<any> = [
+const ruleColumns: DataTableColumns<Record<string, unknown>> = [
   { title: '读者类型', key: 'patronCategory.name', width: 120 },
   { title: '资料类型', key: 'itemType.name', width: 120 },
   { title: '借阅上限', key: 'maxBorrows', width: 80 },
@@ -57,11 +58,11 @@ const ruleColumns: DataTableColumns<any> = [
   { title: '日罚金', key: 'finePerDay', width: 80, render: (r) => `¥${r.finePerDay}` }
 ]
 
-const patronColumns: DataTableColumns<any> = [
+const patronColumns: DataTableColumns<Record<string, unknown>> = [
   { title: '名称', key: 'name' }
 ]
 
-const itemTypeColumns: DataTableColumns<any> = [
+const itemTypeColumns: DataTableColumns<Record<string, unknown>> = [
   { title: '名称', key: 'name' },
   { title: '默认借期', key: 'loanDays', render: (r) => `${r.loanDays} 天` },
   { title: '日罚金', key: 'fineRate', render: (r) => `¥${r.fineRate}` }

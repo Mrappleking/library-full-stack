@@ -59,3 +59,16 @@ export interface CirculationRuleResponse {
   id: number; maxBorrows: number; loanDays: number; renewals: number; renewalDays: number; finePerDay: number
   patronCategory: { id: number; name: string }; itemType: { id: number; name: string }
 }
+
+export interface ReaderResponse {
+  id: number; username: string; name: string; role: 'admin' | 'reader'
+  phone?: string | null; email?: string | null; totalFines?: number
+  patronCategory?: { id: number; name: string } | null
+  createdAt: string
+}
+
+export interface PatronCategoryResponse { id: number; name: string }
+export interface ItemTypeResponse { id: number; name: string; loanDays: number; fineRate: number }
+
+// Helper for Naive UI DataTable row type
+export type DataRow = { id: number | string; [key: string]: unknown }

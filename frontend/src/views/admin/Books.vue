@@ -17,7 +17,7 @@
       :loading="loading"
       :pagination="pagination"
       remote
-      :row-key="(r: any) => r.id"
+      :row-key="(r: DataRow) => r.id"
       :expanded-row-keys="expandedKeys"
       @update:expanded-row-keys="onExpand"
       @update:page="onPage"
@@ -68,6 +68,7 @@
 import { ref, reactive, onMounted, h } from 'vue'
 import { useMessage, NTag, NButton, NPopconfirm, NPopover } from 'naive-ui'
 import { api } from '../../api'
+import type { BookItemsResponse, BookListResponse, BookItemSummary, CategoryResponse, DataRow } from '../../types/api'
 import type { DataTableColumns } from 'naive-ui'
 
 const message = useMessage()
@@ -79,7 +80,7 @@ const catOptions = ref<{ label: string; value: number }[]>([])
 const pagination = reactive({ page: 1, pageSize: 20, itemCount: 0 })
 const expandedKeys = ref<number[]>([])
 
-const columns: DataTableColumns<any> = [
+const columns: DataTableColumns<Record<string, unknown>> = [
   { type: 'expand', renderExpand: (row) => h(ExpandItems, { bookId: row.id, onRefresh: fetchBooks }) },
   { title: 'ISBN', key: 'isbn', width: 140 },
   { title: '书名', key: 'title', ellipsis: { tooltip: true } },
@@ -88,7 +89,7 @@ const columns: DataTableColumns<any> = [
   {
     title: '状态', key: 'status', width: 80,
     render(row) {
-      const m: Record<string, { type: any; label: string }> = {
+      const m: Record<string, { type: 'success' | 'warning' | 'error' | 'info' | 'default'; label: string }> = {
         available: { type: 'success', label: '在架' },
         borrowed: { type: 'warning', label: '借出' },
         removed: { type: 'default', label: '下架' }
@@ -117,11 +118,11 @@ const columns: DataTableColumns<any> = [
 const ExpandItems = {
   props: { bookId: Number },
   emits: ['refresh'],
-  setup(props: any, { emit }: any) {
+  setup(_props: Record<string, unknown>, { emit }: Record<string, unknown>) {
     const items = ref<any[]>([])
     const load = async () => {
       try {
-        const res: any = await api.get(`/books/${props.bookId}/items`)
+        const res = await api.get<BookItemsResponse>(`/books/${_props.bookId as number}/items`)
         items.value = res.items || []
       } catch {}
     }
@@ -138,7 +139,7 @@ const ExpandItems = {
             h('th', { style: 'text-align:left;padding:4px 12px;color:#8a8f98;' }, '品相'),
             h('th', { style: 'text-align:right;padding:4px 12px;color:#8a8f98;' }, '价格')
           ])),
-          h('tbody', {}, items.value.map((i: any) => {
+          h('tbody', {}, items.value.map((i: BookItemSummary) => {
             const statusColors: Record<string, any> = { available: 'success', borrowed: 'warning', repairing: 'info', lost: 'error', withdrawn: 'default' }
             return h('tr', { style: 'border-top:1px solid rgba(255,255,255,0.05);' }, [
               h('td', { style: 'padding:6px 12px;font-family:monospace;' }, i.barcode),
@@ -164,7 +165,7 @@ async function fetchBooks() {
     const params = new URLSearchParams({ page: String(pagination.page), limit: String(pagination.pageSize) })
     if (search.value) params.set('search', search.value)
     if (filterCategory.value) params.set('categoryId', String(filterCategory.value))
-    const res: any = await api.get(`/books?${params}`)
+    const res = await api.get<BookListResponse>(`/books?${params}`)
     books.value = res.books
     pagination.itemCount = res.total
   } catch { message.error('加载失败') }
@@ -172,7 +173,7 @@ async function fetchBooks() {
 }
 
 async function fetchCategories() {
-  try { catOptions.value = (await api.get('/categories')).map((c: any) => ({ label: c.name, value: c.id })) } catch {}
+  try { catOptions.value = (await api.get('/categories')).map((c: CategoryResponse) => ({ label: c.name, value: c.id })) } catch {}
 }
 
 function onPage(page: number) { pagination.page = page; fetchBooks() }
@@ -191,23 +192,23 @@ const rulesData = {
 }
 
 function openCreate() { editingId.value = null; Object.assign(form, { isbn: '', title: '', author: '', publisher: '', year: undefined, categoryId: null, total: 1, location: '', desc: '' }); showModal.value = true }
-function openEdit(row: any) { editingId.value = row.id; Object.assign(form, { isbn: row.isbn, title: row.title, author: row.author, publisher: row.publisher, year: row.year, categoryId: row.categoryId, total: row.total, location: row.location, desc: row.desc }); showModal.value = true }
+function openEdit(row: DataRow) { editingId.value = row.id; Object.assign(form, { isbn: row.isbn, title: row.title, author: row.author, publisher: row.publisher, year: row.year, categoryId: row.categoryId, total: row.total, location: row.location, desc: row.desc }); showModal.value = true }
 
 async function handleSave() {
   saving.value = true
   try {
-    const data: any = { ...form }
+    const data: Record<string, unknown> = { ...form }
     if (editingId.value) { await api.put(`/books/${editingId.value}`, data); message.success('已更新') }
     else { await api.post('/books', data); message.success('已添加') }
     showModal.value = false
     fetchBooks()
-  } catch (e: any) { message.error(e.message) }
+  } catch (e: unknown) { message.error((e as Error).message) }
   saving.value = false
 }
 
 async function handleDelete(id: number) {
   try { await api.delete(`/books/${id}`); message.success('已删除'); fetchBooks() }
-  catch (e: any) { message.error(e.message) }
+  catch (e: unknown) { message.error((e as Error).message) }
 }
 
 // Copy Modal
@@ -216,7 +217,7 @@ const copyBookId = ref<number | null>(null)
 const copySaving = ref(false)
 const copyForm = reactive({ barcode: '', callNumber: '', location: '', price: null as number | null })
 
-function openAddCopy(row: any) { copyBookId.value = row.id; copyForm.barcode = ''; copyForm.callNumber = ''; copyForm.location = ''; copyForm.price = null; showCopyModal.value = true }
+function openAddCopy(row: DataRow) { copyBookId.value = row.id; copyForm.barcode = ''; copyForm.callNumber = ''; copyForm.location = ''; copyForm.price = null; showCopyModal.value = true }
 
 async function handleAddCopy() {
   if (!copyForm.barcode) { message.warning('条码号必填'); return }
@@ -225,7 +226,7 @@ async function handleAddCopy() {
     // No dedicated API yet — use generic POST (or extend later)
     message.success('复本功能待后端接口支持')
     showCopyModal.value = false
-  } catch (e: any) { message.error(e.message) }
+  } catch (e: unknown) { message.error((e as Error).message) }
   copySaving.value = false
 }
 

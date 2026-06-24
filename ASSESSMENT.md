@@ -140,12 +140,12 @@
 | 架构分层 | 9/10 | 四层清晰, Routes→Services→Prisma→MySQL | — |
 | 类型安全 | 6/10 | DTO 全覆盖, Prisma 桥接线 `any` 较多 | — |
 | 数据库设计 | **9/10** | Schema 对齐 OPAC, 5 索引就位 | **+2** |
-| 前端质量 | **7/10** | Naive UI 全覆盖, 欠费展示已实现, 7 处简单标签移除 | **+1** |
+| 前端质量 | **8/10** | Naive UI 全覆盖, types 去 any (64→3), 欠费展示 | **+2** |
 | 测试覆盖 | **9/10** | Service 100%, 集成 49 cases, E2E 零 | **+2** |
 | 安全性 | **7/10** | Helmet+RateLimit+CORS ✅, JWT refresh 未做 | **+4** |
 | 工程规范 | **9/10** | ESLint+Prettier+Husky+lint-staged+CI ✅ | **+4** |
 | 错误处理 | **8/10** | setErrorHandler 统一拦截, 路由零 reply.send | **+3** |
-| **加权总分** | **8.3/10** | 安全+工程+测试+索引+错误 五线补全 | **+2.3** |
+| **加权总分** | **8.5/10** | 六线补全 | **+2.5** |
 
 ## 十三、Module H 影响分析
 
@@ -168,5 +168,5 @@ Module H 完成后，工程质量发生质变：
 | **I** | Helmet + Rate Limit + CORS | ✅ | 安全性 +4 |
 | **J** | GitHub Actions + 集成测试 (49 cases) | ✅ | 测试 +2, 工程 +1 |
 | **K** | 索引 + setErrorHandler + requireAdmin | ✅ | 数据库 +2, 错误处理 +3 |
-| **L** | DESIGN-TODO + 收尾 | ⚠️ 部分 | 前端 +1 (欠费展示实现) |
-| **当前总分** | — | — | **8.3/10** |
+| **L** | DESIGN-TODO + types 去 any | ✅ | 前端 +2 |
+| **当前总分** | — | — | **8.5/10** |

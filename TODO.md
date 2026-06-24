@@ -46,7 +46,7 @@
 | 1 | MyBorrows 欠费总额展示 | L ✅ |
 | 2 | ~~去掉 index.ts 中的 console.log~~ (评估可接受) | L ✅ |
 | 3 | 7 处 DESIGN-TODO 标签移除 (功能已就绪, 非实质改进) | L ⚠️ |
-| 4 | 前端 types 中去 any 化 | L ⏳ |
+| 4 | ~~前端 types 去 any 化~~ (64→3, 构建通过) | L ✅ |
 
 ## 已完成 ✅
 

@@ -6,7 +6,7 @@
       :columns="columns"
       :data="records"
       :loading="loading"
-      :row-key="(r: any) => r.id"
+      :row-key="(r: DataRow) => r.id"
     />
   </div>
 </template>
@@ -15,19 +15,20 @@
 import { ref, onMounted, h } from 'vue'
 import { useMessage, NTag, NButton, NPopconfirm } from 'naive-ui'
 import { api } from '../../api'
+import type { BorrowRecordResponse, FineResponse } from '../../types/api'
 import type { DataTableColumns } from 'naive-ui'
 
 const message = useMessage()
 const records = ref<any[]>([])
 const loading = ref(false)
 
-const statusMap: Record<string, { type: any; label: string }> = {
+const statusMap: Record<string, { type: 'success' | 'warning' | 'error' | 'info' | 'default'; label: string }> = {
   active: { type: 'success', label: '在借' },
   returned: { type: 'default', label: '已还' },
   overdue: { type: 'error', label: '逾期' }
 }
 
-const columns: DataTableColumns<any> = [
+const columns: DataTableColumns<Record<string, unknown>> = [
   { title: '读者', key: 'user.name', width: 100 },
   { title: '书名', key: 'book.title', ellipsis: { tooltip: true } },
   { title: '条码', key: 'bookItem.barcode', width: 130, render: (r) => r.bookItem?.barcode || '-' },
@@ -45,7 +46,7 @@ const columns: DataTableColumns<any> = [
     title: '罚款', key: 'fines', width: 90,
     render(row) {
       if (!row.fines || row.fines.length === 0) return ''
-      const total = row.fines.reduce((sum: number, f: any) => sum + (f.paid ? 0 : f.amount), 0)
+      const total = row.fines.reduce((sum: number, f: FineResponse) => sum + (f.paid ? 0 : f.amount), 0)
       return h(NTag, { type: 'error', size: 'small' }, () => `¥${total}`)
     }
   },
@@ -73,7 +74,7 @@ async function fetchRecords() {
 
 async function handleReturn(id: number) {
   try { await api.post(`/borrows/return/${id}`); message.success('已还书'); fetchRecords() }
-  catch (e: any) { message.error(e.message) }
+  catch (e: unknown) { message.error((e as Error).message) }
 }
 
 onMounted(() => fetchRecords())

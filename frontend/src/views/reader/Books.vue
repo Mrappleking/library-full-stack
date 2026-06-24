@@ -16,7 +16,7 @@
       :loading="loading"
       :pagination="pagination"
       remote
-      :row-key="(r: any) => r.id"
+      :row-key="(r: DataRow) => r.id"
       @update:page="onPage"
     />
   </div>
@@ -26,6 +26,7 @@
 import { ref, reactive, onMounted, h } from 'vue'
 import { useMessage, NTag, NButton } from 'naive-ui'
 import { api } from '../../api'
+import type { BookListResponse, CategoryResponse } from '../../types/api'
 import type { DataTableColumns } from 'naive-ui'
 
 const message = useMessage()
@@ -36,7 +37,7 @@ const filterCategory = ref<number | null>(null)
 const catOptions = ref<{ label: string; value: number }[]>([])
 const pagination = reactive({ page: 1, pageSize: 20, itemCount: 0 })
 
-const columns: DataTableColumns<any> = [
+const columns: DataTableColumns<Record<string, unknown>> = [
   { title: '书名', key: 'title', ellipsis: { tooltip: true } },
   { title: '作者', key: 'author', width: 120 },
   { title: '分类', key: 'category.name', width: 100 },
@@ -62,7 +63,7 @@ async function fetchBooks() {
     const params = new URLSearchParams({ page: String(pagination.page), limit: String(pagination.pageSize) })
     if (search.value) params.set('search', search.value)
     if (filterCategory.value) params.set('categoryId', String(filterCategory.value))
-    const res: any = await api.get(`/books?${params}`)
+    const res = await api.get<BookListResponse>(`/books?${params}`)
     books.value = res.books
     pagination.itemCount = res.total
   } catch {}
@@ -70,17 +71,17 @@ async function fetchBooks() {
 }
 
 async function fetchCategories() {
-  try { catOptions.value = (await api.get('/categories')).map((c: any) => ({ label: c.name, value: c.id })) } catch {}
+  try { catOptions.value = (await api.get('/categories')).map((c: CategoryResponse) => ({ label: c.name, value: c.id })) } catch {}
 }
 
 function onPage(page: number) { pagination.page = page; fetchBooks() }
 
-async function handleBorrow(row: any) {
+async function handleBorrow(row: DataRow) {
   try {
     await api.post('/borrows/borrow', { bookId: row.id })
     message.success(`已借阅《${row.title}》`)
     fetchBooks()
-  } catch (e: any) { message.error(e.message) }
+  } catch (e: unknown) { message.error((e as Error).message) }
 }
 
 onMounted(() => { fetchCategories(); fetchBooks() })

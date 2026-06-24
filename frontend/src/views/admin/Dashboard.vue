@@ -21,6 +21,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { api } from '../../api'
+import type { StatsOverviewResponse } from '../../types/api'
 
 const stats = ref([
   { label: '总藏书', value: '-' },
@@ -32,7 +33,7 @@ const stats = ref([
 
 onMounted(async () => {
   try {
-    const res: any = await api.get('/stats')
+    const res = await api.get<StatsOverviewResponse>('/stats')
     stats.value = [
       { label: '总藏书', value: res.totalBooks || 0 },
       { label: '在借数量', value: res.activeBorrows || 0 },

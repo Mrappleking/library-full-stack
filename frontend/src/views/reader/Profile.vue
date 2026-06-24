@@ -30,6 +30,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useMessage } from 'naive-ui'
 import { api } from '../../api'
+import type { UserProfile } from '../../types/api'
 
 const message = useMessage()
 const loading = ref(false)
@@ -39,7 +40,7 @@ const form = reactive({ username: '', role: '', name: '', phone: '', email: '', 
 onMounted(async () => {
   loading.value = true
   try {
-    const res: any = await api.get('/auth/me')
+    const res = await api.get<UserProfile>('/auth/me')
     Object.assign(form, res)
   } catch { message.error('获取信息失败') }
   loading.value = false
@@ -50,7 +51,7 @@ async function handleSave() {
   try {
     await api.put('/readers/profile', { name: form.name, phone: form.phone, email: form.email })
     message.success('已保存')
-  } catch (e: any) { message.error(e.message) }
+  } catch (e: unknown) { message.error((e as Error).message) }
   saving.value = false
 }
 </script>

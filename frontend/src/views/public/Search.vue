@@ -66,7 +66,7 @@ async function onFacetSelect(key: string, value: string) {
   } else {
     activeFilters.value[key] = value
   }
-  const params: any = { search: store.searchQuery || undefined }
+  const params: BookListParams = { search: store.searchQuery || undefined }
   if (activeFilters.value.campus) params.campus = activeFilters.value.campus
   await store.search(params)
 }

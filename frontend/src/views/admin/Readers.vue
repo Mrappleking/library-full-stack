@@ -6,7 +6,7 @@
       :columns="columns"
       :data="readers"
       :loading="loading"
-      :row-key="(r: any) => r.id"
+      :row-key="(r: DataRow) => r.id"
       :expanded-row-keys="expandedKeys"
       @update:expanded-row-keys="onExpand"
     />
@@ -28,9 +28,11 @@
 </template>
 
 <script setup lang="ts">
+import type { DataRow } from '../../types/api'
 import { ref, reactive, onMounted, h } from 'vue'
 import { useMessage, NButton, NTag } from 'naive-ui'
 import { api } from '../../api'
+import type { ReaderResponse, BorrowRecordResponse } from '../../types/api'
 import type { DataTableColumns } from 'naive-ui'
 
 const message = useMessage()
@@ -38,7 +40,7 @@ const readers = ref<any[]>([])
 const loading = ref(false)
 const expandedKeys = ref<number[]>([])
 
-const columns: DataTableColumns<any> = [
+const columns: DataTableColumns<Record<string, unknown>> = [
   { type: 'expand', renderExpand: (row) => h(ExpandPanel, { readerId: row.id }) },
   { title: '用户名', key: 'username', width: 120 },
   { title: '姓名', key: 'name', width: 100 },
@@ -64,9 +66,9 @@ function onExpand(keys: number[]) { expandedKeys.value = keys }
 
 const showModal = ref(false)
 const saving = ref(false)
-const form: any = reactive({ id: null, name: '', phone: '', email: '' })
+const form = reactive<{ id: number | null; name: string; phone: string; email: string }>({ id: null, name: '', phone: '', email: '' })
 
-function openEdit(row: any) { Object.assign(form, { id: row.id, name: row.name, phone: row.phone, email: row.email }); showModal.value = true }
+function openEdit(row: DataRow) { Object.assign(form, { id: row.id, name: row.name, phone: row.phone, email: row.email }); showModal.value = true }
 
 async function handleSave() {
   saving.value = true
@@ -75,18 +77,18 @@ async function handleSave() {
     message.success('已更新')
     showModal.value = false
     fetchReaders()
-  } catch (e: any) { message.error(e.message) }
+  } catch (e: unknown) { message.error((e as Error).message) }
   saving.value = false
 }
 
 // Expand panel component (inline)
 const ExpandPanel = {
   props: { readerId: Number },
-  setup(props: any) {
-    const records = ref<any[]>([])
+  setup(props: Record<string, unknown>) {
+    const records = ref<BorrowRecordResponse[]>([])
     const load = async () => {
       try {
-        const res: any = await api.get(`/readers/${props.readerId}`)
+        const res = await api.get<ReaderResponse>(`/readers/${props.readerId}`)
         records.value = res.borrowRecords || []
       } catch {}
     }
@@ -94,7 +96,7 @@ const ExpandPanel = {
     return () => records.value.length === 0
       ? h('div', { style: 'padding:12px;color:#8a8f98;' }, '暂无借阅记录')
       : h('div', { style: 'padding:8px 0;' },
-          records.value.map((r: any) =>
+          records.value.map((r: BorrowRecordResponse) =>
             h('div', { style: 'display:flex;gap:16px;padding:6px 12px;font-size:13px;color:#d0d6e0;' }, [
               h('span', r.book?.title || '未知'),
               h('span', { style: 'color:#8a8f98;' }, new Date(r.borrowDate).toLocaleDateString('zh-CN')),

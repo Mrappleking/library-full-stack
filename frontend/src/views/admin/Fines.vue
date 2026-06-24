@@ -12,7 +12,7 @@
       :columns="columns"
       :data="fines"
       :loading="loading"
-      :row-key="(r: any) => r.id"
+      :row-key="(r: DataRow) => r.id"
     />
   </div>
 </template>
@@ -39,14 +39,14 @@ const paidOptions = [
   { label: '已缴', value: 'true' }
 ]
 
-const columns: DataTableColumns<any> = [
+const columns: DataTableColumns<Record<string, unknown>> = [
   { title: '读者', key: 'user.name', width: 100 },
   { title: '图书', key: 'borrowRecord.book.title', ellipsis: { tooltip: true } },
   { title: '金额', key: 'amount', width: 100, render: (r) => `¥${r.amount}` },
   {
     title: '类型', key: 'type', width: 70,
     render(row) {
-      const m: Record<string, { type: any; label: string }> = {
+      const m: Record<string, { type: 'success' | 'warning' | 'error' | 'info' | 'default'; label: string }> = {
         overdue: { type: 'error', label: '逾期' },
         lost: { type: 'warning', label: '遗失' },
         damage: { type: 'info', label: '破损' }
@@ -85,7 +85,7 @@ async function fetchFines() {
 
 async function handlePay(id: number) {
   try { await api.post(`/fines/${id}/pay`); message.success('已确认缴费'); fetchFines() }
-  catch (e: any) { message.error(e.message) }
+  catch (e: unknown) { message.error((e as Error).message) }
 }
 
 onMounted(() => fetchFines())
