@@ -15,6 +15,7 @@ import { statsRoutes } from './routes/stats.js';
 import { finesRoutes } from './routes/fines.js';
 import { rulesRoutes } from './routes/rules.js';
 import { holdRoutes } from './routes/holds.js';
+import { bookItemRoutes } from './routes/bookItems.js';
 
 const prisma = new PrismaClient();
 const app = Fastify({ logger: true });
@@ -130,6 +131,7 @@ app.register(statsRoutes, { prefix: '/api/stats' });
 app.register(finesRoutes, { prefix: '/api/fines' });
 app.register(rulesRoutes, { prefix: '/api/rules' });
 app.register(holdRoutes, { prefix: '/api/holds' });
+app.register(bookItemRoutes, { prefix: '/api/book-items' });
 
 // Health check
 app.get('/api/health', async () => ({ status: 'ok' }));
