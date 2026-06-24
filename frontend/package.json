@@ -23,6 +23,7 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@vicons/ionicons5": "^0.13.0",
     "jsbarcode": "^3.12.3",
     "naive-ui": "^2.44.1",
     "pinia": "^3.0.4",

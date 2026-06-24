@@ -10,7 +10,7 @@
       </n-ellipsis>
       <span class="author">{{ book.author }}</span>
       <div class="meta">
-        <StatusBadge :status="book.status" />
+        <StatusBadge :status="book.available > 0 ? 'available' : 'borrowed'" />
         <span class="avail">{{ book.available }}/{{ book.total }}可借</span>
       </div>
     </div>
@@ -27,9 +27,11 @@ defineEmits<{ click: [] }>()
 </script>
 
 <style scoped>
-.book-card { cursor: pointer; width: 200px; }
+.book-card { cursor: pointer; width: 200px; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.book-card:hover { transform: translateY(-2px); }
 .cover-wrap { width: 160px; height: 200px; margin: 0 auto 8px; border-radius: 6px; overflow: hidden; }
-.cover-img { width: 100%; height: 100%; object-fit: cover; }
+.cover-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.2s ease; }
+.book-card:hover .cover-img { transform: scale(1.05); }
 .cover-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
   background: linear-gradient(135deg, #5e6ad2, #7170ff); color: #fff; font-size: 48px; font-weight: bold; }
 .info { text-align: center; }
