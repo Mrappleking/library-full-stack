@@ -1,12 +1,5 @@
 <template>
   <div class="login-wrapper">
-    <div class="bg-layer">
-      <div class="arch arch-left" />
-      <div class="arch arch-right" />
-      <div class="beam beam-1" />
-      <div class="beam beam-2" />
-      <div class="beam beam-3" />
-    </div>
     <div class="login-card">
       <div class="logo-area">
         <div class="logo-icon">📚</div>
@@ -66,40 +59,9 @@ async function handleRegister() {
 }
 </script>
 
-<style>
-@keyframes beamSway {
-  0%, 100% { opacity: 0.4; transform: rotate(-15deg) translateX(0); }
-  50%      { opacity: 0.7; transform: rotate(-10deg) translateX(30px); }
-}
-@keyframes archGlow {
-  0%, 100% { opacity: 0.7; }
-  50%      { opacity: 0.95; }
-}
-.login-wrapper {
-  position: relative; display: flex; align-items: center; justify-content: center;
-  min-height: 100vh; overflow: hidden; background: #0a0b12;
-}
-.bg-layer { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
-.arch {
-  position: absolute; bottom: 0;
-  border: 1px solid rgba(200,180,140,0.15); border-bottom: none;
-  background: linear-gradient(180deg, rgba(18,20,32,0.5) 0%, rgba(10,11,18,0.9) 100%);
-}
-.arch-left  { left: 3%; width: 30%; height: 80%; border-radius: 50% 50% 0 0 / 6% 6% 0 0; animation: archGlow 10s ease-in-out infinite; }
-.arch-right { right: 3%; width: 30%; height: 80%; border-radius: 50% 50% 0 0 / 6% 6% 0 0; animation: archGlow 10s ease-in-out infinite 4s; }
-.beam {
-  position: absolute; top: -5%; height: 110%; width: 60px;
-  background: linear-gradient(180deg, rgba(220,180,100,0.06) 0%, rgba(220,180,100,0.18) 50%, rgba(220,180,100,0.04) 100%);
-  filter: blur(20px);
-}
-.beam-1 { left: 18%; transform: rotate(-15deg); animation: beamSway 18s ease-in-out infinite; }
-.beam-2 { left: 45%; transform: rotate(3deg); width: 70px; animation: beamSway 20s ease-in-out infinite -6s; }
-.beam-3 { left: 68%; transform: rotate(12deg); animation: beamSway 22s ease-in-out infinite -12s; }
-.login-card {
-  position: relative; z-index: 1; width: 400px; padding: 40px 36px 32px;
-  background: rgba(15,16,22,0.7); border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 16px; backdrop-filter: blur(24px); box-shadow: 0 8px 40px rgba(0,0,0,0.4);
-}
+<style scoped>
+.login-wrapper { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+.login-card { width: 400px; padding: 40px 36px 32px; background: rgba(15,16,22,0.7); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; backdrop-filter: blur(24px); box-shadow: 0 8px 40px rgba(0,0,0,0.4); position: relative; z-index: 1; }
 .logo-area { text-align: center; margin-bottom: 28px; }
 .logo-icon { font-size: 48px; margin-bottom: 8px; }
 .logo-area h1 { margin: 0; font-size: 20px; font-weight: 600; color: var(--n-text-color); }

@@ -26,9 +26,45 @@
     }
     .n-data-table .n-data-table-tr { transition: background 0.12s; }
     .n-data-table .n-data-table-tr:hover { background: rgba(255,255,255,0.02) !important; }
+
+    /* ===== Login Background ===== */
+    @keyframes archPulse {
+      0%, 100% { opacity: 0.6; }
+      50%      { opacity: 0.9; }
+    }
+    @keyframes beamSway {
+      0%, 100% { opacity: 0.3; transform: rotate(-15deg) translateX(0); }
+      50%      { opacity: 0.6; transform: rotate(-8deg) translateX(25px); }
+    }
+    .login-bg {
+      position: fixed; inset: 0; z-index: -1; pointer-events: none;
+      background: #0a0b12; overflow: hidden;
+    }
+    .login-bg .arch {
+      position: absolute; bottom: 0;
+      border: 1px solid rgba(200,180,140,0.12); border-bottom: none;
+      background: linear-gradient(180deg, rgba(18,20,32,0.4) 0%, rgba(10,11,18,0.9) 100%);
+    }
+    .login-bg .arch-l  { left: 5%; width: 28%; height: 75%; border-radius: 50% 50% 0 0 / 5% 5% 0 0; animation: archPulse 8s ease-in-out infinite; }
+    .login-bg .arch-r  { right: 5%; width: 28%; height: 75%; border-radius: 50% 50% 0 0 / 5% 5% 0 0; animation: archPulse 8s ease-in-out infinite 3s; }
+    .login-bg .beam {
+      position: absolute; top: -10%; height: 120%; width: 55px;
+      background: linear-gradient(180deg, rgba(220,180,100,0.04) 0%, rgba(220,180,100,0.15) 50%, rgba(220,180,100,0.02) 100%);
+      filter: blur(25px);
+    }
+    .login-bg .beam-1 { left: 18%; animation: beamSway 16s ease-in-out infinite; }
+    .login-bg .beam-2 { left: 45%; width: 65px; animation: beamSway 18s ease-in-out infinite -5s; }
+    .login-bg .beam-3 { left: 68%; animation: beamSway 20s ease-in-out infinite -11s; }
   </style>
 </head>
 <body>
+  <div class="login-bg">
+    <div class="arch arch-l"></div>
+    <div class="arch arch-r"></div>
+    <div class="beam beam-1"></div>
+    <div class="beam beam-2"></div>
+    <div class="beam beam-3"></div>
+  </div>
   <div id="app"></div>
   <script type="module" src="/src/main.ts"></script>
 </body>
