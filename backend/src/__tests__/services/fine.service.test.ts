@@ -6,6 +6,7 @@ function mockPrisma() {
     fine: { findMany: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
     user: { update: vi.fn() },
     $transaction: vi.fn((ops: Promise<any>[]) => Promise.all(ops)),
+    auditLog: { create: vi.fn().mockResolvedValue({}) },
   } as any;
 }
 

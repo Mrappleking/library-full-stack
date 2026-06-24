@@ -20,6 +20,7 @@ import type {
 import { getRule } from './rules.js'
 import { createFine, calcOverdueFine } from './fine.service.js'
 import { getNextPendingHold } from './hold.service.js'
+import { validateItemStatus } from './book.service.js'
 
 async function audit(
   prisma: PrismaClient,
@@ -122,6 +123,8 @@ export async function borrow(
   // Fetch rule once for both borrow limit check and loanDays
   const rule = await getRule(prisma, user?.patronCategoryId ?? null, item?.itemTypeId ?? null);
 
+  if (targetItemId) validateItemStatus('available', 'borrowed');
+
   // Borrow limit check (inline, no second getRule call)
   const currentCount = await prisma.borrowRecord.count({
     where: { userId, status: 'active' },
@@ -195,6 +198,7 @@ export async function returnBook(
 
   // Check for pending hold BEFORE transaction (read-only, safe)
   const nextHold = await getNextPendingHold(prisma, record.bookId);
+  if (record.bookItemId) validateItemStatus('borrowed', nextHold ? 'on_hold' : 'available');
   const holdOps = nextHold && record.bookItemId
     ? [
         prisma.hold.update({

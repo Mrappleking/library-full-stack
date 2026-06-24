@@ -18,7 +18,7 @@ export async function list(
 ): Promise<BookListResponse> {
   const page = Math.max(1, params.page || 1);
   const limit = Math.min(50, Math.max(1, params.limit || 20));
-  const where: any = {};
+  const where: Record<string, unknown> = {};
   if (params.search) {
     where.OR = [
       { title: { contains: params.search } },
@@ -98,7 +98,7 @@ export async function update(
   id: number,
   data: BookUpdateParams,
 ): Promise<BookSummary> {
-  const updateData: any = { ...data };
+  const updateData: Record<string, unknown> = { ...data };
   if (data.total !== undefined && data.total !== null) {
     const current = await prisma.book.findUnique({ where: { id } });
     if (current) {
@@ -127,7 +127,7 @@ export async function getFacets(
   prisma: PrismaClient,
   params: BookListParams,
 ): Promise<FacetsResponse> {
-  const where: any = {};
+  const where: Record<string, unknown> = {};
   if (params.search) {
     where.OR = [
       { title: { contains: params.search } },
@@ -206,7 +206,7 @@ export async function getFacets(
 
 const STATUS_TRANSITIONS: Record<string, string[]> = {
   available: ['borrowed', 'on_hold', 'repairing', 'lost', 'withdrawn'],
-  borrowed: ['available', 'lost'],
+  borrowed: ['available', 'lost', 'on_hold'],  // on_hold: returnBook→hold promotion
   on_hold: ['available', 'borrowed', 'expired'],
   repairing: ['available', 'lost', 'withdrawn'],
   lost: ['available', 'withdrawn'],

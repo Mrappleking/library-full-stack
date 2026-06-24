@@ -32,6 +32,7 @@ function mockPrisma(overrides: Record<string, any> = {}) {
     },
     user: { findUnique: vi.fn() },
     $transaction: vi.fn((ops: any[]) => Promise.all(ops)),
+    auditLog: { create: vi.fn().mockResolvedValue({}) },
   };
   return { ...defaults, ...overrides } as any;
 }

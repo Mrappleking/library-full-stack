@@ -2,9 +2,13 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import type { RegisterParams, LoginResponse, UserProfile } from '../types/api.types.js';
 
+interface JWT {
+  sign: (payload: { id: number; role: string }) => string;
+}
+
 export async function register(
   prisma: PrismaClient,
-  jwt: any,
+  jwt: JWT,
   data: RegisterParams,
 ): Promise<LoginResponse> {
   const existing = await prisma.user.findUnique({ where: { username: data.username } });
@@ -27,7 +31,7 @@ export async function register(
 
 export async function login(
   prisma: PrismaClient,
-  jwt: any,
+  jwt: JWT,
   username: string,
   password: string,
 ): Promise<LoginResponse> {

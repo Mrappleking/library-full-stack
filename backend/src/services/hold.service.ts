@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+import { validateItemStatus } from './book.service.js'
 
 export interface HoldResponse {
   id: number
@@ -89,6 +90,7 @@ export async function cancelHold(
 
   // Release the reserved bookItem if hold was in ready state
   if (hold.status === 'ready' && hold.bookItemId) {
+    validateItemStatus('on_hold', 'available');
     await prisma.bookItem.update({
       where: { id: hold.bookItemId },
       data: { status: 'available' },
@@ -111,6 +113,7 @@ async function expireReadyHolds(prisma: PrismaClient): Promise<void> {
   for (const h of expired) {
     await prisma.hold.update({ where: { id: h.id }, data: { status: 'expired' } })
     if (h.bookItemId) {
+      validateItemStatus('on_hold', 'available');
       await prisma.bookItem.update({ where: { id: h.bookItemId }, data: { status: 'available' } })
       await prisma.book.update({ where: { id: h.bookId }, data: { available: { increment: 1 } } })
     }
@@ -214,6 +217,7 @@ export async function fulfillHold(
 
   // Mark the reserved item as borrowed
   if (hold.bookItemId) {
+    validateItemStatus('on_hold', 'borrowed');
     await prisma.bookItem.update({
       where: { id: hold.bookItemId },
       data: { status: 'borrowed' },
