@@ -39,8 +39,8 @@
 
 | Metric | Count | Detail |
 |--------|-------|--------|
-| 显式索引 | 1 | 仅 `@@unique([patronCategoryId, itemTypeId])` |
-| 缺失索引 | 4 | Book.title, BookItem.campus, BorrowRecord(userId,status), Fine.userId |
+| 显式索引 | 5 | @@index: [title], [campus], [userId,status], [userId], @@unique: [patronCategoryId,itemTypeId] |
+| 缺失索引 | 0 | — |
 | Prisma 事务 | 2 处 | borrow() + returnBook() 均使用 `$transaction` |
 | 冗余计数器 | Book.available | 与 BookItem.status 计数可能不一致 (无校验) |
 | Enum 覆盖 | 6 个 | UserRole, BookStatus, ItemCondition, ItemStatus, FineType, BorrowStatus |
@@ -139,13 +139,13 @@
 |------|------|------|------|
 | 架构分层 | 9/10 | 四层清晰, Routes→Services→Prisma→MySQL | — |
 | 类型安全 | 6/10 | DTO 全覆盖, Prisma 桥接线 `any` 较多 | — |
-| 错误处理 | 5/10 | 缺 setErrorHandler 统一拦截 | — |
-| 数据库设计 | 7/10 | Schema 对齐 OPAC, 缺索引 | — |
+| 数据库设计 | **9/10** | Schema 对齐 OPAC, 5 索引就位 | **+2** |
 | 前端质量 | 6/10 | 组件库完整, 8 个 DESIGN-TODO 未决策 | — |
 | 测试覆盖 | **9/10** | Service 100%, 集成 49 cases, E2E 零 | **+2** |
 | 安全性 | **7/10** | Helmet+RateLimit+CORS ✅, JWT refresh 未做 | **+4** |
 | 工程规范 | **9/10** | ESLint+Prettier+Husky+lint-staged+CI ✅ | **+4** |
-| **加权总分** | **8.1/10** | 骨架完整, 安全+工程+测试三线到位 | **+2.1** |
+| 错误处理 | **8/10** | setErrorHandler 统一拦截, 路由零 reply.send | **+3** |
+| **加权总分** | **8.5/10** | 安全+工程+测试+索引+错误 五线补全 | **+2.5** |
 
 ## 十三、Module H 影响分析
 
@@ -167,6 +167,6 @@ Module H 完成后，工程质量发生质变：
 | **H** | ESLint + Prettier + Husky | ✅ | 工程规范 +4 |
 | **I** | Helmet + Rate Limit + CORS | ✅ | 安全性 +4 |
 | **J** | GitHub Actions + 集成测试 (49 cases) | ✅ | 测试 +2, 工程 +1 |
-| **K** | 索引 + setErrorHandler + requireAdmin | ⏳ | 数据库 +2, 错误处理 +3 |
+| **K** | 索引 + setErrorHandler + requireAdmin | ✅ | 数据库 +2, 错误处理 +3 |
 | **L** | DESIGN-TODO + 收尾 | ⏳ | 前端 +2 |
-| **当前总分** | — | — | **8.1/10** |
+| **当前总分** | — | — | **8.5/10** |
