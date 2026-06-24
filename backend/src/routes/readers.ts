@@ -10,8 +10,10 @@ const updateReaderSchema = z.object({
 });
 
 export async function readerRoutes(app: FastifyInstance) {
-  app.get('/', { onRequest: [app.authenticate, requireAdmin] }, async (request: any) =>
-    userService.listReaders(app.prisma));
+  app.get('/', { onRequest: [app.authenticate, requireAdmin] }, async (request: any) => {
+    const { page = 1, limit = 20 } = request.query;
+    return userService.listReaders(app.prisma, parseInt(page as string), parseInt(limit as string));
+  });
 
   app.get('/:id', { onRequest: [app.authenticate, requireAdmin] }, async (request: any) => {
     const reader = await userService.getReaderDetail(app.prisma, parseInt(request.params.id));

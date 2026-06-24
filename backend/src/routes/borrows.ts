@@ -9,8 +9,10 @@ const borrowSchema = z.object({
 }).refine(d => d.bookId || d.bookItemId, { message: 'bookId or bookItemId required' });
 
 export async function borrowRoutes(app: FastifyInstance) {
-  app.get('/my', { onRequest: [app.authenticate] }, async (request: any) =>
-    borrowService.getMyBorrows(app.prisma, request.user.id));
+  app.get('/my', { onRequest: [app.authenticate] }, async (request: any) => {
+    const { page = 1, limit = 20 } = request.query;
+    return borrowService.getMyBorrows(app.prisma, request.user.id, parseInt(page as string), parseInt(limit as string));
+  });
 
   app.get('/', { onRequest: [app.authenticate, requireAdmin] }, async (request: any) => {
     const { page = 1, limit = 20 } = request.query;
@@ -29,6 +31,8 @@ export async function borrowRoutes(app: FastifyInstance) {
   app.post('/renew/:id', { onRequest: [app.authenticate] }, async (request: any) =>
     borrowService.renew(app.prisma, parseInt(request.params.id), request.user.id));
 
-  app.get('/history', { onRequest: [app.authenticate] }, async (request: any) =>
-    borrowService.getHistory(app.prisma, request.user.id));
+  app.get('/history', { onRequest: [app.authenticate] }, async (request: any) => {
+    const { page = 1, limit = 20 } = request.query;
+    return borrowService.getHistory(app.prisma, request.user.id, parseInt(page as string), parseInt(limit as string));
+  });
 }

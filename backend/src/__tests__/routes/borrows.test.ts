@@ -69,7 +69,9 @@ describe('Borrows Integration', () => {
       headers: authHeaders(readerToken),
     });
     expect(res.statusCode).toBe(200);
-    expect(Array.isArray(res.json())).toBe(true);
+    const data = res.json();
+    expect(data.borrows).toBeDefined();
+    expect(Array.isArray(data.borrows)).toBe(true);
   });
 
   it('POST /api/borrows/borrow — reader can borrow a book', async () => {
@@ -102,8 +104,8 @@ describe('Borrows Integration', () => {
     });
     expect(res.statusCode).toBe(200);
     const data = res.json();
-    expect(data.length).toBe(1);
-    expect(data[0].status).toBe('active');
+    expect(data.borrows.length).toBe(1);
+    expect(data.borrows[0].status).toBe('active');
   });
 
   it('POST /api/borrows/return/:id — can return a borrowed book', async () => {
@@ -113,7 +115,7 @@ describe('Borrows Integration', () => {
       url: '/api/borrows/my',
       headers: authHeaders(readerToken),
     });
-    const borrowId = myBorrows.json()[0].id;
+    const borrowId = myBorrows.json().borrows[0].id;
 
     const res = await app.inject({
       method: 'POST',
@@ -139,7 +141,8 @@ describe('Borrows Integration', () => {
   it('GET /api/borrows/history — reader can see borrow history', async () => {
     const res = await app.inject({ method: 'GET', url: '/api/borrows/history', headers: authHeaders(readerToken) });
     expect(res.statusCode).toBe(200);
-    expect(Array.isArray(res.json())).toBe(true);
+    const histData = res.json();
+    expect(Array.isArray(histData.borrows)).toBe(true);
   });
 
   it('POST /api/borrows/renew/:id — reader can renew', async () => {

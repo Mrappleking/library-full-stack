@@ -1,20 +1,26 @@
 import { PrismaClient } from '@prisma/client';
 import type { ReaderSummary, ReaderDetail } from '../types/api.types.js';
 
-export async function listReaders(prisma: PrismaClient): Promise<ReaderSummary[]> {
-  return prisma.user.findMany({
-    where: { role: 'reader' },
-    select: {
-      id: true,
-      username: true,
-      name: true,
-      phone: true,
-      email: true,
-      createdAt: true,
-      _count: { select: { borrowRecords: true } },
-    },
-    orderBy: { createdAt: 'desc' },
-  }) as unknown as ReaderSummary[];
+export async function listReaders(
+  prisma: PrismaClient,
+  page = 1,
+  limit = 20,
+): Promise<{ readers: ReaderSummary[]; total: number }> {
+  const [readers, total] = await Promise.all([
+    prisma.user.findMany({
+      where: { role: 'reader' },
+      select: {
+        id: true, username: true, name: true,
+        phone: true, email: true, createdAt: true,
+        _count: { select: { borrowRecords: true } },
+      },
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.user.count({ where: { role: 'reader' } }),
+  ]);
+  return { readers: readers as unknown as ReaderSummary[], total };
 }
 
 export async function getReaderDetail(

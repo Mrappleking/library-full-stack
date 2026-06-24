@@ -36,16 +36,24 @@ async function audit(
 export async function getMyBorrows(
   prisma: PrismaClient,
   userId: number,
-): Promise<BorrowRecordResponse[]> {
-  return prisma.borrowRecord.findMany({
-    where: { userId },
-    include: {
-      book: { select: { id: true, title: true, author: true, isbn: true } },
-      bookItem: { select: { id: true, barcode: true, callNumber: true } },
-      fines: { select: { id: true, amount: true, type: true, paid: true } },
-    },
-    orderBy: { borrowDate: 'desc' },
-  }) as unknown as BorrowRecordResponse[];
+  page = 1,
+  limit = 20,
+): Promise<{ borrows: BorrowRecordResponse[]; total: number }> {
+  const [borrows, total] = await Promise.all([
+    prisma.borrowRecord.findMany({
+      where: { userId },
+      include: {
+        book: { select: { id: true, title: true, author: true, isbn: true } },
+        bookItem: { select: { id: true, barcode: true, callNumber: true } },
+        fines: { select: { id: true, amount: true, type: true, paid: true } },
+      },
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { borrowDate: 'desc' },
+    }),
+    prisma.borrowRecord.count({ where: { userId } }),
+  ]);
+  return { borrows: borrows as unknown as BorrowRecordResponse[], total };
 }
 
 export async function listBorrows(
@@ -225,6 +233,7 @@ export async function returnBook(
     ...holdOps,
   ]);
 
+  audit(prisma, userId, 'return', `record:${recordId}`, isOverdue ? 'overdue' : void 0);
   return {
     id: updated.id,
     status: isOverdue ? 'overdue' : 'returned',
@@ -234,7 +243,6 @@ export async function returnBook(
       ? { holdId: nextHold.id, userId: nextHold.userId }
       : null,
   };
-  audit(prisma, userId, 'return', `record:${recordId}`, isOverdue ? 'overdue' : void 0);
 }
 
 export async function renew(
@@ -268,25 +276,33 @@ export async function renew(
     where: { id: recordId },
     data: { dueDate: newDue, renewed: true },
   });
+  audit(prisma, userId, 'renew', `record:${recordId}`, `${rule.renewalDays}d`);
   return {
     id: updated.id,
     dueDate: newDue.toISOString(),
     renewed: true,
     renewedDays: rule.renewalDays,
   };
-  audit(prisma, userId, 'renew', `record:${recordId}`, `${rule.renewalDays}d`);
 }
 
 export async function getHistory(
   prisma: PrismaClient,
   userId: number,
-): Promise<BorrowRecordResponse[]> {
-  return prisma.borrowRecord.findMany({
-    where: { userId },
-    include: {
-      book: { select: { id: true, title: true, author: true, isbn: true } },
-      fines: { select: { id: true, amount: true, type: true, paid: true } },
-    },
-    orderBy: { borrowDate: 'desc' },
-  }) as unknown as BorrowRecordResponse[];
+  page = 1,
+  limit = 20,
+): Promise<{ borrows: BorrowRecordResponse[]; total: number }> {
+  const [borrows, total] = await Promise.all([
+    prisma.borrowRecord.findMany({
+      where: { userId },
+      include: {
+        book: { select: { id: true, title: true, author: true, isbn: true } },
+        fines: { select: { id: true, amount: true, type: true, paid: true } },
+      },
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { borrowDate: 'desc' },
+    }),
+    prisma.borrowRecord.count({ where: { userId } }),
+  ]);
+  return { borrows: borrows as unknown as BorrowRecordResponse[], total };
 }

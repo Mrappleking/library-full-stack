@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import type { FineType } from '@prisma/client';
 import type { FineListParams, FineResponse, FinePayResult } from '../types/api.types.js';
 
 async function audit(
@@ -62,11 +63,6 @@ export async function payFine(prisma: PrismaClient, fineId: number): Promise<Fin
 
 // ===== Borrow-time fine utilities (merged from fines.ts) =====
 
-import type { FineType } from '@prisma/client';
-
-/**
- * 创建罚款记录并更新用户欠费总额（事务保护）
- */
 export async function createFine(
   prisma: PrismaClient,
   params: {
@@ -96,9 +92,6 @@ export async function createFine(
   return fine;
 }
 
-/**
- * 还书时计算逾期费：逾期天数 × 日罚金率
- */
 export function calcOverdueFine(dueDate: Date, returnDate: Date, finePerDay: number): number {
   const overdueMs = returnDate.getTime() - dueDate.getTime();
   const overdueDays = Math.max(0, Math.ceil(overdueMs / (1000 * 60 * 60 * 24)));

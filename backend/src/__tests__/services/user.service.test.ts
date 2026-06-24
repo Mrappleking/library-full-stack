@@ -3,7 +3,7 @@ import * as userService from '../../services/user.service.js';
 
 function mockPrisma() {
   return {
-    user: { findMany: vi.fn(), findFirst: vi.fn(), update: vi.fn() },
+    user: { findMany: vi.fn(), findFirst: vi.fn(), update: vi.fn(), count: vi.fn() },
   } as any;
 }
 
@@ -11,8 +11,9 @@ describe('listReaders', () => {
   it('返回读者列表', async () => {
     const prisma = mockPrisma();
     prisma.user.findMany.mockResolvedValue([{ id: 1, username: '20230001', name: 'Alice' }]);
+    prisma.user.count.mockResolvedValue(1);
     const result = await userService.listReaders(prisma);
-    expect(result).toHaveLength(1);
+    expect(result.readers).toHaveLength(1);
   });
 });
 

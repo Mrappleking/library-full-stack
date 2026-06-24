@@ -1,7 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 
 /**
- * 默认借阅规则（当 CirculationRule 表无匹配时使用）
+ * Borrow engine rules — used by borrow.service.ts for limit checks and loanDays.
+ * (checkBorrowLimit retired; logic inlined into borrow.service.ts)
  */
 const DEFAULTS = {
   maxBorrows: 5,
