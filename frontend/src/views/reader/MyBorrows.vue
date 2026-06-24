@@ -104,7 +104,7 @@ const holdColumns: DataTableColumns<Record<string, unknown>> = [
 
 async function fetchRecords() {
   loading.value = true
-  try { records.value = await api.get('/borrows/my') } catch {}
+  try { records.value = (await api.get<{ borrows: any[]; total: number }>('/borrows/my')).borrows } catch {}
   loading.value = false
 }
 
