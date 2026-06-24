@@ -19,7 +19,8 @@ const routes = [
       { path: 'borrows', component: () => import('../views/admin/Borrows.vue') },
       { path: 'fines', component: () => import('../views/admin/Fines.vue') },
       { path: 'stats', component: () => import('../views/admin/Stats.vue') },
-      { path: 'settings', component: () => import('../views/admin/Settings.vue') }
+      { path: 'settings', component: () => import('../views/admin/Settings.vue') },
+      { path: 'circulation', component: () => import('../views/admin/Circulation.vue') }
     ]
   },
   {

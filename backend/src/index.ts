@@ -50,6 +50,14 @@ app.register(rulesRoutes, { prefix: '/api/admin/rules' })
 // Health check
 app.get('/api/health', async () => ({ status: 'ok' }))
 
+// Barcode lookup (Module F)
+app.get('/api/book-items/:barcode', async (request: any, reply: any) => {
+  const item = await prisma.bookItem.findUnique({ where: { barcode: request.params.barcode }, include: { book: true } })
+  if (!item) return reply.status(404).send({ error: 'Item not found' })
+  const currentBorrow = await prisma.borrowRecord.findFirst({ where: { bookItemId: item.id, status: 'active' } })
+  return { item, currentBorrow }
+})
+
 // Start
 const start = async () => {
   try {
