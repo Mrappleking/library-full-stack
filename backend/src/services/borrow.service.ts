@@ -5,8 +5,8 @@ import type {
   ReturnResult,
   RenewResult,
 } from '../types/api.types.js'
-import { getRule, checkBorrowLimit } from './rules.js'
-import { createFine, calcOverdueFine } from './fines.js'
+import { getRule } from './rules.js'
+import { createFine, calcOverdueFine } from './fine.service.js'
 import { getNextPendingHold } from './hold.service.js'
 
 export async function getMyBorrows(
@@ -73,13 +73,23 @@ export async function borrow(
     throw Object.assign(new Error('You already borrowed this book'), { statusCode: 400 });
 
   const user = await prisma.user.findUnique({ where: { id: userId } });
-  const limit = await checkBorrowLimit(prisma, userId, user?.patronCategoryId ?? null);
-  if (!limit.allowed) throw Object.assign(new Error(limit.message!), { statusCode: 400 });
-
   const item = targetItemId
     ? await prisma.bookItem.findUnique({ where: { id: targetItemId }, include: { itemType: true } })
     : null;
+
+  // Fetch rule once for both borrow limit check and loanDays
   const rule = await getRule(prisma, user?.patronCategoryId ?? null, item?.itemTypeId ?? null);
+
+  // Borrow limit check (inline, no second getRule call)
+  const currentCount = await prisma.borrowRecord.count({
+    where: { userId, status: 'active' },
+  });
+  if (currentCount >= rule.maxBorrows) {
+    throw Object.assign(
+      new Error(`已达到借阅上限 ${rule.maxBorrows} 册`),
+      { statusCode: 400 },
+    );
+  }
   const dueDate = new Date();
   dueDate.setDate(dueDate.getDate() + rule.loanDays);
 

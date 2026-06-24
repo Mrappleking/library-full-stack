@@ -44,9 +44,10 @@ export async function updateReader(
   id: number,
   data: { name?: string; phone?: string; email?: string },
 ) {
+  const { name, phone, email } = data;
   return prisma.user.update({
     where: { id },
-    data,
+    data: { name, phone, email },
     select: { id: true, username: true, name: true, role: true, phone: true, email: true },
   });
 }
@@ -56,9 +57,10 @@ export async function updateProfile(
   userId: number,
   data: { name?: string; phone?: string; email?: string },
 ) {
+  const { name, phone, email } = data;
   return prisma.user.update({
     where: { id: userId },
-    data,
+    data: { name, phone, email },
     select: { id: true, username: true, name: true, role: true, phone: true, email: true },
   });
 }

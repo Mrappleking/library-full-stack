@@ -39,5 +39,9 @@ export async function upsertRule(
     },
     update: data,
     create: data,
+    include: {
+      patronCategory: { select: { id: true, name: true } },
+      itemType: { select: { id: true, name: true, loanDays: true, fineRate: true } },
+    },
   }) as unknown as CirculationRuleResponse;
 }

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as borrowService from '../../services/borrow.service.js';
 import * as rules from '../../services/rules.js';
-import * as fines from '../../services/fines.js';
+import * as fines from '../../services/fine.service.js';
 
 // Mock dependencies
 vi.mock('../../services/hold.service.js', () => ({
@@ -12,7 +12,7 @@ vi.mock('../../services/rules.js', () => ({
   getRule: vi.fn(),
   checkBorrowLimit: vi.fn(),
 }));
-vi.mock('../../services/fines.js', () => ({
+vi.mock('../../services/fine.service.js', () => ({
   createFine: vi.fn(),
   calcOverdueFine: vi.fn(),
 }));
@@ -106,13 +106,8 @@ describe('borrow', () => {
   });
 
   it('3. 超借阅上限 — 返回错误 "exceeded limit"', async () => {
-    vi.mocked(rules.checkBorrowLimit).mockResolvedValue({
-      allowed: false,
-      currentCount: 5,
-      maxBorrows: 5,
-      message: '已达到借阅上限 5 册',
-    });
     const prisma = mockPrisma();
+    prisma.borrowRecord.count = vi.fn().mockResolvedValue(5); // trigger limit
     prisma.bookItem.findUnique = vi
       .fn()
       .mockResolvedValue({

@@ -27,16 +27,26 @@ export async function getPopularBooks(prisma: PrismaClient): Promise<PopularBook
 export async function getMonthlyStats(prisma: PrismaClient): Promise<MonthlyStat[]> {
   const twelveMonthsAgo = new Date();
   twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
-  const records = await prisma.borrowRecord.findMany({
-    where: { borrowDate: { gte: twelveMonthsAgo } },
-    select: { borrowDate: true },
-  });
-  const monthly: Record<string, number> = {};
-  for (const r of records) {
-    const key = `${r.borrowDate.getFullYear()}-${String(r.borrowDate.getMonth() + 1).padStart(2, '0')}`;
-    monthly[key] = (monthly[key] || 0) + 1;
+
+  // SQL GROUP BY with zero-fill for missing months
+  const rows = await prisma.$queryRawUnsafe<{ month: string; count: bigint }[]>(
+    `SELECT DATE_FORMAT(borrow_date, '%Y-%m') AS month, COUNT(*) AS count
+     FROM borrow_records
+     WHERE borrow_date >= ?
+     GROUP BY month
+     ORDER BY month`,
+    twelveMonthsAgo,
+  );
+
+  // Zero-fill missing months
+  const result: MonthlyStat[] = [];
+  const filled = new Map(rows.map(r => [r.month, Number(r.count)]));
+  const cursor = new Date(twelveMonthsAgo);
+  const now = new Date();
+  while (cursor <= now) {
+    const key = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
+    result.push({ month: key, count: filled.get(key) ?? 0 });
+    cursor.setMonth(cursor.getMonth() + 1);
   }
-  return Object.entries(monthly)
-    .sort()
-    .map(([month, count]) => ({ month, count }));
+  return result;
 }

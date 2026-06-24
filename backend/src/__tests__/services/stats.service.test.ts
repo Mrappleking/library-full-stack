@@ -7,6 +7,7 @@ function mockPrisma() {
     user: { count: vi.fn() },
     borrowRecord: { count: vi.fn(), findMany: vi.fn() },
     category: { count: vi.fn() },
+    $queryRawUnsafe: vi.fn(),
   } as any;
 }
 
@@ -42,9 +43,11 @@ describe('getMonthlyStats', () => {
   it('返回月度统计', async () => {
     const prisma = mockPrisma();
     const now = new Date();
-    prisma.borrowRecord.findMany.mockResolvedValue([{ borrowDate: now }]);
+    const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    prisma.$queryRawUnsafe.mockResolvedValue([{ month, count: BigInt(1) }]);
     const result = await statsService.getMonthlyStats(prisma);
-    expect(result).toHaveLength(1);
-    expect(result[0].count).toBe(1);
+    expect(result.length).toBeGreaterThanOrEqual(1);
+    const thisMonth = result.find(r => r.month === month);
+    expect(thisMonth?.count).toBe(1);
   });
 });

@@ -29,7 +29,11 @@ export async function authRoutes(app: FastifyInstance) {
 
   app.post('/login', async (request) => {
     const parsed = loginSchema.safeParse(request.body);
-    if (!parsed.success) throw Object.assign(new Error('Validation failed'), { statusCode: 400 });
+    if (!parsed.success)
+      throw Object.assign(new Error('Validation failed'), {
+        statusCode: 400,
+        issues: parsed.error.flatten(),
+      });
     const { username, password } = parsed.data;
     return authService.login(app.prisma, app.jwt, username, password);
   });
