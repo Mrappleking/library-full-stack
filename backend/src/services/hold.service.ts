@@ -78,7 +78,7 @@ export async function cancelHold(
   const hold = await prisma.hold.findUnique({ where: { id: holdId } })
   if (!hold) throw Object.assign(new Error('Hold not found'), { statusCode: 404 })
   if (hold.userId !== userId) throw Object.assign(new Error('Unauthorized'), { statusCode: 403 })
-  if (hold.status === 'fulfilled' || hold.status === 'cancelled') {
+  if (hold.status === 'fulfilled' || hold.status === 'cancelled' || hold.status === 'expired') {
     throw Object.assign(new Error('Hold already resolved'), { statusCode: 400 })
   }
 
@@ -86,6 +86,35 @@ export async function cancelHold(
     where: { id: holdId },
     data: { status: 'cancelled' },
   })
+
+  // Release the reserved bookItem if hold was in ready state
+  if (hold.status === 'ready' && hold.bookItemId) {
+    await prisma.bookItem.update({
+      where: { id: hold.bookItemId },
+      data: { status: 'available' },
+    })
+    await prisma.book.update({
+      where: { id: hold.bookId },
+      data: { available: { increment: 1 } },
+    })
+  }
+}
+
+/**
+ * Auto-expire ready holds past their pickup window.
+ */
+async function expireReadyHolds(prisma: PrismaClient): Promise<void> {
+  const now = new Date()
+  const expired = await prisma.hold.findMany({
+    where: { status: 'ready', expiryDate: { lt: now } },
+  })
+  for (const h of expired) {
+    await prisma.hold.update({ where: { id: h.id }, data: { status: 'expired' } })
+    if (h.bookItemId) {
+      await prisma.bookItem.update({ where: { id: h.bookItemId }, data: { status: 'available' } })
+      await prisma.book.update({ where: { id: h.bookId }, data: { available: { increment: 1 } } })
+    }
+  }
 }
 
 /**
@@ -95,6 +124,7 @@ export async function getMyHolds(
   prisma: PrismaClient,
   userId: number
 ): Promise<HoldResponse[]> {
+  await expireReadyHolds(prisma)
   const holds = await prisma.hold.findMany({
     where: { userId },
     include: {
@@ -123,7 +153,8 @@ export async function listHolds(
   prisma: PrismaClient,
   filters?: { status?: string; bookId?: number }
 ): Promise<HoldResponse[]> {
-  const where: any = {}
+  await expireReadyHolds(prisma)
+  const where: Record<string, unknown> = {}
   if (filters?.status) where.status = filters.status
   if (filters?.bookId) where.bookId = filters.bookId
 
@@ -174,6 +205,14 @@ export async function fulfillHold(
       book: { select: { id: true, title: true, author: true, isbn: true } },
     },
   })
+
+  // Mark the reserved item as borrowed
+  if (hold.bookItemId) {
+    await prisma.bookItem.update({
+      where: { id: hold.bookItemId },
+      data: { status: 'borrowed' },
+    })
+  }
 
   return {
     id: updated.id,

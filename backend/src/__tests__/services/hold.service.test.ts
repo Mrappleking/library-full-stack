@@ -88,4 +88,30 @@ describe('hold.service', () => {
     await prisma.hold.delete({ where: { id: hold.id } })
     await prisma.user.delete({ where: { id: user2.id } })
   })
+
+  it('getNextPendingHold — returns first pending hold', async () => {
+    const h = await holdService.createHold(prisma, userId, bookId)
+    const next = await holdService.getNextPendingHold(prisma, bookId)
+    expect(next).not.toBeNull()
+    expect(next!.userId).toBe(userId)
+    expect(next!.status).toBe('pending')
+    await holdService.cancelHold(prisma, h.id, userId)
+  })
+
+  it('fulfillHold — rejects non-ready hold', async () => {
+    const h = await holdService.createHold(prisma, userId, bookId)
+    try {
+      await holdService.fulfillHold(prisma, h.id)
+      expect(true).toBe(false)
+    } catch (e: any) {
+      expect(e.statusCode).toBe(400)
+    }
+    await holdService.cancelHold(prisma, h.id, userId)
+  })
+
+  it('listHolds with status filter', async () => {
+    const holds = await holdService.listHolds(prisma, { status: 'cancelled' })
+    expect(Array.isArray(holds)).toBe(true)
+    expect(holds.every((h) => h.status === 'cancelled')).toBe(true)
+  })
 })

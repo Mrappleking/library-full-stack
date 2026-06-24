@@ -9,9 +9,14 @@ let prisma: PrismaClient;
 beforeAll(async () => {
   prisma = makePrisma();
   app = await buildApp(prisma);
+  // Clean up leftover test users from previous incomplete runs
+  await prisma.user.deleteMany({ where: { username: { startsWith: 'it_rule' } } })
 }, 10000);
 
-afterAll(async () => { await prisma.$disconnect(); });
+afterAll(async () => {
+  await prisma.user.deleteMany({ where: { username: { startsWith: 'it_rule' } } })
+  await prisma.$disconnect()
+});
 
 describe('Rules Integration', () => {
   it('GET /api/admin/rules — returns rules list (public)', async () => {
@@ -32,7 +37,10 @@ describe('Rules Integration', () => {
   it('PUT /api/admin/rules — admin can upsert rule', async () => {
     // Need an admin token
     const r = await app.inject({ method: 'POST', url: '/api/auth/register', payload: { username: 'it_ruleadm', password: 'admin123', name: 'Rule Admin' } });
-    await prisma.user.update({ where: { id: r.json().user.id }, data: { role: 'admin' } });
+    expect(r.statusCode).toBe(200)
+    const uid = r.json().user?.id
+    expect(uid).toBeDefined()
+    await prisma.user.update({ where: { id: uid }, data: { role: 'admin' } });
     const login = await app.inject({ method: 'POST', url: '/api/auth/login', payload: { username: 'it_ruleadm', password: 'admin123' } });
     const token = login.json().token;
 

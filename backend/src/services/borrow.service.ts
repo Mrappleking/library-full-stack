@@ -181,10 +181,15 @@ async function notifyNextHold(
     data: { status: 'ready', bookItemId, expiryDate: expiry },
   })
 
-  // Set item to on_hold status
+  // Set item to on_hold status and keep book.available unchanged
+  // (returnBook already incremented available; we net it to zero for this held copy)
   await prisma.bookItem.update({
     where: { id: bookItemId },
     data: { status: 'on_hold' },
+  })
+  await prisma.book.update({
+    where: { id: bookId },
+    data: { available: { decrement: 1 } },
   })
 
   return { holdId: nextHold.id, userId: nextHold.userId }

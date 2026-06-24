@@ -70,8 +70,9 @@ onMounted(async () => {
     // Fetch hold count
     if (book.value && book.value.available === 0) {
       try {
-        const holds = await api.get<any[]>(`/holds?bookId=${id}`)
-        holdCount.value = holds.filter((h: any) => h.status === 'pending').length
+        const res = await fetch(`/api/holds/count?bookId=${id}`)
+        const data = await res.json()
+        holdCount.value = data.count ?? 0
       } catch { holdCount.value = 0 }
     }
   } finally { loading.value = false }

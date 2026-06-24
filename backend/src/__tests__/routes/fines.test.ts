@@ -11,6 +11,13 @@ let readerToken: string;
 beforeAll(async () => {
   prisma = makePrisma();
   app = await buildApp(prisma);
+  // Clean up leftovers from incomplete previous runs
+  await prisma.fine.deleteMany({ where: { borrowRecord: { book: { isbn: { startsWith: '978-FN' } } } } }).catch(() => {})
+  await prisma.borrowRecord.deleteMany({ where: { book: { isbn: { startsWith: '978-FN' } } } }).catch(() => {})
+  await prisma.bookItem.deleteMany({ where: { barcode: 'LIB-FINE-001' } }).catch(() => {})
+  await prisma.book.deleteMany({ where: { isbn: { startsWith: '978-FN' } } }).catch(() => {})
+  await prisma.category.deleteMany({ where: { name: 'Fine Test Cat' } }).catch(() => {})
+  await prisma.user.deleteMany({ where: { username: { startsWith: 'it_fine' } } }).catch(() => {})
   const r1 = await app.inject({ method: 'POST', url: '/api/auth/register', payload: { username: 'it_fineadm', password: 'admin123', name: 'Fine Admin' } });
   await prisma.user.update({ where: { id: r1.json().user.id }, data: { role: 'admin' } });
   const l1 = await app.inject({ method: 'POST', url: '/api/auth/login', payload: { username: 'it_fineadm', password: 'admin123' } });

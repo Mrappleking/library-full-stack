@@ -7,6 +7,16 @@ export async function holdRoutes(app: FastifyInstance) {
   app.post('/', { onRequest: [app.authenticate] }, async (request: any) =>
     holdService.createHold(app.prisma, request.user.id, request.body.bookId))
 
+  // Public: count pending holds for a book
+  app.get('/count', async (request: any) => {
+    const bookId = parseInt(request.query.bookId)
+    if (!bookId) return { count: 0 }
+    const count = await app.prisma.hold.count({
+      where: { bookId, status: 'pending' },
+    })
+    return { count }
+  })
+
   // Cancel own hold
   app.delete('/:id', { onRequest: [app.authenticate] }, async (request: any) =>
     holdService.cancelHold(app.prisma, parseInt(request.params.id), request.user.id))
