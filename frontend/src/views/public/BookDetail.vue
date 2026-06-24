@@ -14,8 +14,11 @@
           <div class="cover-section">
             <img v-if="book.cover" :src="book.cover" class="cover-img" />
             <div v-else class="cover-placeholder">{{ book.title[0] }}</div>
-            <n-button type="primary" size="large" style="margin-top:16px" @click="$router.push('/login')">
-              {{ book.total > 0 ? '登录后借阅' : '暂不可借' }}
+            <n-button type="primary" size="large" style="margin-top:16px" @click="handleBorrow">
+              {{ book.available > 0 ? '登录后借阅' : '登录后预约' }}
+            </n-button>
+            <n-button v-if="book.total > 0 && book.available === 0" type="warning" size="small" style="margin-top:8px" @click="handleHold">
+              预约此书 ({{ holdCount }} 人排队)
             </n-button>
           </div>
           <div class="info-section">
@@ -44,12 +47,15 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { NLayout, NLayoutHeader, NLayoutContent, NButton, NSpace, NSpin, NDivider, NDescriptions, NDescriptionsItem } from 'naive-ui'
 import HoldingsTable from '../../components/HoldingsTable.vue'
+import { api } from '../../api'
 import type { BookDetail, BookItemSummary } from '../../types/api'
 
 const route = useRoute()
 const book = ref<BookDetail | null>(null)
 const items = ref<BookItemSummary[]>([])
 const loading = ref(true)
+const holdCount = ref(0)
+const token = !!localStorage.getItem('token')
 
 onMounted(async () => {
   const id = Number(route.params.id)
@@ -61,8 +67,31 @@ onMounted(async () => {
     book.value = await detailRes.json()
     const itemsData = await itemsRes.json()
     items.value = itemsData.items || []
+    // Fetch hold count
+    if (book.value && book.value.available === 0) {
+      try {
+        const holds = await api.get<any[]>(`/holds?bookId=${id}`)
+        holdCount.value = holds.filter((h: any) => h.status === 'pending').length
+      } catch { holdCount.value = 0 }
+    }
   } finally { loading.value = false }
 })
+
+function handleBorrow() {
+  if (!token) { window.location.href = '/login'; return }
+  // Redirect to reader books page
+  window.location.href = '/reader/books'
+}
+
+async function handleHold() {
+  if (!token) { window.location.href = '/login'; return }
+  if (!book.value) return
+  try {
+    await api.post('/holds', { bookId: book.value.id })
+    holdCount.value++
+    alert('预约成功！有书归还时将通知您。')
+  } catch (e: unknown) { alert((e as Error).message) }
+}
 </script>
 
 <style scoped>

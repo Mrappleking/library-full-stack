@@ -22,6 +22,16 @@
         :row-key="(r: DataRow) => r.id"
       />
     </n-card>
+
+    <!-- Holds Section -->
+    <n-card v-if="holds.length > 0" title="我的预约" style="margin-top: 24px;">
+      <n-data-table
+        :columns="holdColumns"
+        :data="holds"
+        size="small"
+        :row-key="(r: DataRow) => r.id"
+      />
+    </n-card>
   </div>
 </template>
 
@@ -29,12 +39,13 @@
 import { ref, onMounted, h, computed } from 'vue'
 import { useMessage, NTag, NButton } from 'naive-ui'
 import { api } from '../../api'
-import type { BorrowRecordResponse, FineResponse } from '../../types/api'
+import type { BorrowRecordResponse, FineResponse, HoldResponse, DataRow } from '../../types/api'
 import type { DataTableColumns } from 'naive-ui'
 
 const message = useMessage()
-const records = ref<any[]>([])
-const fines = ref<any[]>([])
+const records = ref<BorrowRecordResponse[]>([])
+const fines = ref<FineResponse[]>([])
+const holds = ref<HoldResponse[]>([])
 const loading = ref(false)
 
 const totalFines = computed(() =>
@@ -76,6 +87,20 @@ const fineColumns: DataTableColumns<Record<string, unknown>> = [
   { title: '状态', key: 'paid', width: 80, render: (r) => h(NTag, { type: r.paid ? 'success' : 'error', size: 'tiny' }, () => r.paid ? '已缴' : '未缴') }
 ]
 
+const holdColumns: DataTableColumns<Record<string, unknown>> = [
+  { title: '书名', key: 'book?.title', ellipsis: { tooltip: true } },
+  { title: '预约日', key: 'requestDate', width: 110, render: (r) => new Date(r.requestDate).toLocaleDateString('zh-CN') },
+  { title: '状态', key: 'status', width: 80, render: (r) => {
+    const m: Record<string, { t: string; l: string }> = { pending: { t: 'warning', l: '排队中' }, ready: { t: 'success', l: '可取' }, fulfilled: { t: 'default', l: '已取' }, cancelled: { t: 'error', l: '已取消' }, expired: { t: 'default', l: '已过期' } }
+    const s = m[r.status] || { t: 'default', l: r.status }
+    return h(NTag, { type: s.t as any, size: 'tiny' }, () => s.l)
+  }},
+  { title: '操作', key: 'actions', width: 70, render: (r) => {
+    if (r.status !== 'pending') return ''
+    return h(NButton, { size: 'small', text: true, type: 'error', onClick: () => handleCancelHold(r.id) }, () => '取消')
+  }}
+]
+
 async function fetchRecords() {
   loading.value = true
   try { records.value = await api.get('/borrows/my') } catch {}
@@ -91,5 +116,14 @@ async function handleRenew(id: number) {
   catch (e: unknown) { message.error((e as Error).message) }
 }
 
-onMounted(() => { fetchRecords(); fetchFines() })
+async function fetchHolds() {
+  try { holds.value = await api.get<HoldResponse[]>('/holds/my') } catch {}
+}
+
+async function handleCancelHold(id: number) {
+  try { await api.delete(`/holds/${id}`); message.success('已取消预约'); fetchHolds() }
+  catch (e: unknown) { message.error((e as Error).message) }
+}
+
+onMounted(() => { fetchRecords(); fetchFines(); fetchHolds() })
 </script>

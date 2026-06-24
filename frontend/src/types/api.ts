@@ -72,3 +72,23 @@ export interface ItemTypeResponse { id: number; name: string; loanDays: number; 
 
 // Helper for Naive UI DataTable row type
 export type DataRow = { id: number | string; [key: string]: unknown }
+
+export interface BarcodeLabelProps {
+  barcode: string
+  width?: number
+  height?: number
+  fontSize?: number
+  displayValue?: boolean
+}
+
+export interface HoldResponse {
+  id: number
+  userId: number
+  bookId: number
+  bookItemId: number | null
+  status: string
+  requestDate: string
+  expiryDate: string | null
+  fulfilledAt: string | null
+  book?: { id: number; title: string; author: string; isbn: string }
+}

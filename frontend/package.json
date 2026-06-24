@@ -19,6 +19,7 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "jsbarcode": "^3.12.3",
     "naive-ui": "^2.44.1",
     "pinia": "^3.0.4",
     "vue": "^3.5.38",
