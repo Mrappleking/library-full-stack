@@ -6,7 +6,7 @@
 
 | Layer | Lines | Files | avg/File |
 |-------|-------|-------|----------|
-| Routes | 340 | 8 | 42 |
+| Routes | 234 | 8 | 29 |
 | Services | 889 | 10 | 89 |
 | Types (backend) | 415 | 2 | 207 |
 | Frontend Total | 2,156 | 28 | 77 |
@@ -20,9 +20,9 @@
 | `any` in routes | 41 | ⚠️ Fastify 请求对象无泛型, 属结构性 `any` |
 | `any` in services | 28 | ⚠️ Prisma where 动态构建, 可逐步替换为强类型 |
 | `any` in tests | 26 | ✅ vi.mock 的 prisma 实例，mock 专用 |
-| `any` in frontend | 15+ | ⚠️ Vue views 中 store/ref 类型不完整 |
+| `any` in frontend | 3 | ⚠️ 仅 composables/utility 代码，业务代码已去 any |
 | `as unknown as` casts | 21 | ⚠️ Prisma 返回类型与 DTO 类型桥接 |
-| DTO interfaces | 40 | ✅ 覆盖全部 35 API 端点 |
+| DTO interfaces | 40 | ✅ 覆盖全部 38 API 端点 |
 | TSC errors | 12 | ⚠️ 测试 mock 类型 + book.service 隐式 any + fine Decimal 转换 |
 | `BookListResponse` → type alias | ✅ | Module H 修复：空 interface → type 别名，通过 no-empty-object-type |
 
@@ -99,7 +99,7 @@
 | Prettier 3.8 | ✅ 全量格式化, singleQuote/trailingComma/100w |
 | Husky pre-commit | ✅ lint-staged: *.ts → eslint --fix → prettier --write |
 | lint-staged | ✅ v17 配置 |
-| Conventional Commits | ✅ 全部 10 次提交遵循 `<type>: <verb>` 格式 |
+| Conventional Commits | ✅ 全部 27 次提交遵循 `<type>: <verb>` 格式 |
 | CI/CD | ✅ GitHub Actions (lint→test→build) |
 | .prettierignore | ✅ dist/node_modules/migrations |
 | npm scripts | ✅ lint/lint:fix/format/prepare |

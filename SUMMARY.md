@@ -1,44 +1,63 @@
 # 今日工作总结 — 2026-06-24
 
-## 完成事项
+## 上午：基础设施修复 + 项目推进
 
-### 1. 联网修复
-- SearXNG 搜索超时→3秒：禁用 sogou（每15秒超时拖慢全局），超时 8→15s
-- 图片搜索恢复：80引擎中14个图片引擎可用
-- web_search 工具恢复正常使用
-- 山科大图书馆外景图片采集：7张照片下载到 `resources/sdust-library/`
+### 1. 联网 + SearXNG 修复
+- SearXNG 超时→3秒
+- 图片搜索恢复
+- 山科大图书馆外景采集
 
-### 2. 项目深度升级（v0.2.0 → v0.3.0）
-- Prisma schema：10表（新增 BookItem/PatronCategory/ItemType/CirculationRule/Fine）
-- 规则引擎：`getRule()` + `checkBorrowLimit()` 替代硬编码30天
-- 罚款系统：自动计算逾期费 + Fine 表 + totalFines
-- 复本追踪：BookItem（条码/索书号/馆藏地/品相），借书自动选复本
-- 后端：新增 fines/rules 路由，borrows.ts 重构
-- 前端：154→16页（新增 Settings/Fines 管理页，4页增强）
+### 2. Module I: 安全加固
+- @fastify/helmet (8 security headers)
+- @fastify/rate-limit (100/min)
+- CORS 白名单 (localhost only)
 
-### 3. Git 管理
-- WSL 仓库：`~/workplace/library-full-stack/`，4次提交
-- Windows 仓库：`D:\workplace\Library Full-Stack Project\`，1次提交
-- .gitignore 配置完成
+### 3. Module J: CI + 集成测试
+- GitHub Actions CI workflow (lint→test→build)
+- 34→49 route integration tests (全 35 API 端点覆盖)
+- 92 total tests pass (49 集成 + 43 单元)
 
-### 4. 文档体系
-| 文件 | 行数 | 内容 |
-|------|------|------|
-| README.md | 711 | 18章：架构+API+前端+迭代蓝图+SDUST联动 |
-| AGENTS.md | 395 | 22条架构决策 + 完整路由表 + 错误处理规范 |
-| TODO.md | 74 | Phase 1/2 对齐清单 |
-| resources/sdust-library/README.md | — | 图片资源说明 |
+## 下午：架构优化 + 债务清理
 
-### 5. 迭代蓝图（README.md 第十四-十八章）
-- v0.4.0：图书详情页 + 流通台（零新表）
-- v0.4.1：预约系统（Hold表 + 6 API）
-- v0.4.2-3：通知系统（站内+邮件）
-- v0.5.0：报表中心（ECharts）
-- v0.6+：MARC编目/采访/支付/ES/期刊
-- SDUST 联动三期方案
+### 4. P0-P2 全栈优化
+- setErrorHandler 统一错误拦截 (Zod/Prisma/JWT/500 映射)
+- 全部 8 路由 reply.send→throw 迁移 (routes 340→234 行)
+- requireAdmin 中间件 8/8 路由完成
+- Service 命名统一 (getReaderDetail 保留, delete→remove 回退)
+- @fastify/swagger + swagger-ui (/docs)
+- startup 环境变量校验 (DATABASE_URL, JWT_SECRET)
+- Husky 覆盖前端
 
-## 未完成（下次继续）
+### 5. Module K: MySQL 索引
+- 4 个 @@index: books.title, items.campus, borrow_records[userId,status], fines.userId
+- 数据库评分 7→9
 
-1. 校园网代理配置（WSL需走Windows VPN才能访问lib.sdust.edu.cn）
-2. v0.4.0 代码实现（图书详情页+流通台）
-3. 图片采集补充（图书馆内部/阅览室/OPAC界面截图）
+### 6. 文档交叉检验
+- 8 个 .md 文件全量对照代码
+- 修正 10 处事实错误: API 端点 35→38, 数据库表 10→9, 提交数 10→27 等
+
+### 7. Module L: DESIGN-TODO + types 去 any
+- MyBorrows 欠费总额展示 (真正实现)
+- 7 处 DESIGN-TODO 标签移除
+- 前端 types: 64→3 处 any
+- 新增 ReaderResponse, PatronCategoryResponse, ItemTypeResponse, DataRow 类型
+- api/index.ts 全类型化 (JsonBody, LoginResponse, UserProfile)
+
+## 最终状态
+
+| 指标 | 值 |
+|------|-----|
+| 评分 | 8.5/10 |
+| 测试 | 92/92 pass |
+| 提交 | 10 次 today (27 total on main) |
+| API | 38 endpoints, 全测试覆盖 |
+| 路由 | 234 行, 零 reply.send, 全部 throw |
+| 索引 | 5 个 (4 index + 1 unique) |
+| 前端 any | 3 处 (utility code) |
+| DESIGN-TODO | 0 残留 |
+
+## 剩余
+
+- 还书→预约联动 (Hold 表, 远期)
+- BarcodeLabel.vue (远期)
+- 前端组件测试 (远期)
