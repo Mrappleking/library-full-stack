@@ -52,14 +52,14 @@
 | # | 任务 | 状态 |
 |---|------|------|
 | 1 | 四层架构 (routes/services/Prisma/MySQL) | ✅ |
-| 2 | 10 service 文件, 281 行 routes | ✅ |
+| 2 | 11 service 文件, 336 行 routes | ✅ |
 | 3 | Schema +7 字段, Seed 3×3 规则矩阵 | ✅ |
 | 4 | 分面搜索 + 封面服务 | ✅ |
 | 5 | 10 UI 组件 + 3 页面 + 流通台 | ✅ |
 | 6 | 43 单元测试 (9 files, 100% service) | ✅ |
 | 7 | ARCHITECTURE.md + .env.example | ✅ |
 | 8 | 前端 build 通过 | ✅ |
-| 9 | 16 API 端点全部 PASS | ✅ |
+| 9 | 39 API 端点全部 PASS | ✅ |
 | 10 | Git main 分支合并 | ✅ |
 | 11 | ASSESSMENT.md 代码质量评估 | ✅ |
 
