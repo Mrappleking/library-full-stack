@@ -10,16 +10,16 @@
 // ══════════════════════════════════════════════════════════════
 
 export interface PaginationParams {
-  page?: number
-  limit?: number
+  page?: number;
+  limit?: number;
 }
 
 export interface PaginatedResponse<T> {
-  data: T[]
-  total: number
-  page: number
-  limit: number
-  pages: number
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -27,38 +27,38 @@ export interface PaginatedResponse<T> {
 // ══════════════════════════════════════════════════════════════
 
 export interface RegisterParams {
-  username: string
-  password: string
-  name: string
-  phone?: string
-  email?: string
+  username: string;
+  password: string;
+  name: string;
+  phone?: string;
+  email?: string;
 }
 
 export interface LoginParams {
-  username: string
-  password: string
+  username: string;
+  password: string;
 }
 
 export interface UserProfile {
-  id: number
-  username: string
-  name: string
-  role: 'admin' | 'reader'
-  phone?: string | null
-  email?: string | null
-  patronCategoryId?: number | null
-  totalFines?: number
-  createdAt: string
+  id: number;
+  username: string;
+  name: string;
+  role: 'admin' | 'reader';
+  phone?: string | null;
+  email?: string | null;
+  patronCategoryId?: number | null;
+  totalFines?: number;
+  createdAt: string;
 }
 
 export interface LoginResponse {
-  user: UserProfile
-  token: string
+  user: UserProfile;
+  token: string;
 }
 
 export interface AuthError {
-  error: string
-  details?: unknown
+  error: string;
+  details?: unknown;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -66,109 +66,109 @@ export interface AuthError {
 // ══════════════════════════════════════════════════════════════
 
 export interface BookListParams extends PaginationParams {
-  search?: string
-  categoryId?: number
+  search?: string;
+  categoryId?: number;
   // 模块 C 新增分面过滤
-  campus?: string
-  location?: string
-  yearMin?: number
-  yearMax?: number
-  language?: string
-  clcNumber?: string
-  sortBy?: 'relevance' | 'year' | 'title'
+  campus?: string;
+  location?: string;
+  yearMin?: number;
+  yearMax?: number;
+  language?: string;
+  clcNumber?: string;
+  sortBy?: 'relevance' | 'year' | 'title';
 }
 
 export interface CategoryRef {
-  id: number
-  name: string
-  desc?: string | null
+  id: number;
+  name: string;
+  desc?: string | null;
 }
 
 export interface BookSummary {
-  id: number
-  isbn: string
-  title: string
-  author: string
-  publisher?: string | null
-  year?: number | null
-  total: number
-  available: number
-  status: 'available' | 'borrowed' | 'removed'
-  desc?: string | null
-  location?: string | null
+  id: number;
+  isbn: string;
+  title: string;
+  author: string;
+  publisher?: string | null;
+  year?: number | null;
+  total: number;
+  available: number;
+  status: 'available' | 'borrowed' | 'removed';
+  desc?: string | null;
+  location?: string | null;
   // 新增
-  clcNumber?: string | null
-  physicalDesc?: string | null
-  cover?: string | null
-  language?: string | null
-  country?: string | null
-  categoryId: number
-  category: CategoryRef
-  _count?: { items: number }
-  createdAt: string
-  updatedAt: string
+  clcNumber?: string | null;
+  physicalDesc?: string | null;
+  cover?: string | null;
+  language?: string | null;
+  country?: string | null;
+  categoryId: number;
+  category: CategoryRef;
+  _count?: { items: number };
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface BookDetail extends BookSummary {
-  items?: BookItemSummary[]
-  electronicResources?: string[]
+  items?: BookItemSummary[];
+  electronicResources?: string[];
 }
 
-export interface BookListResponse extends PaginatedResponse<BookSummary> {}
+export type BookListResponse = PaginatedResponse<BookSummary>;
 
 export interface BookCreateParams {
-  isbn: string
-  title: string
-  author: string
-  publisher?: string
-  year?: number
-  total: number
-  location?: string
-  desc?: string
-  categoryId: number
-  clcNumber?: string
-  physicalDesc?: string
-  cover?: string
-  language?: string
-  country?: string
+  isbn: string;
+  title: string;
+  author: string;
+  publisher?: string;
+  year?: number;
+  total: number;
+  location?: string;
+  desc?: string;
+  categoryId: number;
+  clcNumber?: string;
+  physicalDesc?: string;
+  cover?: string;
+  language?: string;
+  country?: string;
 }
 
-export type BookUpdateParams = Partial<BookCreateParams>
+export type BookUpdateParams = Partial<BookCreateParams>;
 
-export type BookStatus = 'available' | 'borrowed' | 'removed'
+export type BookStatus = 'available' | 'borrowed' | 'removed';
 
 // ══════════════════════════════════════════════════════════════
 // BookItem (2 端点 + Module F 新增 barcode 查询)
 // ══════════════════════════════════════════════════════════════
 
-export type ItemCondition = 'normal' | 'damaged' | 'repairing' | 'lost' | 'withdrawn'
-export type ItemStatus = 'available' | 'borrowed' | 'repairing' | 'lost' | 'withdrawn' | 'on_hold'
+export type ItemCondition = 'normal' | 'damaged' | 'repairing' | 'lost' | 'withdrawn';
+export type ItemStatus = 'available' | 'borrowed' | 'repairing' | 'lost' | 'withdrawn' | 'on_hold';
 
 export interface BookItemSummary {
-  id: number
-  barcode: string
-  callNumber?: string | null
-  location?: string | null
-  campus?: string | null
-  status: ItemStatus
-  condition: ItemCondition
-  price?: number | null
-  acquiredAt?: string | null
-  requests: number
-  bookId: number
-  itemTypeId?: number | null
-  itemType?: ItemTypeRef | null
+  id: number;
+  barcode: string;
+  callNumber?: string | null;
+  location?: string | null;
+  campus?: string | null;
+  status: ItemStatus;
+  condition: ItemCondition;
+  price?: number | null;
+  acquiredAt?: string | null;
+  requests: number;
+  bookId: number;
+  itemTypeId?: number | null;
+  itemType?: ItemTypeRef | null;
 }
 
 export interface BookItemsResponse {
-  book: { id: number; title: string; isbn: string }
-  items: BookItemSummary[]
+  book: { id: number; title: string; isbn: string };
+  items: BookItemSummary[];
 }
 
 // Module F: GET /api/book-items/:barcode
 export interface BookItemBarcodeResponse {
-  item: BookItemSummary & { book: BookSummary }
-  currentBorrow: BorrowRecordResponse | null
+  item: BookItemSummary & { book: BookSummary };
+  currentBorrow: BorrowRecordResponse | null;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -176,17 +176,17 @@ export interface BookItemBarcodeResponse {
 // ══════════════════════════════════════════════════════════════
 
 export interface CategoryCreateParams {
-  name: string
-  desc?: string
+  name: string;
+  desc?: string;
 }
 
-export type CategoryUpdateParams = Partial<CategoryCreateParams>
+export type CategoryUpdateParams = Partial<CategoryCreateParams>;
 
 export interface CategoryResponse {
-  id: number
-  name: string
-  desc?: string | null
-  _count?: { books: number }
+  id: number;
+  name: string;
+  desc?: string | null;
+  _count?: { books: number };
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -194,40 +194,40 @@ export interface CategoryResponse {
 // ══════════════════════════════════════════════════════════════
 
 export interface BorrowParams {
-  bookId?: number
-  bookItemId?: number
+  bookId?: number;
+  bookItemId?: number;
 }
 
-export type BorrowStatus = 'active' | 'returned' | 'overdue'
+export type BorrowStatus = 'active' | 'returned' | 'overdue';
 
 export interface BorrowRecordResponse {
-  id: number
-  userId: number
-  bookId: number
-  bookItemId?: number | null
-  borrowDate: string
-  dueDate: string
-  returnDate?: string | null
-  status: BorrowStatus
-  renewed: boolean
-  book: { id: number; title: string; author: string; isbn: string }
-  bookItem?: { id: number; barcode: string; callNumber?: string | null } | null
-  user?: { id: number; name: string; username: string } | null
-  fines?: FineSummary[] | null
+  id: number;
+  userId: number;
+  bookId: number;
+  bookItemId?: number | null;
+  borrowDate: string;
+  dueDate: string;
+  returnDate?: string | null;
+  status: BorrowStatus;
+  renewed: boolean;
+  book: { id: number; title: string; author: string; isbn: string };
+  bookItem?: { id: number; barcode: string; callNumber?: string | null } | null;
+  user?: { id: number; name: string; username: string } | null;
+  fines?: FineSummary[] | null;
 }
 
 export interface ReturnResult {
-  id: number
-  status: string
-  returnDate: string
-  fine: { amount: number; type: string } | null
+  id: number;
+  status: string;
+  returnDate: string;
+  fine: { amount: number; type: string } | null;
 }
 
 export interface RenewResult {
-  id: number
-  dueDate: string
-  renewed: boolean
-  renewedDays: number
+  id: number;
+  dueDate: string;
+  renewed: boolean;
+  renewedDays: number;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -235,25 +235,25 @@ export interface RenewResult {
 // ══════════════════════════════════════════════════════════════
 
 export interface ReaderSummary {
-  id: number
-  username: string
-  name: string
-  phone?: string | null
-  email?: string | null
-  createdAt: string
-  _count?: { borrowRecords: number }
+  id: number;
+  username: string;
+  name: string;
+  phone?: string | null;
+  email?: string | null;
+  createdAt: string;
+  _count?: { borrowRecords: number };
 }
 
 export interface ReaderDetail extends ReaderSummary {
-  patronCategoryId?: number | null
-  totalFines?: number
-  borrowRecords: BorrowRecordResponse[]
+  patronCategoryId?: number | null;
+  totalFines?: number;
+  borrowRecords: BorrowRecordResponse[];
 }
 
 export interface ReaderUpdateParams {
-  name?: string
-  phone?: string
-  email?: string
+  name?: string;
+  phone?: string;
+  email?: string;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -261,58 +261,58 @@ export interface ReaderUpdateParams {
 // ══════════════════════════════════════════════════════════════
 
 export interface StatsOverviewResponse {
-  totalBooks: number
-  totalReaders: number
-  activeBorrows: number
-  totalCategories: number
-  overdueCount: number
+  totalBooks: number;
+  totalReaders: number;
+  activeBorrows: number;
+  totalCategories: number;
+  overdueCount: number;
 }
 
 export interface PopularBook {
-  id: number
-  title: string
-  author: string
-  isbn: string
-  category: CategoryRef
-  _count: { borrowRecords: number }
+  id: number;
+  title: string;
+  author: string;
+  isbn: string;
+  category: CategoryRef;
+  _count: { borrowRecords: number };
 }
 
 export interface MonthlyStat {
-  month: string
-  count: number
+  month: string;
+  count: number;
 }
 
 // ══════════════════════════════════════════════════════════════
 // Fine (3 端点)
 // ══════════════════════════════════════════════════════════════
 
-export type FineType = 'overdue' | 'lost' | 'damage'
+export type FineType = 'overdue' | 'lost' | 'damage';
 
 export interface FineListParams {
-  type?: FineType
-  paid?: boolean
+  type?: FineType;
+  paid?: boolean;
 }
 
 export interface FineSummary {
-  id: number
-  amount: number
-  type: FineType
-  paid: boolean
-  paidAt?: string | null
-  createdAt: string
+  id: number;
+  amount: number;
+  type: FineType;
+  paid: boolean;
+  paidAt?: string | null;
+  createdAt: string;
 }
 
 export interface FineResponse extends FineSummary {
-  user: { id: number; username: string; name: string }
-  borrowRecord?: { id: number; book: { title: string } } | null
+  user: { id: number; username: string; name: string };
+  borrowRecord?: { id: number; book: { title: string } } | null;
 }
 
 export interface FinePayResult {
-  id: number
-  amount: number
-  type: FineType
-  paid: boolean
-  paidAt: string
+  id: number;
+  amount: number;
+  type: FineType;
+  paid: boolean;
+  paidAt: string;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -320,38 +320,38 @@ export interface FinePayResult {
 // ══════════════════════════════════════════════════════════════
 
 export interface PatronCategoryResponse {
-  id: number
-  name: string
+  id: number;
+  name: string;
 }
 
 export interface ItemTypeResponse {
-  id: number
-  name: string
-  loanDays: number
-  fineRate: number
+  id: number;
+  name: string;
+  loanDays: number;
+  fineRate: number;
 }
 
 export interface CirculationRuleResponse {
-  id: number
-  patronCategoryId: number
-  itemTypeId: number
-  maxBorrows: number
-  loanDays: number
-  renewals: number
-  renewalDays: number
-  finePerDay: number
-  patronCategory: PatronCategoryResponse
-  itemType: ItemTypeResponse
+  id: number;
+  patronCategoryId: number;
+  itemTypeId: number;
+  maxBorrows: number;
+  loanDays: number;
+  renewals: number;
+  renewalDays: number;
+  finePerDay: number;
+  patronCategory: PatronCategoryResponse;
+  itemType: ItemTypeResponse;
 }
 
 export interface RuleUpsertParams {
-  patronCategoryId: number
-  itemTypeId: number
-  maxBorrows: number
-  loanDays: number
-  renewals: number
-  renewalDays: number
-  finePerDay: number
+  patronCategoryId: number;
+  itemTypeId: number;
+  maxBorrows: number;
+  loanDays: number;
+  renewals: number;
+  renewalDays: number;
+  finePerDay: number;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -359,40 +359,40 @@ export interface RuleUpsertParams {
 // ══════════════════════════════════════════════════════════════
 
 export interface FacetValue {
-  value: string
-  count: number
+  value: string;
+  count: number;
 }
 
 export interface FacetsResponse {
   facets: {
-    type?: FacetValue[]
-    campus?: FacetValue[]
-    location?: FacetValue[]
-    yearRange?: FacetValue[]
-    language?: FacetValue[]
-    subject?: FacetValue[]
-    publisher?: FacetValue[]
-  }
+    type?: FacetValue[];
+    campus?: FacetValue[];
+    location?: FacetValue[];
+    yearRange?: FacetValue[];
+    language?: FacetValue[];
+    subject?: FacetValue[];
+    publisher?: FacetValue[];
+  };
 }
 
 // ══════════════════════════════════════════════════════════════
 // Hold (Module G 新增)
 // ══════════════════════════════════════════════════════════════
 
-export type HoldStatus = 'pending' | 'waiting' | 'ready' | 'cancelled' | 'expired'
+export type HoldStatus = 'pending' | 'waiting' | 'ready' | 'cancelled' | 'expired';
 
 export interface HoldResponse {
-  id: number
-  userId: number
-  bookItemId: number
-  placedAt: string
-  expiresAt?: string | null
-  pickupLocation?: string | null
-  status: HoldStatus
-  queuePosition: number
-  notifiedAt?: string | null
-  bookItem: BookItemSummary
-  user: { id: number; name: string; username: string }
+  id: number;
+  userId: number;
+  bookItemId: number;
+  placedAt: string;
+  expiresAt?: string | null;
+  pickupLocation?: string | null;
+  status: HoldStatus;
+  queuePosition: number;
+  notifiedAt?: string | null;
+  bookItem: BookItemSummary;
+  user: { id: number; name: string; username: string };
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -400,6 +400,6 @@ export interface HoldResponse {
 // ══════════════════════════════════════════════════════════════
 
 export interface ItemTypeRef {
-  id: number
-  name: string
+  id: number;
+  name: string;
 }

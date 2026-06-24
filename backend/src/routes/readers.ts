@@ -1,28 +1,30 @@
-import { FastifyInstance } from 'fastify'
-import { z } from 'zod'
-import * as userService from '../services/user.service.js'
+import { FastifyInstance } from 'fastify';
+import { z } from 'zod';
+import * as userService from '../services/user.service.js';
 
 export async function readerRoutes(app: FastifyInstance) {
   app.get('/', { onRequest: [app.authenticate] }, async (request: any, reply: any) => {
-    if (request.user.role !== 'admin') return reply.status(403).send({ error: 'Admin only' })
-    return userService.listReaders(app.prisma)
-  })
+    if (request.user.role !== 'admin') return reply.status(403).send({ error: 'Admin only' });
+    return userService.listReaders(app.prisma);
+  });
 
   app.get('/:id', { onRequest: [app.authenticate] }, async (request: any, reply: any) => {
-    if (request.user.role !== 'admin') return reply.status(403).send({ error: 'Admin only' })
-    const reader = await userService.getReaderDetail(app.prisma, parseInt(request.params.id))
-    if (!reader) return reply.status(404).send({ error: 'Reader not found' })
-    return reader
-  })
+    if (request.user.role !== 'admin') return reply.status(403).send({ error: 'Admin only' });
+    const reader = await userService.getReaderDetail(app.prisma, parseInt(request.params.id));
+    if (!reader) return reply.status(404).send({ error: 'Reader not found' });
+    return reader;
+  });
 
   app.put('/:id', { onRequest: [app.authenticate] }, async (request: any, reply: any) => {
-    if (request.user.role !== 'admin') return reply.status(403).send({ error: 'Admin only' })
+    if (request.user.role !== 'admin') return reply.status(403).send({ error: 'Admin only' });
     try {
-      return await userService.updateReader(app.prisma, parseInt(request.params.id), request.body)
-    } catch { return reply.status(404).send({ error: 'Reader not found' }) }
-  })
+      return await userService.updateReader(app.prisma, parseInt(request.params.id), request.body);
+    } catch {
+      return reply.status(404).send({ error: 'Reader not found' });
+    }
+  });
 
   app.put('/profile', { onRequest: [app.authenticate] }, async (request: any) => {
-    return userService.updateProfile(app.prisma, request.user.id, request.body)
-  })
+    return userService.updateProfile(app.prisma, request.user.id, request.body);
+  });
 }

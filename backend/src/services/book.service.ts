@@ -1,22 +1,40 @@
-import { PrismaClient } from '@prisma/client'
-import type { BookListParams, BookSummary, BookDetail, BookCreateParams, BookUpdateParams, BookListResponse, BookItemsResponse, BookItemSummary, FacetsResponse, FacetValue } from '../types/api.types.js'
+import { PrismaClient } from '@prisma/client';
+import type {
+  BookListParams,
+  BookSummary,
+  BookDetail,
+  BookCreateParams,
+  BookUpdateParams,
+  BookListResponse,
+  BookItemsResponse,
+  BookItemSummary,
+  FacetsResponse,
+  FacetValue,
+} from '../types/api.types.js';
 
-export async function list(prisma: PrismaClient, params: BookListParams): Promise<BookListResponse> {
-  const page = Math.max(1, params.page || 1)
-  const limit = Math.min(50, Math.max(1, params.limit || 20))
-  const where: any = {}
+export async function list(
+  prisma: PrismaClient,
+  params: BookListParams,
+): Promise<BookListResponse> {
+  const page = Math.max(1, params.page || 1);
+  const limit = Math.min(50, Math.max(1, params.limit || 20));
+  const where: any = {};
   if (params.search) {
-    where.OR = [{ title: { contains: params.search } }, { author: { contains: params.search } }, { isbn: { contains: params.search } }]
+    where.OR = [
+      { title: { contains: params.search } },
+      { author: { contains: params.search } },
+      { isbn: { contains: params.search } },
+    ];
   }
-  if (params.categoryId) where.categoryId = params.categoryId
-  if (params.campus) where.items = { some: { campus: params.campus } }
-  if (params.location) where.location = params.location
+  if (params.categoryId) where.categoryId = params.categoryId;
+  if (params.campus) where.items = { some: { campus: params.campus } };
+  if (params.location) where.location = params.location;
   if (params.yearMin || params.yearMax) {
-    where.year = {}
-    if (params.yearMin) where.year.gte = params.yearMin
-    if (params.yearMax) where.year.lte = params.yearMax
+    where.year = {};
+    if (params.yearMin) where.year.gte = params.yearMin;
+    if (params.yearMax) where.year.lte = params.yearMax;
   }
-  if (params.language) where.language = params.language
+  if (params.language) where.language = params.language;
 
   const [books, total] = await Promise.all([
     prisma.book.findMany({
@@ -24,102 +42,156 @@ export async function list(prisma: PrismaClient, params: BookListParams): Promis
       skip: (page - 1) * limit,
       take: limit,
       include: { category: true, _count: { select: { items: true } } },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     }),
-    prisma.book.count({ where })
-  ])
-  return { books: books as unknown as BookSummary[], total, page, limit, pages: Math.ceil(total / limit) }
+    prisma.book.count({ where }),
+  ]);
+  return {
+    books: books as unknown as BookSummary[],
+    total,
+    page,
+    limit,
+    pages: Math.ceil(total / limit),
+  };
 }
 
 export async function getById(prisma: PrismaClient, id: number): Promise<BookDetail | null> {
   return prisma.book.findUnique({
     where: { id },
-    include: { category: true, _count: { select: { items: true } } }
-  }) as unknown as BookDetail | null
+    include: { category: true, _count: { select: { items: true } } },
+  }) as unknown as BookDetail | null;
 }
 
-export async function getItems(prisma: PrismaClient, bookId: number): Promise<BookItemsResponse | null> {
-  const book = await prisma.book.findUnique({ where: { id: bookId }, select: { id: true, title: true, isbn: true } })
-  if (!book) return null
+export async function getItems(
+  prisma: PrismaClient,
+  bookId: number,
+): Promise<BookItemsResponse | null> {
+  const book = await prisma.book.findUnique({
+    where: { id: bookId },
+    select: { id: true, title: true, isbn: true },
+  });
+  if (!book) return null;
   const items = await prisma.bookItem.findMany({
     where: { bookId },
     include: { itemType: true, borrowRecords: { where: { status: 'active' }, take: 1 } },
-    orderBy: { barcode: 'asc' }
-  })
-  return { book, items: items as unknown as BookItemSummary[] }
+    orderBy: { barcode: 'asc' },
+  });
+  return { book, items: items as unknown as BookItemSummary[] };
 }
 
 export async function create(prisma: PrismaClient, data: BookCreateParams): Promise<BookSummary> {
-  const { total, ...rest } = data
+  const { total, ...rest } = data;
   return prisma.book.create({
     data: { ...rest, total, available: total, status: 'available' },
-    include: { category: true }
-  }) as unknown as BookSummary
+    include: { category: true },
+  }) as unknown as BookSummary;
 }
 
-export async function update(prisma: PrismaClient, id: number, data: BookUpdateParams): Promise<BookSummary> {
-  const updateData: any = { ...data }
+export async function update(
+  prisma: PrismaClient,
+  id: number,
+  data: BookUpdateParams,
+): Promise<BookSummary> {
+  const updateData: any = { ...data };
   if (data.total !== undefined && data.total !== null) {
-    const current = await prisma.book.findUnique({ where: { id } })
+    const current = await prisma.book.findUnique({ where: { id } });
     if (current) {
-      const borrowed = current.total - current.available
+      const borrowed = current.total - current.available;
       if (data.total < borrowed) {
-        throw Object.assign(new Error(`Cannot reduce total below ${borrowed}`), { statusCode: 400 })
+        throw Object.assign(new Error(`Cannot reduce total below ${borrowed}`), {
+          statusCode: 400,
+        });
       }
-      const diff = data.total - current.total
-      updateData.available = current.available + diff
+      const diff = data.total - current.total;
+      updateData.available = current.available + diff;
     }
   }
-  return prisma.book.update({ where: { id }, data: updateData, include: { category: true } }) as unknown as BookSummary
+  return prisma.book.update({
+    where: { id },
+    data: updateData,
+    include: { category: true },
+  }) as unknown as BookSummary;
 }
 
 export async function remove(prisma: PrismaClient, id: number): Promise<void> {
-  await prisma.book.delete({ where: { id } })
+  await prisma.book.delete({ where: { id } });
 }
 
-export async function getFacets(prisma: PrismaClient, params: BookListParams): Promise<FacetsResponse> {
-  const where: any = {}
+export async function getFacets(
+  prisma: PrismaClient,
+  params: BookListParams,
+): Promise<FacetsResponse> {
+  const where: any = {};
   if (params.search) {
-    where.OR = [{ title: { contains: params.search } }, { author: { contains: params.search } }, { isbn: { contains: params.search } }]
+    where.OR = [
+      { title: { contains: params.search } },
+      { author: { contains: params.search } },
+      { isbn: { contains: params.search } },
+    ];
   }
-  if (params.categoryId) where.categoryId = params.categoryId
+  if (params.categoryId) where.categoryId = params.categoryId;
 
   // Prisma 5 groupBy doesn't support relation filters (book: { where })
   // Workaround: get matching bookIds first
-  const matchingBooks = await prisma.book.findMany({ where, select: { id: true } })
-  const bookIds = matchingBooks.map(b => b.id)
-  const itemWhere = bookIds.length > 0 ? { bookId: { in: bookIds } } : { bookId: -1 }  // -1 = no match
+  const matchingBooks = await prisma.book.findMany({ where, select: { id: true } });
+  const bookIds = matchingBooks.map((b) => b.id);
+  const itemWhere = bookIds.length > 0 ? { bookId: { in: bookIds } } : { bookId: -1 }; // -1 = no match
 
   const [campus, locations, languages, subjects] = await Promise.all([
-    prisma.bookItem.groupBy({ by: ['campus'], where: { ...itemWhere, campus: { not: null } }, _count: true, orderBy: { campus: 'desc' } }) as any,
-    prisma.bookItem.groupBy({ by: ['location'], where: { ...itemWhere, location: { not: null } }, _count: true, orderBy: { location: 'desc' } }) as any,
-    prisma.book.groupBy({ by: ['language'], where: { ...where, language: { not: null } }, _count: true, orderBy: { language: 'desc' } }) as any,
+    prisma.bookItem.groupBy({
+      by: ['campus'],
+      where: { ...itemWhere, campus: { not: null } },
+      _count: true,
+      orderBy: { campus: 'desc' },
+    }) as any,
+    prisma.bookItem.groupBy({
+      by: ['location'],
+      where: { ...itemWhere, location: { not: null } },
+      _count: true,
+      orderBy: { location: 'desc' },
+    }) as any,
+    prisma.book.groupBy({
+      by: ['language'],
+      where: { ...where, language: { not: null } },
+      _count: true,
+      orderBy: { language: 'desc' },
+    }) as any,
     prisma.book.groupBy({ by: ['categoryId'], where, _count: true }) as any,
-  ])
+  ]);
 
-  const catIds = subjects.map(s => s.categoryId)
-  const categories = await prisma.category.findMany({ where: { id: { in: catIds } }, select: { id: true, name: true } })
-  const catMap = new Map(categories.map(c => [c.id, c.name]))
+  const catIds = subjects.map((s) => s.categoryId);
+  const categories = await prisma.category.findMany({
+    where: { id: { in: catIds } },
+    select: { id: true, name: true },
+  });
+  const catMap = new Map(categories.map((c) => [c.id, c.name]));
 
-  const yearBooks = await prisma.book.groupBy({ by: ['year'], where: { ...where, year: { not: null } }, _count: true })
-  const yearRanges: FacetValue[] = []
-  const decades: Record<string, number> = {}
+  const yearBooks = await prisma.book.groupBy({
+    by: ['year'],
+    where: { ...where, year: { not: null } },
+    _count: true,
+  });
+  const yearRanges: FacetValue[] = [];
+  const decades: Record<string, number> = {};
   for (const y of yearBooks) {
-    if (!y.year) continue
-    const decade = `${Math.floor(y.year / 10) * 10}s`
-    decades[decade] = (decades[decade] || 0) + y._count
+    if (!y.year) continue;
+    const decade = `${Math.floor(y.year / 10) * 10}s`;
+    decades[decade] = (decades[decade] || 0) + y._count;
   }
   for (const [d, c] of Object.entries(decades).sort()) {
-    yearRanges.push({ value: d, count: c })
+    yearRanges.push({ value: d, count: c });
   }
 
   return {
     facets: {
-      campus: campus.map(c => ({ value: c.campus!, count: c._count })),
-      location: locations.map(l => ({ value: l.location!, count: l._count })),
-      language: languages.map(l => ({ value: l.language!, count: l._count })),
-      subject: subjects.map(s => ({ value: catMap.get(s.categoryId) || `#${s.categoryId}`, count: s._count })),
+      campus: campus.map((c) => ({ value: c.campus!, count: c._count })),
+      location: locations.map((l) => ({ value: l.location!, count: l._count })),
+      language: languages.map((l) => ({ value: l.language!, count: l._count })),
+      subject: subjects.map((s) => ({
+        value: catMap.get(s.categoryId) || `#${s.categoryId}`,
+        count: s._count,
+      })),
       yearRange: yearRanges,
-    }
-  }
+    },
+  };
 }
