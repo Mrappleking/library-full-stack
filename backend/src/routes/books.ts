@@ -62,4 +62,8 @@ export async function bookRoutes(app: FastifyInstance) {
     await bookService.remove(app.prisma, parseInt(request.params.id));
     return { success: true };
   });
+
+  // Admin: reconcile available count (fix drift from actual item statuses)
+  app.post('/:id/reconcile', { onRequest: [app.authenticate, requireAdmin] }, async (request: any) =>
+    bookService.reconcileBookAvailable(app.prisma, parseInt(request.params.id)));
 }
