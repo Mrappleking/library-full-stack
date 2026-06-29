@@ -17,7 +17,7 @@ class BookServiceTest extends AbstractServiceTest {
 
     @BeforeEach
     void setUp() {
-        bookService = new BookService(bookMapper, bookItemMapper, categoryMapper);
+        bookService = new BookService(bookMapper, bookItemMapper);
     }
 
     @Test

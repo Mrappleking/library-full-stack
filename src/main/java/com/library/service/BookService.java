@@ -17,7 +17,6 @@ public class BookService {
 
     private final BookMapper bookMapper;
     private final BookItemMapper bookItemMapper;
-    private final CategoryMapper categoryMapper;
 
     // Status transition validation
     private static final Map<String, List<String>> STATUS_TRANSITIONS = new HashMap<>();
@@ -30,10 +29,9 @@ public class BookService {
         STATUS_TRANSITIONS.put("withdrawn", Collections.emptyList());
     }
 
-    public BookService(BookMapper bookMapper, BookItemMapper bookItemMapper, CategoryMapper categoryMapper) {
+    public BookService(BookMapper bookMapper, BookItemMapper bookItemMapper) {
         this.bookMapper = bookMapper;
         this.bookItemMapper = bookItemMapper;
-        this.categoryMapper = categoryMapper;
     }
 
     public Map<String, Object> list(Map<String, Object> params) {

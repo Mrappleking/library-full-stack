@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -26,11 +25,11 @@ class BorrowServiceTest extends AbstractServiceTest {
     void setUp() {
         ruleService = new RuleService(circulationRuleMapper);
         fineService = new FineService(fineMapper, userMapper);
-        bookService = new BookService(bookMapper, bookItemMapper, categoryMapper);
+        bookService = new BookService(bookMapper, bookItemMapper);
         holdService = new HoldService(holdMapper, bookMapper, bookItemMapper, bookService);
         borrowService = new BorrowService(
                 borrowRecordMapper, bookMapper, bookItemMapper, userMapper,
-                fineMapper, auditLogMapper, ruleService, fineService,
+                auditLogMapper, ruleService, fineService,
                 holdService, bookService, holdMapper);
     }
 

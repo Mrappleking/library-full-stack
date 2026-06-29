@@ -18,7 +18,6 @@ public class BorrowService {
     private final BookMapper bookMapper;
     private final BookItemMapper bookItemMapper;
     private final UserMapper userMapper;
-    private final FineMapper fineMapper;
     private final AuditLogMapper auditLogMapper;
     private final RuleService ruleService;
     private final FineService fineService;
@@ -28,14 +27,13 @@ public class BorrowService {
 
     public BorrowService(BorrowRecordMapper borrowRecordMapper, BookMapper bookMapper,
                           BookItemMapper bookItemMapper, UserMapper userMapper,
-                          FineMapper fineMapper, AuditLogMapper auditLogMapper,
+                          AuditLogMapper auditLogMapper,
                           RuleService ruleService, FineService fineService,
                           HoldService holdService, BookService bookService, HoldMapper holdMapper) {
         this.borrowRecordMapper = borrowRecordMapper;
         this.bookMapper = bookMapper;
         this.bookItemMapper = bookItemMapper;
         this.userMapper = userMapper;
-        this.fineMapper = fineMapper;
         this.auditLogMapper = auditLogMapper;
         this.ruleService = ruleService;
         this.fineService = fineService;
@@ -168,11 +166,10 @@ public class BorrowService {
                 record.getBookItem() != null ? record.getBookItem().getItemTypeId() : null
         );
 
-        Fine fineResult = null;
         if (isOverdue) {
             BigDecimal fineAmount = fineService.calcOverdueFine(record.getDueDate(), now, rule.getFinePerDay());
             if (fineAmount.compareTo(BigDecimal.ZERO) > 0) {
-                fineResult = fineService.createFine(borrowRecordId, record.getUserId(), fineAmount, "overdue");
+                fineService.createFine(borrowRecordId, record.getUserId(), fineAmount, "overdue");
             }
         }
 
