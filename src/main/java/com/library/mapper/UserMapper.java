@@ -30,6 +30,9 @@ public interface UserMapper {
     @Select("SELECT * FROM users ORDER BY created_at DESC LIMIT #{limit} OFFSET #{offset}")
     List<User> findPage(@Param("offset") int offset, @Param("limit") int limit);
 
+    @Select("SELECT COUNT(*) FROM users WHERE role = 'reader'")
+    long countReaders();
+
     @Select("SELECT COUNT(*) FROM users")
     long count();
 }

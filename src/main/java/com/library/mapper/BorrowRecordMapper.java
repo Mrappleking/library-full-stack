@@ -35,7 +35,7 @@ public interface BorrowRecordMapper {
     @Select("SELECT * FROM borrow_records WHERE userId = #{userId} AND status = 'active'")
     List<BorrowRecord> findActiveByUserId(Integer userId);
 
-    @Select("SELECT * FROM borrow_records WHERE userId = #{userId} AND book_id = #{bookId} AND status = 'active' LIMIT 1")
+    @Select("SELECT * FROM borrow_records WHERE userId = #{userId} AND bookId = #{bookId} AND status = 'active' LIMIT 1")
     BorrowRecord findActiveByUserAndBook(@Param("userId") Integer userId, @Param("bookId") Integer bookId);
 
     @Select("SELECT COUNT(*) FROM borrow_records WHERE userId = #{userId} AND status = 'active'")
@@ -67,10 +67,18 @@ public interface BorrowRecordMapper {
     @Update("UPDATE borrow_records SET due_date=#{dueDate}, renewed=true, updated_at=NOW() WHERE id=#{id}")
     void renew(@Param("id") Integer id, @Param("dueDate") LocalDateTime dueDate);
 
+    @Select("SELECT COUNT(*) FROM borrow_records WHERE status = 'active'")
+    long countActive();
+
+    @Select("SELECT COUNT(*) FROM borrow_records WHERE status = 'overdue'")
+    long countOverdue();
+
     @Select("SELECT DATE_FORMAT(borrow_date, '%Y-%m') as month, COUNT(*) as count FROM borrow_records " +
             "WHERE borrow_date >= #{since} GROUP BY DATE_FORMAT(borrow_date, '%Y-%m') ORDER BY month")
     List<Map<String, Object>> monthlyStats(LocalDateTime since);
 
-    @Select("SELECT book_id, COUNT(*) as count FROM borrow_records GROUP BY book_id ORDER BY count DESC LIMIT 20")
+    @Select("SELECT b.id, b.title, b.author, b.isbn, b.categoryId, COUNT(*) as borrowCount " +
+            "FROM borrow_records br JOIN books b ON br.bookId = b.id " +
+            "GROUP BY b.id ORDER BY borrowCount DESC LIMIT 20")
     List<Map<String, Object>> popularBooks();
 }

@@ -26,16 +26,31 @@ public class StatsService {
     public StatsOverviewResponse getOverview() {
         StatsOverviewResponse stats = new StatsOverviewResponse();
         stats.setTotalBooks(bookMapper.count());
-        stats.setTotalReaders(userMapper.count());
+        stats.setTotalReaders(userMapper.countReaders());
         stats.setTotalCategories(categoryMapper.findAll().size());
-        // These need proper queries - simplified for now
-        stats.setActiveBorrows(0);
-        stats.setOverdueCount(0);
+        stats.setActiveBorrows((int) borrowRecordMapper.countActive());
+        stats.setOverdueCount((int) borrowRecordMapper.countOverdue());
         return stats;
     }
 
     public List<Map<String, Object>> getPopular() {
-        return borrowRecordMapper.popularBooks();
+        List<Map<String, Object>> raw = borrowRecordMapper.popularBooks();
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Map<String, Object> row : raw) {
+            Map<String, Object> enriched = new HashMap<>(row);
+            // Transform borrowCount to _count.borrowRecords
+            Object bc = enriched.remove("borrowCount");
+            enriched.put("_count", Map.of("borrowRecords", bc != null ? bc : 0));
+            // Enrich with category name
+            Object catId = enriched.get("categoryId");
+            if (catId instanceof Number) {
+                var cat = categoryMapper.findById(((Number) catId).intValue());
+                enriched.put("category", cat != null ? Map.of("id", cat.getId(), "name", cat.getName()) : null);
+            }
+            enriched.remove("categoryId");
+            result.add(enriched);
+        }
+        return result;
     }
 
     public List<Map<String, Object>> getMonthly() {
