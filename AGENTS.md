@@ -225,7 +225,7 @@
 ## 种子数据（Seed）
 - 脚本：`backend/prisma/seed.ts`
 - 运行：`npx prisma db seed`
-- 内容：1 admin (admin/admin123)、5 分类·7 本书·3 读者（本科生/研究生/教师各一）
+- 内容：1 admin (admin/admin123)、5 分类·20 种书·8 读者·23 借阅·2 罚款·3 预约
 - 规则：seed 脚本必须幂等（用 `upsert`，不重复插）
 - 规则：`package.json` 配置 `"prisma": { "seed": "tsx prisma/seed.ts" }`
 - 规则：schema 变更后跑 seed 验证

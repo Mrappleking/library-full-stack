@@ -26,7 +26,12 @@ npm install
 npm run dev             # → localhost:5173
 ```
 
-默认账号：admin / admin123；读者：2023110101 / reader123（张三·本科生）
+默认账号：
+- 管理员：admin / admin123
+- 读者：2023110101 / reader123（张三·本科生）
+- 读者：2022110201 / reader123（李四·研究生 — 有逾期未还罚款¥60）
+- 读者：T2023001   / reader123（王五·教师）
+- 所有读者密码统一为 reader123
 
 ---
 
