@@ -32,9 +32,9 @@ export const useBookStore = defineStore('books', () => {
     await search({ ...activeFilters.value, search: searchQuery.value })
   }
 
-  async function updateFacets(search?: string) {
+  async function updateFacets(params: BookListParams = {}) {
     try {
-      const res = await bookApi.getFacets(search)
+      const res = await bookApi.getFacets(params)
       facets.value = res.facets
     } catch {
       facets.value = null

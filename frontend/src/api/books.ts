@@ -17,5 +17,15 @@ export const bookApi = {
   },
   getById: (id: number) => request<BookDetail>(`/books/${id}`),
   getItems: (bookId: number) => request<BookItemsResponse>(`/books/${bookId}/items`),
-  getFacets: (search?: string) => request<FacetsResponse>(`/books/facets${search ? '?search=' + encodeURIComponent(search) : ''}`),
+  getFacets: (params: BookListParams = {}) => {
+    const q = new URLSearchParams()
+    if (params.search) q.set('search', params.search)
+    if (params.categoryId) q.set('categoryId', String(params.categoryId))
+    if (params.campus) q.set('campus', params.campus)
+    if (params.yearMin) q.set('yearMin', String(params.yearMin))
+    if (params.yearMax) q.set('yearMax', String(params.yearMax))
+    if (params.language) q.set('language', params.language)
+    const qs = q.toString()
+    return request<FacetsResponse>(`/books/facets${qs ? '?' + qs : ''}`)
+  },
 }

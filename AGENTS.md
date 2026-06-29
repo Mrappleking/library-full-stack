@@ -3,8 +3,8 @@
 ## 项目概述
 图书馆全栈管理系统，四层架构（前端→路由→服务→数据）。三层业务深度（书目→复本→规则引擎）。前端 Vue 3 + Naive UI，后端 Fastify，ORM Prisma 5，数据库 MySQL（WSL 3306）。TypeScript 全栈。
 
-**实施计划**: `PLAN.md` — 7 模块分步，每步验收通过才进下一步。
-**OPAC 参考**: `resources/opac-data-collection.md` — 仅供设计参考，不集成外部 API。
+**项目状态**: 14 轮审计完成，95 fixes，106 tests (52 service + 54 route) 全部通过。前端亮色主题+暗色侧边栏，40 API 端点。
+**仓库**: https://github.com/Mrappleking/library-full-stack
 
 ## 角色与权限
 - 管理员（admin）：全部管理权限，可管理图书/读者/借阅/统计
@@ -58,36 +58,10 @@
 | 2026-06-24 | Services 用纯函数，不用 class | 与已有 rules.ts/fines.ts 风格一致，prisma 第一参数 |
 | 2026-06-24 | 前端 typed API + Pinia stores + composables | 不再裸调 `api.get()`，类型全 |
 | 2026-06-24 | 零外部 API 依赖（学生项目） | 超星/豆瓣需授权，用 OpenLibrary + CSS 占位 |
-| 2026-06-24 | 7 模块分步实施，每步验收不进下一步 | 见 PLAN.md |
-| 2026-06-24 | 分面搜索用 MySQL GROUP BY，不调外部 OPAC | findsdust.libsp.cn 封闭系统 |
-| 2026-06-24 | 43 单元测试覆盖全部 services | 9 文件, vitest + vi.mock |
-| 2026-06-24 | Phase 2: 工程卓越六维度补全 | PLAN.md H-L 模块: lint/安全/CI/索引/收尾 |
-| 2026-06-24 | ASSESSMENT.md — 代码质量量化评估 | 加权总分 6.0/10, 骨架完整血肉待补 |
-| 2026-06-24 | ESLint v10 flat config + Prettier + Husky | Module H 完成, 0 errors 95 warnings, pre-commit 拦截 |
-| 2026-06-24 | Helmet + Rate Limit + CORS 白名单 | Module I 完成, 8 security headers, 100/min, localhost-only |
-| 2026-06-24 | CI + 集成测试 (49 route tests) | Module J 完成, GitHub Actions, 92 total tests |
-| 2026-06-24 | requireAdmin 中间件替代内联 role 检查 | middleware/requireAdmin.ts，8/8 routes 完成，零内联检查 |
-| 2026-06-24 | Module J 集成测试补全 (49 route tests) | 15 缺口补齐。全 92 tests pass |
-| 2026-06-24 | Module K: MySQL 索引 + 统一错误处理 | 4 索引 (books.title/items.campus/borrows.UserStatus/fines.userId)，setErrorHandler，requireAdmin 8/8 routes |
-| 2026-06-24 | Module L: types 去 any 化 | 前端 64→3 处 any，新增 ReaderResponse 等类型，api/index.ts 全类型化。构建通过，92 tests pass |
-| 2026-06-24 | P0-P2 优化 | 路由 reply.send→throw，命名统一，swagger /docs，startup 校验 |
-| 2026-06-24 | M1: BarcodeLabel.vue + jsbarcode | CODE128 格式，可配置宽高/字号/显示值 |
-| 2026-06-24 | M2: Hold 预约体系 | 5 端点 + returnBook 联动 + BookDetail/MyBorrows UI |
-| 2026-06-24 | M3: 前端组件测试 | @vue/test-utils + vitest，4 文件 10 tests |
-| 2026-06-24 | P0-P2 审计修复 (M1-M3) | notifyNextHold available 递减、cancelHold 复本释放、fulfillHold item 更新、过期自废、公开 count 端点、测试强化 |
-| 2026-06-24 | 第六轮全代码审计 (12 fixes) | Search bare fetch→store, BookDetail request→bookApi, token→hasToken(), rules dead code, admin any[]→typed, alert→useMessage, requireAdmin as any→typed, api barrel re-export |
-| 2026-06-24 | 第七轮全代码审计 (17 fixes) | P0 Circulation 还书 bug, BookListResponse data→books, HoldResponse 重写, listFines 分页, 11 处 any→typed, menu补circulation, reader/Books→bookApi, facets as any→typed |
-| 2026-06-24 | 第八轮专项审计 (12 fixes) | hold cancel/fulfill/expire 三处加 $transaction, ASSESSMENT.md 全量更新(any/error/counts), borrow targetBookId guard, PLAN fines.ts→fine.service.ts |
-| 2026-06-24 | 第九轮质量升级 | 测试 2→7+2→5 强断言, 15 处 catch{}→console.error, 零静默吞错 |
-| 2026-06-24 | 第十轮收尾 | reconcileBookAvailable → POST /:id/reconcile route |
-| 2026-06-24 | 第十一轮竞态修复 | borrow() 交互式 $transaction 防最后一册并发, holds POST Zod 校验 |
-| 2026-06-24 | 第十二轮数据防护 | book.remove() copies+borrows 双重防护, Hold FK onDelete SetNull, 错误消息中→英统一 |
-|| 2026-06-24 | 第十三轮缺失端点 | /api/book-items/:barcode 路由——流通台扫码从未实现 |
-|| 2026-06-24 | 前端视觉重构——亮色主题+暗色侧边栏 | 用户要求白色主界面，侧边栏保持暗色；App.vue 移除 darkTheme，侧边栏用 inverted menu + 硬编码背景 |
-|| 2026-06-24 | 登录页重设计 | 山科校徽(官网原图) + CogView-3 生成图书馆照片 + 毛玻璃 backdrop-filter + 云动画 |
-|| 2026-06-24 | 移除 Vue `<transition>` 动画 | 导致双层渲染 bug；改为直接路由切换 |
-|| 2026-06-24 | 添加 catch-all 路由 `/:pathMatch(.*)*` | 未定义路径(如 /logi)直接重定向到 /books，避免路由守卫多重重叠 |
-|| 2026-06-24 | 禁止 emoji 图标 | 全部替换为 @vicons/ionicons5 SVG 图标或自定义 SVG |
+| 2026-06-24 | Phase 2: 工程卓越 (Modules H-L) | ESLint+Prettier+Husky / Helmet+RateLimit+CORS / GitHub Actions CI+49 route tests / 4 MySQL indexes + setErrorHandler / types 去 any |
+| 2026-06-24 | Phase 2 补全 (M1-M3) | BarcodeLabel+JsBarcode, Hold 预约体系 (5端点), 前端组件测试 |
+| 2026-06-24 | R1-R13: 13 轮全代码审计 | 82 fixes — 竞态/事务/类型安全/数据防护/缺失端点/视觉重构 |
+| 2026-06-29 | R14: 第十四轮审计 | 13 fixes — returnBook 事务化, update/remove $transaction, expireReadyHolds 防双过期, fine 负值截断, lookupByBarcode 移入 service, HoldResponse 去重, authHeaders/+bookApi facets/sortBy 实现 |
 
 ## 环境变量
 ### 必需变量（backend/.env）
@@ -404,13 +378,9 @@ Library Full-Stack Project/
 │   ├── dist/              # 编译产物（不入库）
 │   ├── .env.example       # 环境变量模板（入库）
 │   └── package.json
-├── resources/             # 设计参考
-│   ├── opac-data-collection.md
-│   └── opac-screenshots/
-├── PLAN.md                # 实施计划（7模块）
-├── AGENTS.md              # 本文件
-├── TODO.md                # 未完成清单
-└── README.md              # 项目说明
+├── resources/             # 设计参考 (opac-screenshots)
+├── AGENTS.md              # 本文件 — 架构/规范/API/决策/错误区
+└── README.md              # 项目说明 + 快速开始
 ```
 
 ## 工作流

@@ -64,6 +64,14 @@ export async function payFine(prisma: PrismaClient, fineId: number): Promise<Fin
       data: { totalFines: { decrement: fine.amount } },
     }),
   ]);
+  // Clamp totalFines to 0 in case of data inconsistency
+  const userAfter = await prisma.user.findUnique({ where: { id: fine.userId } });
+  if (userAfter && Number(userAfter.totalFines) < 0) {
+    await prisma.user.update({
+      where: { id: fine.userId },
+      data: { totalFines: 0 },
+    });
+  }
   audit(prisma, fine.userId, 'fine_pay', `fine:${fineId}`, `¥${fine.amount}`);
   return updated as unknown as FinePayResult;
 }

@@ -202,12 +202,26 @@ export async function returnBook(
     });
   }
 
-  // Check for pending hold BEFORE transaction (read-only, safe)
+  // Run entire return + optional hold promotion in a single transaction
   const nextHold = await getNextPendingHold(prisma, record.bookId);
-  if (record.bookItemId) validateItemStatus('borrowed', nextHold ? 'on_hold' : 'available');
-  const holdOps = nextHold && record.bookItemId
-    ? [
-        prisma.hold.update({
+
+  const [updated] = await prisma.$transaction(async (tx) => {
+    // Validate item status transition (status is from the record we just fetched)
+    if (record.bookItemId && record.bookItem) {
+      validateItemStatus(record.bookItem.status, nextHold ? 'on_hold' : 'available');
+    }
+
+    const ops: Promise<any>[] = [
+      tx.borrowRecord.update({
+        where: { id: recordId },
+        data: { returnDate: now, status: isOverdue ? 'overdue' : 'returned' },
+      }),
+    ];
+
+    if (nextHold && record.bookItemId) {
+      // Hold promotion path: item goes borrowed → on_hold, available unchanged (held copy)
+      ops.push(
+        tx.hold.update({
           where: { id: nextHold.id },
           data: {
             status: 'ready',
@@ -215,33 +229,30 @@ export async function returnBook(
             expiryDate: new Date(Date.now() + 3 * 86400000),
           },
         }),
-        prisma.bookItem.update({
+        tx.bookItem.update({
           where: { id: record.bookItemId },
           data: { status: 'on_hold' },
         }),
-        prisma.book.update({
-          where: { id: record.bookId },
-          data: { available: { decrement: 1 } },
-        }),
-      ]
-    : [];
-
-  const [updated] = await prisma.$transaction([
-    prisma.borrowRecord.update({
-      where: { id: recordId },
-      data: { returnDate: now, status: isOverdue ? 'overdue' : 'returned' },
-    }),
-    prisma.book.update({ where: { id: record.bookId }, data: { available: { increment: 1 } } }),
-    ...(record.bookItemId
-      ? [
-          prisma.bookItem.update({
+      );
+      // available stays the same — the copy is now reserved, not truly available
+    } else {
+      // Normal return: item goes back to available, increment count
+      ops.push(
+        tx.book.update({ where: { id: record.bookId }, data: { available: { increment: 1 } } }),
+      );
+      if (record.bookItemId) {
+        ops.push(
+          tx.bookItem.update({
             where: { id: record.bookItemId },
             data: { status: 'available' },
           }),
-        ]
-      : []),
-    ...holdOps,
-  ]);
+        );
+      }
+    }
+
+    const results = await Promise.all(ops);
+    return [results[0]]; // borrowRecord.update result
+  });
 
   audit(prisma, userId, 'return', `record:${recordId}`, isOverdue ? 'overdue' : void 0);
   return {

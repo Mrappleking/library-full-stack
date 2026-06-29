@@ -1,18 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import { validateItemStatus } from './book.service.js'
-
-export interface HoldResponse {
-  id: number
-  userId: number
-  bookId: number
-  bookItemId: number | null
-  status: string
-  requestDate: string
-  expiryDate: string | null
-  fulfilledAt: string | null
-  book?: { id: number; title: string; author: string; isbn: string }
-  user?: { id: number; username: string; name: string }
-}
+import type { HoldResponse, HoldStatus } from '../types/api.types.js'
 
 const MAX_HOLDS = 3
 
@@ -60,7 +48,7 @@ export async function createHold(
     userId: hold.userId,
     bookId: hold.bookId,
     bookItemId: hold.bookItemId,
-    status: hold.status,
+    status: hold.status as HoldStatus,
     requestDate: hold.requestDate.toISOString(),
     expiryDate: hold.expiryDate?.toISOString() ?? null,
     fulfilledAt: hold.fulfilledAt?.toISOString() ?? null,
@@ -115,11 +103,18 @@ async function expireReadyHolds(prisma: PrismaClient): Promise<void> {
   for (const h of expired) {
     try {
       await prisma.$transaction(async (tx) => {
+        // Re-check status inside tx to prevent double-expiry
+        const current = await tx.hold.findUnique({ where: { id: h.id } });
+        if (!current || current.status !== 'ready') return;
         await tx.hold.update({ where: { id: h.id }, data: { status: 'expired' } })
         if (h.bookItemId) {
-          validateItemStatus('on_hold', 'available');
-          await tx.bookItem.update({ where: { id: h.bookItemId }, data: { status: 'available' } })
-          await tx.book.update({ where: { id: h.bookId }, data: { available: { increment: 1 } } })
+          // Verify item is still on_hold before releasing
+          const item = await tx.bookItem.findUnique({ where: { id: h.bookItemId } });
+          if (item && item.status === 'on_hold') {
+            validateItemStatus('on_hold', 'available');
+            await tx.bookItem.update({ where: { id: h.bookItemId }, data: { status: 'available' } })
+            await tx.book.update({ where: { id: h.bookId }, data: { available: { increment: 1 } } })
+          }
         }
       })
     } catch {
@@ -149,7 +144,7 @@ export async function getMyHolds(
     userId: h.userId,
     bookId: h.bookId,
     bookItemId: h.bookItemId,
-    status: h.status,
+    status: h.status as HoldStatus,
     requestDate: h.requestDate.toISOString(),
     expiryDate: h.expiryDate?.toISOString() ?? null,
     fulfilledAt: h.fulfilledAt?.toISOString() ?? null,
@@ -188,7 +183,7 @@ export async function listHolds(
   return {
     holds: holds.map(h => ({
       id: h.id, userId: h.userId, bookId: h.bookId, bookItemId: h.bookItemId,
-      status: h.status,
+      status: h.status as HoldStatus,
       requestDate: h.requestDate.toISOString(),
       expiryDate: h.expiryDate?.toISOString() ?? null,
       fulfilledAt: h.fulfilledAt?.toISOString() ?? null,
@@ -239,7 +234,7 @@ export async function fulfillHold(
     userId: updated.userId,
     bookId: updated.bookId,
     bookItemId: updated.bookItemId,
-    status: updated.status,
+    status: updated.status as HoldStatus,
     requestDate: updated.requestDate.toISOString(),
     expiryDate: updated.expiryDate?.toISOString() ?? null,
     fulfilledAt: updated.fulfilledAt?.toISOString() ?? null,
@@ -266,7 +261,7 @@ export async function getNextPendingHold(
     userId: hold.userId,
     bookId: hold.bookId,
     bookItemId: hold.bookItemId,
-    status: hold.status,
+    status: hold.status as HoldStatus,
     requestDate: hold.requestDate.toISOString(),
     expiryDate: hold.expiryDate?.toISOString() ?? null,
     fulfilledAt: hold.fulfilledAt?.toISOString() ?? null,

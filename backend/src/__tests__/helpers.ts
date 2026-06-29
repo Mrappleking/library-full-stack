@@ -33,7 +33,7 @@ export async function buildApp(prisma: PrismaClient) {
     try {
       await request.jwtVerify();
     } catch {
-      reply.status(401).send({ error: 'Unauthorized' });
+      throw Object.assign(new Error('Unauthorized'), { statusCode: 401 });
     }
   });
 

@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import * as bookService from '../../services/book.service.js';
 
 function mockPrisma(overrides: Record<string, any> = {}) {
-  return {
+  const mock = {
     book: {
       findMany: vi.fn(),
       findUnique: vi.fn(),
@@ -15,8 +15,13 @@ function mockPrisma(overrides: Record<string, any> = {}) {
     bookItem: { findMany: vi.fn(), groupBy: vi.fn(), count: vi.fn() },
     borrowRecord: { count: vi.fn() },
     category: { findMany: vi.fn() },
+    $transaction: vi.fn((fn: any) => {
+      if (typeof fn === 'function') return fn(mock as any);
+      return Promise.all(fn);
+    }),
     ...overrides,
   } as any;
+  return mock;
 }
 
 describe('list', () => {

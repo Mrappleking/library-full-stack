@@ -82,7 +82,7 @@ onMounted(async () => {
 async function onSearch(query: string) {
   searchInput.value = query
   await store.search({ search: query || undefined })
-  await store.updateFacets(query || undefined)
+  await store.updateFacets({ search: query || undefined })
 }
 
 async function onFacetSelect(key: string, value: string) {

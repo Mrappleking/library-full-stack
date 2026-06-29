@@ -23,6 +23,11 @@ export async function bookRoutes(app: FastifyInstance) {
       limit: parseInt(q.limit) || 20,
       search: q.search,
       categoryId: q.categoryId ? parseInt(q.categoryId) : undefined,
+      campus: q.campus,
+      yearMin: q.yearMin ? parseInt(q.yearMin) : undefined,
+      yearMax: q.yearMax ? parseInt(q.yearMax) : undefined,
+      language: q.language,
+      sortBy: q.sortBy,
     });
   });
 

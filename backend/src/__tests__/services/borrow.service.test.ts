@@ -161,7 +161,7 @@ describe('returnBook', () => {
       status: 'active',
       dueDate: new Date(Date.now() + 86400000), // future
       book: { id: 10, title: 'Test' },
-      bookItem: { id: 1, itemTypeId: 1 },
+      bookItem: { id: 1, itemTypeId: 1, status: 'borrowed' },
       user: { id: 1, patronCategoryId: 1 },
     };
     const prisma = mockPrisma({
@@ -184,7 +184,7 @@ describe('returnBook', () => {
       status: 'active',
       dueDate: new Date('2020-01-01'), // past
       book: { id: 10, title: 'Overdue' },
-      bookItem: { id: 1, itemTypeId: 1 },
+      bookItem: { id: 1, itemTypeId: 1, status: 'borrowed' },
       user: { id: 2, patronCategoryId: 1 },
     };
     const prisma = mockPrisma({

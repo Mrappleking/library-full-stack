@@ -4,7 +4,7 @@ import * as fineService from '../../services/fine.service.js';
 function mockPrisma() {
   return {
     fine: { findMany: vi.fn(), findUnique: vi.fn(), update: vi.fn(), count: vi.fn() },
-    user: { update: vi.fn() },
+    user: { update: vi.fn(), findUnique: vi.fn() },
     $transaction: vi.fn((ops: Promise<any>[]) => Promise.all(ops)),
     auditLog: { create: vi.fn().mockResolvedValue({}) },
   } as any;
@@ -34,6 +34,7 @@ describe('payFine', () => {
     const prisma = mockPrisma();
     prisma.fine.findUnique.mockResolvedValue({ id: 1, amount: 10, paid: false, userId: 1 });
     prisma.fine.update.mockResolvedValue({ id: 1, paid: true });
+    prisma.user.findUnique.mockResolvedValue({ id: 1, totalFines: 0 });
 
     const result = await fineService.payFine(prisma, 1);
     expect(result.paid).toBe(true);

@@ -8,6 +8,7 @@ import type {
   BookListResponse,
   BookItemsResponse,
   BookItemSummary,
+  BookItemBarcodeResponse,
   FacetsResponse,
   FacetValue,
 } from '../types/api.types.js';
@@ -41,7 +42,11 @@ export async function list(
       skip: (page - 1) * limit,
       take: limit,
       include: { category: true, _count: { select: { items: true } } },
-      orderBy: { createdAt: 'desc' },
+      orderBy: params.sortBy === 'year'
+        ? { year: 'desc' }
+        : params.sortBy === 'title'
+          ? { title: 'asc' }
+          : { createdAt: 'desc' },
     }),
     prisma.book.count({ where }),
   ]);
@@ -100,17 +105,24 @@ export async function update(
 ): Promise<BookSummary> {
   const updateData: Record<string, unknown> = { ...data };
   if (data.total !== undefined && data.total !== null) {
-    const current = await prisma.book.findUnique({ where: { id } });
-    if (current) {
+    // Use interactive transaction to atomically read current state and update
+    return prisma.$transaction(async (tx) => {
+      const current = await tx.book.findUnique({ where: { id } });
+      if (!current) throw Object.assign(new Error('Book not found'), { statusCode: 404 });
       const borrowed = current.total - current.available;
-      if (data.total < borrowed) {
+      if (data.total! < borrowed) {
         throw Object.assign(new Error(`Cannot reduce total below ${borrowed}`), {
           statusCode: 400,
         });
       }
-      const diff = data.total - current.total;
+      const diff = data.total! - current.total;
       updateData.available = current.available + diff;
-    }
+      return tx.book.update({
+        where: { id },
+        data: updateData,
+        include: { category: true },
+      }) as unknown as BookSummary;
+    });
   }
   return prisma.book.update({
     where: { id },
@@ -120,11 +132,13 @@ export async function update(
 }
 
 export async function remove(prisma: PrismaClient, id: number): Promise<void> {
-  const count = await prisma.bookItem.count({ where: { bookId: id } });
-  if (count > 0) throw Object.assign(new Error(`Cannot delete book with ${count} existing copies`), { statusCode: 400 });
-  const activeBorrows = await prisma.borrowRecord.count({ where: { bookId: id, status: 'active' } });
-  if (activeBorrows > 0) throw Object.assign(new Error(`Cannot delete book with ${activeBorrows} active borrows`), { statusCode: 400 });
-  await prisma.book.delete({ where: { id } });
+  await prisma.$transaction(async (tx) => {
+    const count = await tx.bookItem.count({ where: { bookId: id } });
+    if (count > 0) throw Object.assign(new Error(`Cannot delete book with ${count} existing copies`), { statusCode: 400 });
+    const activeBorrows = await tx.borrowRecord.count({ where: { bookId: id, status: 'active' } });
+    if (activeBorrows > 0) throw Object.assign(new Error(`Cannot delete book with ${activeBorrows} active borrows`), { statusCode: 400 });
+    await tx.book.delete({ where: { id } });
+  });
 }
 
 export async function getFacets(
@@ -243,4 +257,25 @@ export async function reconcileBookAvailable(
     });
   }
   return { available: actual, was: book.available };
+}
+
+// ===== BookItem barcode lookup =====
+
+export async function lookupByBarcode(
+  prisma: PrismaClient,
+  barcode: string,
+): Promise<BookItemBarcodeResponse | null> {
+  const item = await prisma.bookItem.findUnique({
+    where: { barcode },
+    include: {
+      book: true,
+      itemType: true,
+      borrowRecords: { where: { status: 'active' }, take: 1 },
+    },
+  });
+  if (!item) return null;
+  return {
+    item: item as unknown as BookItemBarcodeResponse['item'],
+    currentBorrow: (item.borrowRecords?.[0] ?? null) as unknown as BookItemBarcodeResponse['currentBorrow'],
+  };
 }
