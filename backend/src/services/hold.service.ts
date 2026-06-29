@@ -267,3 +267,15 @@ export async function getNextPendingHold(
     fulfilledAt: hold.fulfilledAt?.toISOString() ?? null,
   }
 }
+
+/**
+ * Count pending holds for a book (public endpoint).
+ */
+export async function getHoldCount(
+  prisma: PrismaClient,
+  bookId: number
+): Promise<number> {
+  return prisma.hold.count({
+    where: { bookId, status: 'pending' },
+  })
+}

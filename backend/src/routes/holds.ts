@@ -19,9 +19,7 @@ export async function holdRoutes(app: FastifyInstance) {
   app.get('/count', async (request: any) => {
     const bookId = parseInt(request.query.bookId)
     if (!bookId) return { count: 0 }
-    const count = await app.prisma.hold.count({
-      where: { bookId, status: 'pending' },
-    })
+    const count = await holdService.getHoldCount(app.prisma, bookId)
     return { count }
   })
 
