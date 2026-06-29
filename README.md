@@ -35,7 +35,7 @@ npm run dev             # → localhost:5173
 | 指标 | 值 |
 |------|-----|
 | 版本 | v0.4.0 (14 轮审计, 95 fixes) |
-| API 端点 | 40 |
+| API 端点 | 45 |
 | 测试 | 106/106 PASS (52 service + 54 route) |
 | 前端构建 | vite build ✅ |
 | ESLint | 0 errors |

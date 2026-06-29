@@ -3,7 +3,7 @@
 ## 项目概述
 图书馆全栈管理系统，四层架构（前端→路由→服务→数据）。三层业务深度（书目→复本→规则引擎）。前端 Vue 3 + Naive UI，后端 Fastify，ORM Prisma 5，数据库 MySQL（WSL 3306）。TypeScript 全栈。
 
-**项目状态**: 14 轮审计完成，95 fixes，106 tests (52 service + 54 route) 全部通过。前端亮色主题+暗色侧边栏，40 API 端点。
+**项目状态**: 14 轮审计完成，95 fixes，106 tests (52 service + 54 route) 全部通过。前端亮色主题+暗色侧边栏，45 API 端点。
 **仓库**: https://github.com/Mrappleking/library-full-stack
 
 ## 角色与权限
@@ -51,7 +51,7 @@
 | 2026-06-24 | 借还操作必须 Prisma 事务 | 防止库存计数与借阅记录不一致 |
 | 2026-06-24 | db push 仅开发用，生产用 migrate dev/deploy | 保护生产数据不丢失 |
 | 2026-06-24 | 前端代理 /api → 后端 3000 | 避免 CORS，生产用 Nginx 反代或同源部署 |
-| 2026-06-24 | 用 Naive UI 暗黑主题替代自定义 CSS | 降低样式维护成本，统一组件行为 |
+| 2026-06-24 | 用 Naive UI 暗黑主题替代自定义 CSS | 后于 06-24 前端视觉重构改为亮色主题+暗色侧边栏 |
 | 2026-06-24 | Prisma 5 非 7，放弃 engineType/client 引擎 | Prisma 7 不支持 MySQL 直连，需不存在 Adapter |
 | 2026-06-24 | 项目移回 WSL 原生路径 ~/workplace/ | /mnt/d 的 node_modules 无法正常安装和删除 |
 | 2026-06-24 | 四层架构：前端→路由(Routes)→服务(Services)→数据(Prisma) | routes 只做 HTTP 分发，业务逻辑进 services |
@@ -143,7 +143,7 @@
 | PUT | /api/categories/:id | admin | 更新 |
 | DELETE | /api/categories/:id | admin | 删除（有图书则拒绝） |
 
-### 借阅
+### 借阅 (含 Hold 预约)
 | 方法 | 路径 | 权限 | 说明 |
 |------|------|------|------|
 | GET | /api/borrows/my | reader | 我的借阅 |
@@ -152,6 +152,12 @@
 | POST | /api/borrows/borrow | reader | 借书 |
 | POST | /api/borrows/return/:id | reader+admin | 还书 |
 | POST | /api/borrows/renew/:id | reader | 续借 |
+| POST | /api/holds | reader | 创建预约 |
+| GET | /api/holds/count | public | 预约排队数 |
+| GET | /api/holds/my | reader | 我的预约 |
+| GET | /api/holds | admin | 全部预约 |
+| DELETE | /api/holds/:id | reader | 取消预约 |
+| POST | /api/holds/:id/fulfill | admin | 确认预约(借出) |
 
 ### 读者
 | 方法 | 路径 | 权限 | 说明 |
@@ -160,6 +166,21 @@
 | GET | /api/readers/:id | admin | 读者详情+借阅 |
 | PUT | /api/readers/:id | admin | 管理员编辑 |
 | PUT | /api/readers/profile | reader | 读者自编辑 |
+
+### 罚款
+| 方法 | 路径 | 权限 | 说明 |
+|------|------|------|------|
+| GET | /api/fines | admin | 全部罚款（支持 type/paid 筛选） |
+| GET | /api/fines/my | reader | 我的罚款 |
+| POST | /api/fines/:id/pay | admin | 缴费 |
+
+### 借阅规则
+| 方法 | 路径 | 权限 | 说明 |
+|------|------|------|------|
+| GET | /api/rules | public | 规则列表（读者类型×资料类型矩阵） |
+| GET | /api/rules/patron-categories | public | 读者类型列表 |
+| GET | /api/rules/item-types | public | 资料类型列表 |
+| PUT | /api/rules | admin | 创建/更新规则 |
 
 ### 统计
 | 方法 | 路径 | 权限 | 说明 |
@@ -172,9 +193,7 @@
 | 方法 | 路径 | 权限 | 说明 |
 |------|------|------|------|
 | GET | /api/health | public | 健康检查 |
-| **新增 (R10-R13 审计)** |
 | POST | /api/books/:id/reconcile | admin | 对账可用计数 |
-| GET | /api/book-items/:barcode | public | 按条码查复本 (流通台扫码) |
 
 ### API 文档生成
 - 安装 `@fastify/swagger` + `@fastify/swagger-ui`
@@ -206,7 +225,7 @@
 ## 种子数据（Seed）
 - 脚本：`backend/prisma/seed.ts`
 - 运行：`npx prisma db seed`
-- 内容：1 个 admin（admin / admin123）、示例分类（计算机/文学/自然科学）、5 本示例书、1 个示例读者
+- 内容：1 admin (admin/admin123)、5 分类·7 本书·3 读者（本科生/研究生/教师各一）
 - 规则：seed 脚本必须幂等（用 `upsert`，不重复插）
 - 规则：`package.json` 配置 `"prisma": { "seed": "tsx prisma/seed.ts" }`
 - 规则：schema 变更后跑 seed 验证
@@ -287,7 +306,7 @@
 
 ### 前端（frontend/）
 - Vue 3 + Vite + TypeScript
-- Naive UI 组件库（暗色主题）
+- Naive UI 组件库（亮色主题，暗色侧边栏）
 - API 调用用 fetch（不引入 axios）
 
 ## 开发规范
@@ -354,7 +373,7 @@ cd frontend && npx vitest run                       # 前端
 Library Full-Stack Project/
 ├── frontend/              # Vue 3 + Vite
 │   ├── src/
-│   │   ├── components/    # 可复用 UI 组件（11个）
+│   │   ├── components/    # 可复用 UI 组件（13个）
 │   │   ├── views/
 │   │   │   ├── admin/     # 管理员页面（含流通台）
 │   │   │   ├── reader/    # 读者页面
