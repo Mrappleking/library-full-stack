@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import { validateItemStatus } from './book.service.js'
+import { getRule } from './rules.js'
 import type { HoldResponse, HoldStatus } from '../types/api.types.js'
 
 const MAX_HOLDS = 3
@@ -194,7 +195,7 @@ export async function listHolds(
 }
 
 /**
- * Admin: mark hold as fulfilled.
+ * Admin: mark hold as fulfilled. Creates a BorrowRecord atomically.
  */
 export async function fulfillHold(
   prisma: PrismaClient,
@@ -207,7 +208,28 @@ export async function fulfillHold(
       { statusCode: 400 })
   }
 
+  // Calculate due date from circulation rule
+  const user = await prisma.user.findUnique({ where: { id: hold.userId } })
+  const item = hold.bookItemId
+    ? await prisma.bookItem.findUnique({ where: { id: hold.bookItemId }, include: { itemType: true } })
+    : null
+  const rule = await getRule(prisma, user?.patronCategoryId ?? null, item?.itemTypeId ?? null)
+  const dueDate = new Date()
+  dueDate.setDate(dueDate.getDate() + rule.loanDays)
+
   const [updated] = await prisma.$transaction(async (tx) => {
+    // Create borrow record — available count stays unchanged
+    // (it was decremented on original borrow, not incremented on return-with-hold)
+    await tx.borrowRecord.create({
+      data: {
+        userId: hold.userId,
+        bookId: hold.bookId,
+        bookItemId: hold.bookItemId ?? null,
+        dueDate,
+        status: 'active',
+      },
+    })
+
     const u = await tx.hold.update({
       where: { id: holdId },
       data: {

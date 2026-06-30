@@ -285,22 +285,30 @@ export async function renew(
     record.user.patronCategoryId ?? null,
     record.bookItem?.itemTypeId ?? null,
   );
-  if (record.renewed)
-    throw Object.assign(new Error(`Already renewed (limit: ${rule.renewals}x)`), {
-      statusCode: 400,
+
+  const updated = await prisma.$transaction(async (tx) => {
+    // Re-check renewed flag inside transaction to prevent race condition
+    const current = await tx.borrowRecord.findUnique({ where: { id: recordId } });
+    if (!current || current.status !== 'active')
+      throw Object.assign(new Error('Cannot renew'), { statusCode: 400 });
+    if (current.renewed)
+      throw Object.assign(new Error(`Already renewed (limit: ${rule.renewals}x)`), {
+        statusCode: 400,
+      });
+
+    const newDue = new Date(current.dueDate);
+    newDue.setDate(newDue.getDate() + rule.renewalDays);
+
+    return tx.borrowRecord.update({
+      where: { id: recordId },
+      data: { dueDate: newDue, renewed: true },
     });
-
-  const newDue = new Date(record.dueDate);
-  newDue.setDate(newDue.getDate() + rule.renewalDays);
-
-  const updated = await prisma.borrowRecord.update({
-    where: { id: recordId },
-    data: { dueDate: newDue, renewed: true },
   });
+
   audit(prisma, userId, 'renew', `record:${recordId}`, `${rule.renewalDays}d`);
   return {
     id: updated.id,
-    dueDate: newDue.toISOString(),
+    dueDate: updated.dueDate.toISOString(),
     renewed: true,
     renewedDays: rule.renewalDays,
   };
