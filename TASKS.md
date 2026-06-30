@@ -2,6 +2,8 @@
 
 > 协作者看这里：从「待认领」选一个任务，在 Issue 下面回复 `我来`，
 > 建自己的 feature branch 开发，完成后提 PR 到 `main`。
+>
+> **看板（实时状态）：** https://github.com/users/Mrappleking/projects/1
 
 ---
 
