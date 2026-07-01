@@ -59,7 +59,7 @@ public class AuthService {
 
     public UserProfile getMe(Integer userId) {
         User user = userMapper.findById(userId);
-        if (user == null) throw AppException.notFound("User not found");
+        if (user == null) throw AppException.notFound("用户不存在");
         return toProfile(user);
     }
 
@@ -69,7 +69,7 @@ public class AuthService {
 
     public UserProfile createAdmin(RegisterRequest data) {
         User existing = userMapper.findByUsername(data.getUsername());
-        if (existing != null) throw AppException.conflict("Username exists");
+        if (existing != null) throw AppException.conflict("用户名已存在");
 
         User user = new User();
         user.setUsername(data.getUsername());
