@@ -27,7 +27,7 @@ public class GlobalExceptionHandler {
                 .collect(Collectors.joining("; "));
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(new ErrorResponse("Validation failed", details));
+                .body(new ErrorResponse("请求参数校验失败", details));
     }
 
     @ExceptionHandler(Exception.class)

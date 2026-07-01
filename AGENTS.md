@@ -21,6 +21,8 @@ Status: 45 API endpoints | 71 Java files | 31 Vue files | 8 XML mappers | 55 tes
 | 4 | `@Transactional` 缺失 | 并发 borrow 导致 available 变负数 | 所有多 DAO 写入操作加 `@Transactional` |
 | 5 | 注解 SQL 和 XML 同时定义同一 statement | `Mapped Statements collection already contains key` | 移除 Java 注解中的 `@Select`/`@Insert`/`@Update`/`@Delete` |
 | 6 | 数组 `transaction([])` 外部检查可用性 | 竞态条件下双借同一本 | `borrow()` 需在 `$transaction` 内重查可用性 |
+| 7 | Mapper XML 中列名写成 camelCase 但数据库是 snake_case | `Unknown column` SQL 错误导致 `Internal Server Error` | 对照 `SHOW CREATE TABLE` 确认实际列名（如 `users` 表是 `total_fines` 不是 `totalFines`） |
+| 8 | 后端错误消息用英文 | 中文用户看不懂报错信息 | 使用中文错误消息（如 `"用户名或密码错误"`） |
 
 ## 3. Architecture Decisions
 
@@ -40,6 +42,8 @@ Status: 45 API endpoints | 71 Java files | 31 Vue files | 8 XML mappers | 55 tes
 | 2026-06-30 | java -jar over mvn spring-boot:run | Avoids OOM killer |
 | 2026-06-30 | application-dev/prod profiles | Password isolation |
 | 2026-06-30 | H2 in-memory DB for tests | No MySQL dependency in CI |
+| 2026-06-30 | 后端错误消息使用中文 | 目标用户为中文使用者 |
+| 2026-06-30 | UserMapper.xml 列名 `totalFines` → `total_fines` | 对齐实际数据库 snake_case 列名 |
 
 ## 4. Commands
 
@@ -58,6 +62,10 @@ cd frontend
 npm install --registry=https://registry.npmmirror.com
 npm run dev                      # -> :5175 (proxies /api -> :8080)
 npm run build                    # production build to dist/
+
+# Rebuild
+./mvnw clean package -DskipTests        # 构建 JAR（跳过测试）
+./mvnw test                              # 运行全部 55 测试
 
 # Kill
 kill -9 $(lsof -ti:8080)
@@ -253,6 +261,15 @@ Configuration split across profiles (`spring.profiles.active=dev` default):
 ### DB column naming hazard
 Database has mixed naming: `categoryId` (camelCase) vs `created_at` (snake_case). Always verify actual column names before writing SQL.
 
+**已知列名对照**（`SHOW CREATE TABLE` 验证）：
+| 表 | camelCase 列 | snake_case 列 |
+|----|-------------|---------------|
+| users | `patronCategoryId` | `total_fines`, `created_at`, `updated_at` |
+| books | `categoryId`, `clcNumber`, `physicalDesc` | `created_at`, `updated_at` |
+| book_items | `bookId`, `itemTypeId`, `callNumber` | `acquired_at`, `created_at`, `updated_at` |
+
+> ⚠️ `UserMapper.xml` 中的列名必须全部使用 snake_case（如 `total_fines`），否则 INSERT/UPDATE 会报 `Unknown column` 错误。
+
 ### Java
 - Services: `@Service`, constructor injection, `@Transactional` for multi-DAO writes
 - Controllers: `@RestController`, thin dispatch, no Mapper calls
@@ -303,6 +320,8 @@ Seed data via `seed.sql`: 3 patron types, 3 item types, 9 rules, 9 users, 20 boo
 `./mvnw` in project root. No global Maven install needed. Java 21.
 
 Startup: `./start.sh` builds JAR then runs `java -jar target/*.jar`. Avoid `mvn spring-boot:run` (OOM risk).
+
+> 数据库密码通过环境变量传入：`DB_PASSWORD=yourpwd ./start.sh` 或 `DB_PASSWORD=yourpwd java -jar target/*.jar`
 
 ---
 
