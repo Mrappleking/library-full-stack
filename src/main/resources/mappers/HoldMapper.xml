@@ -54,7 +54,7 @@
   </insert>
 
   <update id="updateToReady">
-    UPDATE holds SET status=#{status}, bookItemId=#{bookItemId}, expiry_date=#{expiryDate} WHERE id=#{id}
+    UPDATE holds SET status='ready', bookItemId=#{bookItemId}, expiry_date=#{expiryDate} WHERE id=#{id}
   </update>
 
   <update id="fulfill">
