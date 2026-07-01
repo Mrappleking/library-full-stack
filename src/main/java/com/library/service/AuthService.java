@@ -28,7 +28,7 @@ public class AuthService {
     public LoginResponse register(RegisterRequest data) {
         User existing = userMapper.findByUsername(data.getUsername());
         if (existing != null) {
-            throw AppException.conflict("Username already exists");
+            throw AppException.conflict("用户名已存在");
         }
 
         User user = new User();
@@ -49,7 +49,7 @@ public class AuthService {
     public LoginResponse login(String username, String password) {
         User user = userMapper.findByUsername(username);
         if (user == null || !passwordEncoder.matches(password, user.getPassword())) {
-            throw AppException.unauthorized("Invalid credentials");
+            throw AppException.unauthorized("用户名或密码错误");
         }
 
         UserProfile profile = toProfile(user);
