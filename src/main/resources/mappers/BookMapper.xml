@@ -111,6 +111,8 @@
     WHERE language IS NOT NULL
     <if test="search != null">AND (title LIKE CONCAT('%', #{search}, '%') OR author LIKE CONCAT('%', #{search}, '%') OR isbn LIKE CONCAT('%', #{search}, '%'))</if>
     <if test="categoryId != null">AND categoryId = #{categoryId}</if>
+    <if test="yearMin != null">AND year >= #{yearMin}</if>
+    <if test="yearMax != null">AND year &lt;= #{yearMax}</if>
     GROUP BY language ORDER BY `count` DESC
   </select>
 
@@ -120,6 +122,8 @@
     WHERE b.categoryId IS NOT NULL
     <if test="search != null">AND (b.title LIKE CONCAT('%', #{search}, '%') OR b.author LIKE CONCAT('%', #{search}, '%') OR b.isbn LIKE CONCAT('%', #{search}, '%'))</if>
     <if test="language != null">AND b.language = #{language}</if>
+    <if test="yearMin != null">AND b.year >= #{yearMin}</if>
+    <if test="yearMax != null">AND b.year &lt;= #{yearMax}</if>
     GROUP BY b.categoryId, c.name ORDER BY `count` DESC
   </select>
 
@@ -130,6 +134,8 @@
     <if test="search != null">AND (title LIKE CONCAT('%', #{search}, '%') OR author LIKE CONCAT('%', #{search}, '%') OR isbn LIKE CONCAT('%', #{search}, '%'))</if>
     <if test="categoryId != null">AND categoryId = #{categoryId}</if>
     <if test="language != null">AND language = #{language}</if>
+    <if test="yearMin != null">AND year >= #{yearMin}</if>
+    <if test="yearMax != null">AND year &lt;= #{yearMax}</if>
     GROUP BY `value` ORDER BY `value`
   </select>
 
