@@ -36,6 +36,11 @@ export async function bookRoutes(app: FastifyInstance) {
     return bookService.getFacets(app.prisma, {
       search: q.search,
       categoryId: q.categoryId ? parseInt(q.categoryId) : undefined,
+      campus: q.campus,
+      language: q.language,
+      yearMin: q.yearMin ? parseInt(q.yearMin) : undefined,
+      yearMax: q.yearMax ? parseInt(q.yearMax) : undefined,
+      location: q.location,
     });
   });
 

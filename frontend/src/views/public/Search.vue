@@ -91,9 +91,19 @@ async function onFacetSelect(key: string, value: string) {
   } else {
     activeFilters.value[key] = value
   }
+  // Build params from ALL active filters (not just campus)
+  const f = activeFilters.value
   const params: BookListParams = { search: store.searchQuery || undefined }
-  if (activeFilters.value.campus) params.campus = activeFilters.value.campus
+  if (f.campus) params.campus = f.campus
+  if (f.language) params.language = f.language
+  if (f.subject) params.categoryId = Number(f.subject)
+  if (f.yearRange) {
+    const m = f.yearRange.match(/^(\d{4})s$/)
+    if (m) { params.yearMin = Number(m[1]); params.yearMax = Number(m[1]) + 9 }
+  }
+  if (f.location) (params as any).location = f.location
   await store.search(params)
+  await store.updateFacets(params)
 }
 
 function onBookSelect(id: number) { router.push(`/books/${id}`) }

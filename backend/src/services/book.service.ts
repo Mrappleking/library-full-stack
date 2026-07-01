@@ -154,12 +154,20 @@ export async function getFacets(
     ];
   }
   if (params.categoryId) where.categoryId = params.categoryId;
+  if (params.language) where.language = params.language;
+  if (params.yearMin || params.yearMax) {
+    where.year = {};
+    if (params.yearMin) (where.year as Record<string, number>).gte = params.yearMin;
+    if (params.yearMax) (where.year as Record<string, number>).lte = params.yearMax;
+  }
 
   // Prisma 5 groupBy doesn't support relation filters (book: { where })
   // Workaround: get matching bookIds first
   const matchingBooks = await prisma.book.findMany({ where, select: { id: true } });
   const bookIds = matchingBooks.map((b) => b.id);
-  const itemWhere = bookIds.length > 0 ? { bookId: { in: bookIds } } : { bookId: -1 }; // -1 = no match
+  const itemWhere: Record<string, unknown> = bookIds.length > 0 ? { bookId: { in: bookIds } } : { bookId: -1 };
+  if (params.campus) itemWhere.campus = params.campus;
+  if (params.location) itemWhere.location = params.location;
 
   const [campus, locations, languages, subjects] = await Promise.all([
     prisma.bookItem.groupBy({
