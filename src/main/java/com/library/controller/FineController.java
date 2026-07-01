@@ -28,7 +28,8 @@ public class FineController {
     }
 
     @PostMapping("/{id}/pay")
-    public ResponseEntity<?> pay(@PathVariable Integer id) {
-        return ResponseEntity.ok(fineService.markPaid(id));
+    public ResponseEntity<?> pay(@PathVariable Integer id, HttpServletRequest request) {
+        Integer userId = (Integer) request.getAttribute("userId");
+        return ResponseEntity.ok(fineService.markPaid(id, userId));
     }
 }

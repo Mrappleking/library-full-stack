@@ -59,17 +59,19 @@ public class AuthService {
 
     public UserProfile getMe(Integer userId) {
         User user = userMapper.findById(userId);
-        if (user == null) throw AppException.notFound("用户不存在");
+        if (user == null) throw AppException.notFound("User not found");
         return toProfile(user);
     }
 
-    public List<User> listUsers() {
-        return userMapper.findAll();
+    public List<UserProfile> listUsers() {
+        return userMapper.findAll().stream()
+                .map(this::toProfile)
+                .collect(java.util.stream.Collectors.toList());
     }
 
     public UserProfile createAdmin(RegisterRequest data) {
         User existing = userMapper.findByUsername(data.getUsername());
-        if (existing != null) throw AppException.conflict("用户名已存在");
+        if (existing != null) throw AppException.conflict("Username exists");
 
         User user = new User();
         user.setUsername(data.getUsername());

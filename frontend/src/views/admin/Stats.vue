@@ -62,23 +62,25 @@ const monthlyColumns: DataTableColumn[] = [
 onMounted(async () => {
   loading.value = true
   try {
-    const [statsRes, popularRes, monthlyRes] = await Promise.all([
+    const [statsRes, popularRes, monthlyRes] = await Promise.allSettled([
       api.get('/stats'),
       api.get('/stats/popular'),
       api.get('/stats/monthly')
     ])
-    const stats = statsRes.data
-    if (stats) {
-      statCards.value = [
-        { label: '总藏书', value: stats.totalBooks || 0 },
-        { label: '在借数量', value: stats.activeBorrows || 0 },
-        { label: '读者总数', value: stats.totalReaders || 0 },
-        { label: '分类数', value: stats.totalCategories || 0 },
-        { label: '逾期未还', value: stats.overdueCount || 0 }
-      ]
+    if (statsRes.status === 'fulfilled') {
+      const stats = statsRes.value.data
+      if (stats) {
+        statCards.value = [
+          { label: '总藏书', value: stats.totalBooks || 0 },
+          { label: '在借数量', value: stats.activeBorrows || 0 },
+          { label: '读者总数', value: stats.totalReaders || 0 },
+          { label: '分类数', value: stats.totalCategories || 0 },
+          { label: '逾期未还', value: stats.overdueCount || 0 }
+        ]
+      }
     }
-    popularBooks.value = popularRes.data || []
-    monthlyData.value = monthlyRes.data || []
+    popularBooks.value = popularRes.status === 'fulfilled' ? (popularRes.value.data || []) : []
+    monthlyData.value = monthlyRes.status === 'fulfilled' ? (monthlyRes.value.data || []) : []
   } catch (e) { console.error('fetchStats failed:', e) }
   loading.value = false
 })

@@ -56,11 +56,18 @@ public class FineService {
     }
 
     @Transactional
-    public Fine markPaid(Integer fineId) {
+    public Fine markPaid(Integer fineId, Integer userId) {
         Fine fine = fineMapper.findById(fineId);
         if (fine == null) throw AppException.notFound("Fine not found");
         if (fine.getPaid()) throw AppException.badRequest("Already paid");
 
+        // Ownership verification
+        if (!fine.getUserId().equals(userId)) {
+            throw AppException.forbidden("无权操作该罚款记录");
+        }
+
+        // Deduct from user's total_fines
+        userMapper.addFine(fine.getUserId(), fine.getAmount().negate());
         fineMapper.markPaid(fineId, LocalDateTime.now());
         return fineMapper.findById(fineId);
     }
