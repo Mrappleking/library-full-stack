@@ -48,10 +48,20 @@ public class BookController {
     @GetMapping("/facets")
     public ResponseEntity<?> getFacets(
             @RequestParam(required = false) String search,
-            @RequestParam(required = false) Integer categoryId) {
+            @RequestParam(required = false) Integer categoryId,
+            @RequestParam(required = false) String campus,
+            @RequestParam(required = false) String language,
+            @RequestParam(required = false) Integer yearMin,
+            @RequestParam(required = false) Integer yearMax,
+            @RequestParam(required = false) String location) {
         Map<String, Object> params = new java.util.HashMap<>();
         if (search != null) params.put("search", search);
         if (categoryId != null) params.put("categoryId", categoryId);
+        if (campus != null) params.put("campus", campus);
+        if (language != null) params.put("language", language);
+        if (yearMin != null) params.put("yearMin", yearMin);
+        if (yearMax != null) params.put("yearMax", yearMax);
+        if (location != null) params.put("location", location);
         return ResponseEntity.ok(bookService.getFacets(params));
     }
 
