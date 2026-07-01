@@ -14,13 +14,16 @@ public class StatsService {
     private final UserMapper userMapper;
     private final BorrowRecordMapper borrowRecordMapper;
     private final CategoryMapper categoryMapper;
+    private final BookService bookService;
 
     public StatsService(BookMapper bookMapper, UserMapper userMapper,
-                        BorrowRecordMapper borrowRecordMapper, CategoryMapper categoryMapper) {
+                        BorrowRecordMapper borrowRecordMapper, CategoryMapper categoryMapper,
+                        BookService bookService) {
         this.bookMapper = bookMapper;
         this.userMapper = userMapper;
         this.borrowRecordMapper = borrowRecordMapper;
         this.categoryMapper = categoryMapper;
+        this.bookService = bookService;
     }
 
     public StatsOverviewResponse getOverview() {
@@ -59,6 +62,6 @@ public class StatsService {
     }
 
     public Map<String, Object> getFacets(Map<String, Object> params) {
-        return Map.of("facets", Map.of());
+        return bookService.getFacets(params);
     }
 }
