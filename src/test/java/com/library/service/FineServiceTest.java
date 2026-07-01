@@ -79,7 +79,7 @@ class FineServiceTest extends AbstractServiceTest {
 
         when(fineMapper.findById(1)).thenReturn(existing, paid);
 
-        Fine result = fineService.markPaid(1, 1);
+        Fine result = fineService.markPaid(1, 1, "admin");
         assertTrue(result.getPaid());
         verify(userMapper).addFine(1, BigDecimal.TEN.negate());
         verify(fineMapper).markPaid(eq(1), any());
@@ -93,6 +93,6 @@ class FineServiceTest extends AbstractServiceTest {
         existing.setPaid(true);
 
         when(fineMapper.findById(1)).thenReturn(existing);
-        assertThrows(AppException.class, () -> fineService.markPaid(1, 1));
+        assertThrows(AppException.class, () -> fineService.markPaid(1, 1, "admin"));
     }
 }
