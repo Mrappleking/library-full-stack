@@ -68,7 +68,7 @@ function addToQueue(action: string) {
   queue.value.push({
     action,
     barcode: currentItem.value.barcode,
-    bookName: currentItem.value.bookName,
+    bookName: currentItem.value.book?.title || currentItem.value.barcode,
     itemId: currentItem.value.id,
     currentBorrowId: currentBorrow.value?.id
   })
@@ -93,9 +93,14 @@ async function commitAll() {
   queue.value = []
 }
 
+let audioCtx: AudioContext | null = null
+function getAudioContext() {
+  if (!audioCtx) audioCtx = new AudioContext()
+  return audioCtx
+}
 function playBeep(type: string) {
   try {
-    const ctx = new AudioContext()
+    const ctx = getAudioContext()
     const osc = ctx.createOscillator()
     osc.frequency.value = type === 'borrow' ? 880 : 660
     osc.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + 0.1)

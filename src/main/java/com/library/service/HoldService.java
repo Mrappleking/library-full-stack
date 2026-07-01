@@ -7,8 +7,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 public class HoldService {
+
+    private static final Logger log = LoggerFactory.getLogger(HoldService.class);
 
     private final HoldMapper holdMapper;
     private final BookMapper bookMapper;
@@ -76,8 +82,9 @@ public class HoldService {
 
     public Map<String, Object> listHolds(String status, Integer bookId, int page, int limit) {
         expireReadyHolds();
-        List<Hold> holds = holdMapper.findAll(status, bookId);
-        long total = holds.size();
+        int offset = (page - 1) * limit;
+        List<Hold> holds = holdMapper.findAllPage(status, bookId, offset, limit);
+        long total = holdMapper.countAllPage(status, bookId);
 
         Map<String, Object> result = new HashMap<>();
         result.put("holds", holds);
@@ -132,7 +139,7 @@ public class HoldService {
                     }
                 }
             } catch (Exception e) {
-                // Skip individual failures
+                log.warn("预约过期处理失败: holdId={}", h.getId(), e);
             }
         }
     }

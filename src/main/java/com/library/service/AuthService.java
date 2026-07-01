@@ -63,8 +63,10 @@ public class AuthService {
         return toProfile(user);
     }
 
-    public List<User> listUsers() {
-        return userMapper.findAll();
+    public List<UserProfile> listUsers() {
+        return userMapper.findAll().stream()
+                .map(this::toProfile)
+                .collect(java.util.stream.Collectors.toList());
     }
 
     public UserProfile createAdmin(RegisterRequest data) {

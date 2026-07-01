@@ -12,7 +12,7 @@
       </n-ellipsis>
       <span class="author">{{ book.author }}</span>
       <div class="meta">
-        <StatusBadge :status="book.available > 0 ? 'available' : 'borrowed'" />
+        <StatusBadge :status="book.status" />
         <span class="avail">{{ book.available }}/{{ book.total }}可借</span>
       </div>
     </div>

@@ -90,7 +90,7 @@ const ExpandPanel = {
         records.value = data.borrowRecords || []
       } catch { /* ignore */ }
     }
-    load()
+    onMounted(() => { load() })
     return () => records.value.length === 0
       ? h('div', { style: 'padding:12px;color:#8a8f98;' }, '暂无借阅记录')
       : h('div', { style: 'padding:8px 0;' },

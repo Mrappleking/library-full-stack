@@ -136,7 +136,7 @@ public class BookService {
         Book current = bookMapper.findById(id);
         if (current == null) throw AppException.notFound("Book not found");
 
-        if (data.containsKey("total")) {
+        if (data.containsKey("total") && data.get("total") != null) {
             int newTotal = (Integer) data.get("total");
             int borrowed = current.getTotal() - current.getAvailable();
             if (newTotal < borrowed) {
