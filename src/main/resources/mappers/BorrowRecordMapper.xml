@@ -43,6 +43,22 @@
     SELECT * FROM borrow_records ORDER BY borrow_date DESC
   </select>
 
+  <select id="findByUserIdPage" resultMap="borrowWithBook">
+    SELECT * FROM borrow_records WHERE userId = #{userId} ORDER BY borrow_date DESC LIMIT #{limit} OFFSET #{offset}
+  </select>
+
+  <select id="findAllPage" resultMap="fullBorrow">
+    SELECT * FROM borrow_records ORDER BY borrow_date DESC LIMIT #{limit} OFFSET #{offset}
+  </select>
+
+  <select id="countByUserId" resultType="long">
+    SELECT COUNT(*) FROM borrow_records WHERE userId = #{userId}
+  </select>
+
+  <select id="countAll" resultType="long">
+    SELECT COUNT(*) FROM borrow_records
+  </select>
+
   <insert id="insert" useGeneratedKeys="true" keyProperty="id">
     INSERT INTO borrow_records(userId, bookId, bookItemId, borrow_date, due_date, status, created_at, updated_at)
     VALUES(#{userId}, #{bookId}, #{bookItemId}, #{borrowDate}, #{dueDate}, #{status}, NOW(), NOW())

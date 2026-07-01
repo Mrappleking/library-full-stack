@@ -126,7 +126,7 @@ const ExpandItems = {
         items.value = data.items || []
       } catch { /* ignore */ }
     }
-    load()
+    onMounted(() => { load() })
     return () => {
       if (items.value.length === 0) return h('div', { style: 'padding:12px;color:#8a8f98;' }, '暂无复本')
       return h('div', { style: 'padding:8px 0;' }, [
@@ -195,7 +195,7 @@ const rulesData = {
 }
 
 function openCreate() { editingId.value = null; Object.assign(form, { isbn: '', title: '', author: '', publisher: '', year: undefined, categoryId: null, total: 1, location: '', desc: '' }); showModal.value = true }
-function openEdit(row: any) { editingId.value = row.id; Object.assign(form, { isbn: row.isbn, title: row.title, author: row.author, publisher: row.publisher, year: row.year, categoryId: row.categoryId, total: row.total, location: row.location, desc: row.desc }); showModal.value = true }
+function openEdit(row: any) { editingId.value = row.id; Object.assign(form, { isbn: row.isbn, title: row.title, author: row.author, publisher: row.publisher, year: row.year, categoryId: row.category?.id ?? null, total: row.total, location: row.location, desc: row.desc }); showModal.value = true }
 
 async function handleSave() {
   saving.value = true

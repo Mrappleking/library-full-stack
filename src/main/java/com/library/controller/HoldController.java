@@ -23,6 +23,7 @@ public class HoldController {
     public ResponseEntity<?> createHold(HttpServletRequest request, @RequestBody Map<String, Integer> body) {
         Integer userId = (Integer) request.getAttribute("userId");
         Integer bookId = body.get("bookId");
+        if (bookId == null) throw com.library.exception.AppException.badRequest("bookId 不能为空");
         Hold hold = holdService.createHold(userId, bookId);
         return ResponseEntity.status(HttpStatus.CREATED).body(hold);
     }

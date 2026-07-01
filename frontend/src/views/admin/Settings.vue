@@ -67,14 +67,14 @@ const itemTypeColumns: DataTableColumn[] = [
 onMounted(async () => {
   loading.value = true
   try {
-    const [r, p, i] = await Promise.all([
+    const [r, p, i] = await Promise.allSettled([
       api.get('/rules'),
       api.get('/rules/patron-categories'),
       api.get('/rules/item-types')
     ])
-    rules.value = r.data
-    patronCategories.value = p.data
-    itemTypes.value = i.data
+    rules.value = r.status === 'fulfilled' ? r.value.data : []
+    patronCategories.value = p.status === 'fulfilled' ? p.value.data : []
+    itemTypes.value = i.status === 'fulfilled' ? i.value.data : []
   } catch (e) { console.error('fetchSettings failed:', e) }
   loading.value = false
 })
