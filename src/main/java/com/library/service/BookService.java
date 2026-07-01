@@ -178,10 +178,26 @@ public class BookService {
 
     public Map<String, Object> getFacets(Map<String, Object> params) {
         Map<String, Object> facets = new HashMap<>();
-        facets.put("campus", bookItemMapper.findCampuses().stream()
-                .map(c -> Map.of("value", c, "count", 0)).collect(Collectors.toList()));
-        facets.put("language", bookMapper.findLanguages().stream()
-                .map(l -> Map.of("value", l, "count", 0)).collect(Collectors.toList()));
+
+        // campus facet — from book_items
+        Map<String, Object> itemParams = new HashMap<>();
+        if (params.containsKey("location")) itemParams.put("location", params.get("location"));
+        facets.put("campus", bookItemMapper.countByCampus(itemParams));
+
+        // location facet — from book_items
+        Map<String, Object> locParams = new HashMap<>();
+        if (params.containsKey("campus")) locParams.put("campus", params.get("campus"));
+        facets.put("location", bookItemMapper.countByLocation(locParams));
+
+        // language facet — from books
+        facets.put("language", bookMapper.countByLanguage(params));
+
+        // subject (category) facet — from books JOIN categories
+        facets.put("subject", bookMapper.countByCategory(params));
+
+        // yearRange facet — decade grouping
+        facets.put("yearRange", bookMapper.countByYearDecade(params));
+
         return Map.of("facets", facets);
     }
 

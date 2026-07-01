@@ -45,6 +45,22 @@
     SELECT DISTINCT campus FROM book_items WHERE campus IS NOT NULL ORDER BY campus
   </select>
 
+  <select id="countByCampus" resultType="map">
+    SELECT campus as `value`, COUNT(*) as `count`
+    FROM book_items
+    WHERE campus IS NOT NULL
+    <if test="location != null">AND location = #{location}</if>
+    GROUP BY campus ORDER BY `count` DESC
+  </select>
+
+  <select id="countByLocation" resultType="map">
+    SELECT location as `value`, COUNT(*) as `count`
+    FROM book_items
+    WHERE location IS NOT NULL
+    <if test="campus != null">AND campus = #{campus}</if>
+    GROUP BY location ORDER BY `count` DESC
+  </select>
+
   <insert id="insert" useGeneratedKeys="true" keyProperty="id">
     INSERT INTO book_items(barcode, callNumber, location, `condition`, status, price, acquired_at, notes, campus, requests, bookId, itemTypeId, created_at, updated_at)
     VALUES(#{barcode}, #{callNumber}, #{location}, #{condition}, #{status}, #{price}, #{acquiredAt}, #{notes}, #{campus}, #{requests}, #{bookId}, #{itemTypeId}, NOW(), NOW())
