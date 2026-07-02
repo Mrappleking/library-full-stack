@@ -1,6 +1,6 @@
 package com.library.service;
 
-import com.library.dto.response.StatsOverviewResponse;
+import com.library.dto.response.*;
 import com.library.mapper.*;
 import org.springframework.stereotype.Service;
 
@@ -36,32 +36,53 @@ public class StatsService {
         return stats;
     }
 
-    public List<Map<String, Object>> getPopular() {
+    public List<PopularBookDTO> getPopular() {
         List<Map<String, Object>> raw = borrowRecordMapper.popularBooks();
-        List<Map<String, Object>> result = new ArrayList<>();
+        List<PopularBookDTO> result = new ArrayList<>();
         for (Map<String, Object> row : raw) {
-            Map<String, Object> enriched = new HashMap<>(row);
+            PopularBookDTO dto = new PopularBookDTO();
+            dto.setId(toInt(row.get("id")));
+            dto.setTitle((String) row.get("title"));
+            dto.setAuthor((String) row.get("author"));
+            dto.setIsbn((String) row.get("isbn"));
+            dto.setCategoryId(toInt(row.get("categoryId")));
             // Transform borrowCount to _count.borrowRecords
-            Object bc = enriched.remove("borrowCount");
-            enriched.put("_count", Map.of("borrowRecords", bc != null ? bc : 0));
+            Object bc = row.get("borrowCount");
+            dto.set_count(Map.of("borrowRecords", bc != null ? bc : 0));
             // Enrich with category name
-            Object catId = enriched.get("categoryId");
+            Object catId = row.get("categoryId");
             if (catId instanceof Number) {
                 var cat = categoryMapper.findById(((Number) catId).intValue());
-                enriched.put("category", cat != null ? Map.of("id", cat.getId(), "name", cat.getName()) : null);
+                dto.setCategory(cat != null ? new CategoryResponse(cat.getId(), cat.getName(), cat.getDesc(), 0) : null);
             }
-            enriched.remove("categoryId");
-            result.add(enriched);
+            result.add(dto);
         }
         return result;
     }
 
-    public List<Map<String, Object>> getMonthly() {
+    public List<MonthlyStatsDTO> getMonthly() {
         LocalDateTime since = LocalDateTime.now().minusMonths(12);
-        return borrowRecordMapper.monthlyStats(since);
+        List<Map<String, Object>> raw = borrowRecordMapper.monthlyStats(since);
+        List<MonthlyStatsDTO> result = new ArrayList<>();
+        for (Map<String, Object> row : raw) {
+            MonthlyStatsDTO dto = new MonthlyStatsDTO();
+            dto.setMonth((String) row.get("month"));
+            Object count = row.get("count");
+            dto.setCount(count instanceof Number ? ((Number) count).longValue() : 0L);
+            result.add(dto);
+        }
+        return result;
     }
 
-    public Map<String, Object> getFacets(Map<String, Object> params) {
-        return bookService.getFacets(params);
+    public FacetsDTO getFacets(Map<String, Object> params) {
+        Map<String, Object> raw = bookService.getFacets(params);
+        FacetsDTO dto = new FacetsDTO();
+        dto.setFacets((Map<String, List<Map<String, Object>>>) raw.get("facets"));
+        return dto;
+    }
+
+    private Integer toInt(Object value) {
+        if (value instanceof Number) return ((Number) value).intValue();
+        return null;
     }
 }
