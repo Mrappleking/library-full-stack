@@ -15,6 +15,7 @@ public class User {
     private String email;
     private BigDecimal totalFines;
     private Integer patronCategoryId;
+    private Integer tokenVersion;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

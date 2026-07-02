@@ -27,9 +27,21 @@
     UPDATE users SET total_fines = total_fines + #{amount} WHERE id=#{userId}
   </update>
 
+  <update id="updatePassword">
+    UPDATE users SET password=#{password}, updated_at=NOW() WHERE id=#{id}
+  </update>
+
+  <update id="incrementTokenVersion">
+    UPDATE users SET token_version = token_version + 1, updated_at = NOW() WHERE id = #{userId}
+  </update>
+
   <select id="findPage" resultType="com.library.entity.User">
     SELECT * FROM users ORDER BY created_at DESC LIMIT #{limit} OFFSET #{offset}
   </select>
+
+  <delete id="deleteById">
+    DELETE FROM users WHERE id = #{id}
+  </delete>
 
   <select id="countReaders" resultType="long">
     SELECT COUNT(*) FROM users WHERE role = 'reader'

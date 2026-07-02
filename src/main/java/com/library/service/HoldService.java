@@ -38,19 +38,19 @@ public class HoldService {
     public Hold createHold(Integer userId, Integer bookId) {
         // 1. Book must exist and have zero available copies
         Book book = bookMapper.findById(bookId);
-        if (book == null) throw AppException.notFound("Book not found");
+        if (book == null) throw AppException.notFound("图书不存在");
         if (book.getAvailable() > 0) {
-            throw AppException.badRequest("Book has available copies — borrow directly");
+            throw AppException.badRequest("该书有可借复本，请直接借阅");
         }
 
         // 2. No duplicate holds
         Hold existing = holdMapper.findExistingHold(userId, bookId);
-        if (existing != null) throw AppException.conflict("You already have a hold on this book");
+        if (existing != null) throw AppException.conflict("您已预约过此书");
 
         // 3. Max holds limit
         long activeCount = holdMapper.countActiveByUserId(userId);
         if (activeCount >= MAX_HOLDS) {
-            throw AppException.badRequest("Max " + MAX_HOLDS + " holds allowed");
+            throw AppException.badRequest("预约数量已达上限: " + MAX_HOLDS + "个");
         }
 
         Hold hold = new Hold();
@@ -64,10 +64,10 @@ public class HoldService {
     @Transactional
     public void cancelHold(Integer holdId, Integer userId) {
         Hold hold = holdMapper.findById(holdId);
-        if (hold == null) throw AppException.notFound("Hold not found");
-        if (!hold.getUserId().equals(userId)) throw AppException.forbidden("Unauthorized");
+        if (hold == null) throw AppException.notFound("预约记录不存在");
+        if (!hold.getUserId().equals(userId)) throw AppException.forbidden("无权操作");
         if (List.of("fulfilled", "cancelled", "expired").contains(hold.getStatus())) {
-            throw AppException.badRequest("Hold already resolved");
+            throw AppException.badRequest("预约已处理");
         }
 
         // Release reserved item if hold was ready
@@ -101,9 +101,9 @@ public class HoldService {
     @Transactional
     public Hold fulfillHold(Integer holdId) {
         Hold hold = holdMapper.findById(holdId);
-        if (hold == null) throw AppException.notFound("Hold not found");
+        if (hold == null) throw AppException.notFound("预约记录不存在");
         if (!"ready".equals(hold.getStatus())) {
-            throw AppException.badRequest("Hold must be in ready status");
+            throw AppException.badRequest("预约状态不是待取书，无法履约");
         }
 
         bookService.validateItemStatus("on_hold", "borrowed");

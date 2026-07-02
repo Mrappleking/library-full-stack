@@ -29,11 +29,12 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, h } from 'vue'
-import { useMessage, NButton, NTag } from 'naive-ui'
+import { useMessage, NButton, NTag, useDialog } from 'naive-ui'
 import api from '@/api'
 import type { DataTableColumn } from 'naive-ui'
 
 const message = useMessage()
+const dialog = useDialog()
 const readers = ref<any[]>([])
 const loading = ref(false)
 const expandedKeys = ref<number[]>([])
@@ -46,9 +47,12 @@ const columns: DataTableColumn[] = [
   { title: '邮箱', key: 'email', ellipsis: { tooltip: true } },
   { title: '注册时间', key: 'createdAt', width: 160, render: (r: any) => new Date(r.createdAt).toLocaleDateString('zh-CN') },
   {
-    title: '操作', key: 'actions', width: 80,
+    title: '操作', key: 'actions', width: 160,
     render(row: any) {
-      return h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑')
+      return h('span', { style: 'display:flex;gap:6px;' }, [
+        h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑'),
+        h(NButton, { size: 'small', type: 'error', onClick: () => handleAdminDelete(row) }, () => '强制删除')
+      ])
     }
   }
 ]
@@ -78,6 +82,22 @@ async function handleSave() {
     showModal.value = false; fetchReaders()
   } catch (e: unknown) { message.error((e as Error).message) }
   saving.value = false
+}
+
+async function handleAdminDelete(row: any) {
+  dialog.warning({
+    title: '确认强制删除',
+    content: `确定要永久删除用户「${row.name}」(${row.username}) 吗？此操作不可撤销。`,
+    positiveText: '确定删除',
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      try {
+        await api.post(`/auth/admin/delete-user/${row.id}`)
+        message.success(`已删除用户「${row.name}」`)
+        fetchReaders()
+      } catch (e: unknown) { message.error((e as Error).message) }
+    }
+  })
 }
 
 const ExpandPanel = {
