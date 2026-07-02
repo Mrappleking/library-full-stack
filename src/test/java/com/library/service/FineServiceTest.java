@@ -67,16 +67,21 @@ class FineServiceTest extends AbstractServiceTest {
     void markPaid_shouldUpdateStatus() {
         Fine existing = new Fine();
         existing.setId(1);
+        existing.setUserId(1);
+        existing.setAmount(BigDecimal.TEN);
         existing.setPaid(false);
 
         Fine paid = new Fine();
         paid.setId(1);
+        paid.setUserId(1);
+        paid.setAmount(BigDecimal.TEN);
         paid.setPaid(true);
 
         when(fineMapper.findById(1)).thenReturn(existing, paid);
 
-        Fine result = fineService.markPaid(1);
+        Fine result = fineService.markPaid(1, 1, "admin");
         assertTrue(result.getPaid());
+        verify(userMapper).addFine(1, BigDecimal.TEN.negate());
         verify(fineMapper).markPaid(eq(1), any());
     }
 
@@ -84,9 +89,10 @@ class FineServiceTest extends AbstractServiceTest {
     void markPaid_shouldThrowIfAlreadyPaid() {
         Fine existing = new Fine();
         existing.setId(1);
+        existing.setUserId(1);
         existing.setPaid(true);
 
         when(fineMapper.findById(1)).thenReturn(existing);
-        assertThrows(AppException.class, () -> fineService.markPaid(1));
+        assertThrows(AppException.class, () -> fineService.markPaid(1, 1, "admin"));
     }
 }

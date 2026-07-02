@@ -11,8 +11,13 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 public class BorrowService {
+
+    private static final Logger logger = LoggerFactory.getLogger(BorrowService.class);
 
     private final BorrowRecordMapper borrowRecordMapper;
     private final BookMapper bookMapper;
@@ -43,8 +48,9 @@ public class BorrowService {
     }
 
     public Map<String, Object> getMyBorrows(Integer userId, int page, int limit) {
-        List<BorrowRecord> records = borrowRecordMapper.findByUserId(userId);
-        long total = records.size();
+        int offset = (page - 1) * limit;
+        List<BorrowRecord> records = borrowRecordMapper.findByUserIdPage(userId, offset, limit);
+        long total = borrowRecordMapper.countByUserId(userId);
 
         Map<String, Object> result = new HashMap<>();
         result.put("borrows", records);
@@ -53,11 +59,13 @@ public class BorrowService {
     }
 
     public Map<String, Object> listBorrows(int page, int limit) {
-        List<BorrowRecord> records = borrowRecordMapper.findAll();
+        int offset = (page - 1) * limit;
+        List<BorrowRecord> records = borrowRecordMapper.findAllPage(offset, limit);
+        long total = borrowRecordMapper.countAll();
 
         Map<String, Object> result = new HashMap<>();
         result.put("borrows", records);
-        result.put("total", (long) records.size());
+        result.put("total", total);
         return result;
     }
 
@@ -134,7 +142,8 @@ public class BorrowService {
         borrowRecordMapper.insert(record);
 
         // Update book inventory
-        bookMapper.decrementAvailable(targetBookId);
+        int updated = bookMapper.decrementAvailable(targetBookId);
+        if (updated == 0) throw AppException.badRequest("该书已无可用副本");
         if (targetBookId != null) {
             bookMapper.updateStatus(targetBookId, "borrowed");
         }
@@ -230,8 +239,9 @@ public class BorrowService {
     }
 
     public Map<String, Object> getHistory(Integer userId, int page, int limit) {
-        List<BorrowRecord> records = borrowRecordMapper.findByUserId(userId);
-        long total = records.size();
+        int offset = (page - 1) * limit;
+        List<BorrowRecord> records = borrowRecordMapper.findByUserIdPage(userId, offset, limit);
+        long total = borrowRecordMapper.countByUserId(userId);
 
         Map<String, Object> result = new HashMap<>();
         result.put("borrows", records);
@@ -248,7 +258,7 @@ public class BorrowService {
         try {
             auditLogMapper.insert(log);
         } catch (Exception e) {
-            // fire-and-forget
+            logger.error("审计日志写入失败: action={}, target={}", action, target, e);
         }
     }
 }

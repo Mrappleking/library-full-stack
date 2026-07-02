@@ -50,8 +50,9 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage, NIcon, darkTheme } from 'naive-ui'
 import { PersonOutline, LockClosedOutline } from '@vicons/ionicons5'
-import api, { setAuth } from '../api'
+import api from '../api'
 import LoginBg from '../components/LoginBg.vue'
+import { useAuthStore } from '../stores/auth'
 import type { LoginResponse, UserProfile } from '../types/api'
 const router = useRouter(); const message = useMessage()
 const form = ref({ username: '', password: '' }); const loading = ref(false)
@@ -59,7 +60,7 @@ const rules = { username: [{ required: true, message: '请输入用户名' }], p
 async function handleLogin() {
   if (!form.value.username || !form.value.password) { message.warning('请输入用户名和密码'); return }
   loading.value = true
-  try { const { data } = await api.post<LoginResponse>('/auth/login', form.value); setAuth(data.user, data.token); message.success('登录成功'); router.push(data.user.role === 'admin' ? '/admin/dashboard' : '/reader/books') }
+  try { const { data } = await api.post<LoginResponse>('/auth/login', form.value); useAuthStore().login(data); message.success('登录成功'); router.push(data.user.role === 'admin' ? '/admin/dashboard' : '/reader/books') }
   catch (e: unknown) { message.error((e as Error).message || '登录失败') } finally { loading.value = false }
 }
 const showRegister = ref(false); const regLoading = ref(false)
@@ -68,7 +69,7 @@ const regRules = { username: [{ required: true, message: '请输入用户名' }]
 async function handleRegister() {
   if (!reg.value.username || !reg.value.password || !reg.value.name) { message.warning('请填写必填项'); return }
   regLoading.value = true
-  try { const { data } = await api.post<LoginResponse>('/auth/register', reg.value); setAuth(data.user, data.token); showRegister.value = false; message.success('注册成功'); router.push('/reader/books') }
+  try { const { data } = await api.post<LoginResponse>('/auth/register', reg.value); useAuthStore().login(data); showRegister.value = false; message.success('注册成功'); router.push('/reader/books') }
   catch (e: unknown) { message.error((e as Error).message || '注册失败') } finally { regLoading.value = false }
 }
 </script>

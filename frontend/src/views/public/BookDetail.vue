@@ -86,9 +86,14 @@ onMounted(async () => {
   } finally { loading.value = false }
 })
 
-function handleBorrow() {
+async function handleBorrow() {
   if (!hasToken()) { window.location.href = '/login'; return }
-  window.location.href = '/reader/books'
+  if (!book.value) return
+  try {
+    await api.post('/borrows/borrow', { bookId: book.value.id })
+    message.success('借阅成功')
+    window.location.href = '/reader/books'
+  } catch (e: unknown) { message.error((e as Error).message) }
 }
 async function handleHold() {
   if (!hasToken()) { window.location.href = '/login'; return }

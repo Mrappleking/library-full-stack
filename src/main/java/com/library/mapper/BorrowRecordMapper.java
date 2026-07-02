@@ -16,6 +16,10 @@ public interface BorrowRecordMapper {
     long countActiveByUserId(Integer userId);
     long countActiveByBookId(Integer bookId);
     List<BorrowRecord> findAll();
+    List<BorrowRecord> findByUserIdPage(@Param("userId") Integer userId, @Param("offset") int offset, @Param("limit") int limit);
+    List<BorrowRecord> findAllPage(@Param("offset") int offset, @Param("limit") int limit);
+    long countByUserId(@Param("userId") Integer userId);
+    long countAll();
     void insert(BorrowRecord record);
     void returnBook(@Param("id") Integer id, @Param("returnDate") LocalDateTime returnDate, @Param("status") String status);
     void renew(@Param("id") Integer id, @Param("dueDate") LocalDateTime dueDate);

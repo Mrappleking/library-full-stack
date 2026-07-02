@@ -16,6 +16,8 @@ public interface HoldMapper {
     long countActiveByUserId(Integer userId);
     long countPendingByBookId(Integer bookId);
     List<Hold> findExpiredReadyHolds();
+    List<Hold> findAllPage(@Param("status") String status, @Param("bookId") Integer bookId, @Param("offset") int offset, @Param("limit") int limit);
+    long countAllPage(@Param("status") String status, @Param("bookId") Integer bookId);
     void insert(Hold hold);
     void updateToReady(@Param("id") Integer id, @Param("bookItemId") Integer bookItemId, @Param("expiryDate") LocalDateTime expiryDate);
     void fulfill(@Param("id") Integer id, @Param("status") String status);

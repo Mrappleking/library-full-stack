@@ -12,6 +12,11 @@ api.interceptors.request.use(config => {
 api.interceptors.response.use(
   res => res,
   err => {
+    if (err.response?.status === 401) {
+      clearAuth()
+      window.location.href = '/login'
+      return Promise.reject(new Error('登录已过期，请重新登录'))
+    }
     const msg = err.response?.data?.error || err.message || 'Request failed'
     return Promise.reject(new Error(msg))
   }

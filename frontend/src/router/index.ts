@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { getUser, clearAuth } from '../api'
+import { useAuthStore } from '../stores/auth'
+import { getUser } from '../api'
 
 const routes = [
   { path: '/', redirect: '/books' },
@@ -43,7 +44,9 @@ const router = createRouter({
 })
 
 router.beforeEach((to, _from, next) => {
-  const user = getUser()
+  const auth = useAuthStore()
+  // Prefer store state, fall back to localStorage (for page refresh)
+  const user = auth.user || getUser()
   if (to.path === '/login' || to.path === '/books' || to.path.startsWith('/books/')) {
     if (to.path === '/login' && user) {
       next(user.role === 'admin' ? '/admin/dashboard' : '/reader/books')
@@ -53,7 +56,7 @@ router.beforeEach((to, _from, next) => {
     return
   }
   if (!user) {
-    clearAuth()
+    auth.logout()  // Clears both store + localStorage
     next('/login')
     return
   }
