@@ -14,13 +14,16 @@ public class StatsService {
     private final UserMapper userMapper;
     private final BorrowRecordMapper borrowRecordMapper;
     private final CategoryMapper categoryMapper;
+    private final BookService bookService;
 
     public StatsService(BookMapper bookMapper, UserMapper userMapper,
-                        BorrowRecordMapper borrowRecordMapper, CategoryMapper categoryMapper) {
+                        BorrowRecordMapper borrowRecordMapper, CategoryMapper categoryMapper,
+                        BookService bookService) {
         this.bookMapper = bookMapper;
         this.userMapper = userMapper;
         this.borrowRecordMapper = borrowRecordMapper;
         this.categoryMapper = categoryMapper;
+        this.bookService = bookService;
     }
 
     public StatsOverviewResponse getOverview() {
@@ -72,8 +75,9 @@ public class StatsService {
     }
 
     public FacetsDTO getFacets(Map<String, Object> params) {
+        Map<String, Object> raw = bookService.getFacets(params);
         FacetsDTO dto = new FacetsDTO();
-        dto.setFacets(Map.of());
+        dto.setFacets((Map<String, List<Map<String, Object>>>) raw.get("facets"));
         return dto;
     }
 
