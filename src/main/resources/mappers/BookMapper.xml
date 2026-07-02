@@ -106,7 +106,7 @@
   </select>
 
   <select id="countByLanguage" resultType="map">
-    SELECT language as `value`, COUNT(*) as `count`
+    SELECT language as `value`, SUM(available) as `count`
     FROM books
     WHERE language IS NOT NULL
     <if test="search != null">AND (title LIKE CONCAT('%', #{search}, '%') OR author LIKE CONCAT('%', #{search}, '%') OR isbn LIKE CONCAT('%', #{search}, '%'))</if>
@@ -117,7 +117,7 @@
   </select>
 
   <select id="countByCategory" resultType="map">
-    SELECT c.name as `value`, COUNT(*) as `count`
+    SELECT c.name as `value`, SUM(b.available) as `count`
     FROM books b LEFT JOIN categories c ON b.categoryId = c.id
     WHERE b.categoryId IS NOT NULL
     <if test="search != null">AND (b.title LIKE CONCAT('%', #{search}, '%') OR b.author LIKE CONCAT('%', #{search}, '%') OR b.isbn LIKE CONCAT('%', #{search}, '%'))</if>
@@ -128,7 +128,7 @@
   </select>
 
   <select id="countByYearDecade" resultType="map">
-    SELECT CONCAT(FLOOR(year / 10) * 10, 's') as `value`, COUNT(*) as `count`
+    SELECT CONCAT(FLOOR(year / 10) * 10, 's') as `value`, SUM(available) as `count`
     FROM books
     WHERE year IS NOT NULL
     <if test="search != null">AND (title LIKE CONCAT('%', #{search}, '%') OR author LIKE CONCAT('%', #{search}, '%') OR isbn LIKE CONCAT('%', #{search}, '%'))</if>
