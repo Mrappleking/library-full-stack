@@ -46,19 +46,31 @@
   </select>
 
   <select id="countByCampus" resultType="map">
-    SELECT campus as `value`, COUNT(*) as `count`
-    FROM book_items
-    WHERE campus IS NOT NULL
-    <if test="location != null">AND location = #{location}</if>
-    GROUP BY campus ORDER BY `count` DESC
+    SELECT bi.campus as `value`, SUM(CASE WHEN bi.status = 'available' THEN 1 ELSE 0 END) as `count`
+    FROM book_items bi
+    LEFT JOIN books b ON bi.bookId = b.id
+    WHERE bi.campus IS NOT NULL
+    <if test="location != null">AND bi.location = #{location}</if>
+    <if test="search != null">AND (b.title LIKE CONCAT('%', #{search}, '%') OR b.author LIKE CONCAT('%', #{search}, '%') OR b.isbn LIKE CONCAT('%', #{search}, '%'))</if>
+    <if test="categoryId != null">AND b.categoryId = #{categoryId}</if>
+    <if test="language != null">AND b.language = #{language}</if>
+    <if test="yearMin != null">AND b.year >= #{yearMin}</if>
+    <if test="yearMax != null">AND b.year &lt;= #{yearMax}</if>
+    GROUP BY bi.campus ORDER BY `count` DESC
   </select>
 
   <select id="countByLocation" resultType="map">
-    SELECT location as `value`, COUNT(*) as `count`
-    FROM book_items
-    WHERE location IS NOT NULL
-    <if test="campus != null">AND campus = #{campus}</if>
-    GROUP BY location ORDER BY `count` DESC
+    SELECT bi.location as `value`, SUM(CASE WHEN bi.status = 'available' THEN 1 ELSE 0 END) as `count`
+    FROM book_items bi
+    LEFT JOIN books b ON bi.bookId = b.id
+    WHERE bi.location IS NOT NULL
+    <if test="campus != null">AND bi.campus = #{campus}</if>
+    <if test="search != null">AND (b.title LIKE CONCAT('%', #{search}, '%') OR b.author LIKE CONCAT('%', #{search}, '%') OR b.isbn LIKE CONCAT('%', #{search}, '%'))</if>
+    <if test="categoryId != null">AND b.categoryId = #{categoryId}</if>
+    <if test="language != null">AND b.language = #{language}</if>
+    <if test="yearMin != null">AND b.year >= #{yearMin}</if>
+    <if test="yearMax != null">AND b.year &lt;= #{yearMax}</if>
+    GROUP BY bi.location ORDER BY `count` DESC
   </select>
 
   <insert id="insert" useGeneratedKeys="true" keyProperty="id">
