@@ -179,15 +179,11 @@ public class BookService {
     public Map<String, Object> getFacets(Map<String, Object> params) {
         Map<String, Object> facets = new HashMap<>();
 
-        // campus facet — from book_items
-        Map<String, Object> itemParams = new HashMap<>();
-        if (params.containsKey("location")) itemParams.put("location", params.get("location"));
-        facets.put("campus", bookItemMapper.countByCampus(itemParams));
+        // campus facet — from book_items JOIN books
+        facets.put("campus", bookItemMapper.countByCampus(params));
 
-        // location facet — from book_items
-        Map<String, Object> locParams = new HashMap<>();
-        if (params.containsKey("campus")) locParams.put("campus", params.get("campus"));
-        facets.put("location", bookItemMapper.countByLocation(locParams));
+        // location facet — from book_items JOIN books
+        facets.put("location", bookItemMapper.countByLocation(params));
 
         // language facet — from books
         facets.put("language", bookMapper.countByLanguage(params));
