@@ -68,7 +68,7 @@ public class BookService {
 
     public BookDetailResponse getById(Integer id) {
         Book book = bookMapper.findById(id);
-        if (book == null) throw AppException.notFound("Book not found");
+        if (book == null) throw AppException.notFound("图书不存在");
 
         BookDetailResponse resp = new BookDetailResponse();
         resp.setId(book.getId());
@@ -125,7 +125,7 @@ public class BookService {
     public List<BookItemResponse> getItemsByBookId(Integer id) {
         // Verify book exists
         Book book = bookMapper.findById(id);
-        if (book == null) throw AppException.notFound("Book not found");
+        if (book == null) throw AppException.notFound("图书不存在");
 
         List<BookItem> items = bookItemMapper.findByBookId(id);
         return items.stream().map(item -> {
@@ -176,13 +176,13 @@ public class BookService {
     @Transactional
     public Book update(Integer id, Map<String, Object> data) {
         Book current = bookMapper.findById(id);
-        if (current == null) throw AppException.notFound("Book not found");
+        if (current == null) throw AppException.notFound("图书不存在");
 
         if (data.containsKey("total") && data.get("total") != null) {
             int newTotal = (Integer) data.get("total");
             int borrowed = current.getTotal() - current.getAvailable();
             if (newTotal < borrowed) {
-                throw AppException.badRequest("Cannot reduce total below " + borrowed);
+                throw AppException.badRequest("总数不能低于 " + borrowed);
             }
             int diff = newTotal - current.getTotal();
             int newAvailable = current.getAvailable() + diff;
@@ -216,7 +216,7 @@ public class BookService {
     @Transactional
     public void remove(Integer id) {
         long count = bookItemMapper.countByBookId(id);
-        if (count > 0) throw AppException.badRequest("Cannot delete book with " + count + " existing copies");
+        if (count > 0) throw AppException.badRequest("无法删除，该书有 " + count + " 个馆藏复本");
         bookMapper.deleteById(id);
         audit("delete", "book:" + id, "Deleted book id: " + id);
     }
@@ -233,7 +233,7 @@ public class BookService {
     public void validateItemStatus(String current, String next) {
         List<String> allowed = STATUS_TRANSITIONS.get(current);
         if (allowed == null || !allowed.contains(next)) {
-            throw AppException.badRequest("Invalid status transition: " + current + " → " + next);
+            throw AppException.badRequest("无效的状态转换: " + current + " → " + next);
         }
     }
 

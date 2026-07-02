@@ -72,6 +72,6 @@ public class GlobalExceptionHandler {
         log.error("Unhandled exception", e);
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponse("服务器内部错误", "An unexpected error occurred"));
+                .body(new ErrorResponse("服务器内部错误", "发生未知错误，请稍后重试"));
     }
 }

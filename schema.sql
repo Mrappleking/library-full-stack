@@ -1,13 +1,8 @@
 -- ============================================================
 -- Library Full-Stack Schema — MySQL 8.0
 -- ============================================================
--- 注意: 这是一个简化版 DDL，用于快速搭建项目。
--- 相比 Prisma 迁移生成的实际数据库，这里省略了：
---   - 外键约束 (FK)
---   - 部分索引
---   - ENUM 类型（改为 VARCHAR）
---   - 部分 NOT NULL 约束
--- 如需完整一致的 DDL，请用 `mysqldump --no-data library` 导出。
+-- 如已存在旧数据库，请执行迁移：
+--   ALTER TABLE users ADD COLUMN token_version INT NOT NULL DEFAULT 0;
 
 CREATE DATABASE IF NOT EXISTS library DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE library;
@@ -60,6 +55,7 @@ CREATE TABLE `users` (
   `email` VARCHAR(100) DEFAULT NULL,
   `total_fines` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
   `patronCategoryId` INT DEFAULT NULL,
+  `token_version` INT NOT NULL DEFAULT 0,
   `created_at` DATETIME NOT NULL DEFAULT NOW(),
   `updated_at` DATETIME NOT NULL DEFAULT NOW(),
   PRIMARY KEY (`id`),

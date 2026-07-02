@@ -1,10 +1,14 @@
 package com.library.config;
 
+import com.library.entity.User;
+import com.library.mapper.UserMapper;
 import com.library.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -15,10 +19,14 @@ import java.io.IOException;
 @Order(1)
 public class JwtAuthFilter extends OncePerRequestFilter {
 
-    private final JwtUtil jwtUtil;
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthFilter.class);
 
-    public JwtAuthFilter(JwtUtil jwtUtil) {
+    private final JwtUtil jwtUtil;
+    private final UserMapper userMapper;
+
+    public JwtAuthFilter(JwtUtil jwtUtil, UserMapper userMapper) {
         this.jwtUtil = jwtUtil;
+        this.userMapper = userMapper;
     }
 
     @Override
@@ -43,24 +51,47 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         // 3. All other paths (including write operations on read-only paths) require auth
         String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            response.setStatus(401);
-            response.setContentType("application/json");
-            response.getWriter().write("{\"error\":\"Unauthorized\"}");
+            writeError(response, 401, "未登录或Token无效");
             return;
         }
 
         String token = authHeader.substring(7);
         if (!jwtUtil.validateToken(token)) {
-            response.setStatus(401);
-            response.setContentType("application/json");
-            response.getWriter().write("{\"error\":\"Invalid or expired token\"}");
+            writeError(response, 401, "Token无效或已过期");
+            return;
+        }
+
+        int userId = jwtUtil.getUserIdFromToken(token);
+        int tokenVersion = jwtUtil.getTokenVersionFromToken(token);
+
+        // Check token version — reject if user has been logged out / force-logged-out
+        // 兼容旧数据库（无 token_version 列时视为 0）
+        try {
+            User user = userMapper.findById(userId);
+            int currentVersion = user != null && user.getTokenVersion() != null ? user.getTokenVersion() : 0;
+            if (user == null || currentVersion != tokenVersion) {
+                writeError(response, 401, "Token已被注销");
+                return;
+            }
+        } catch (Exception e) {
+            log.error("用户认证查询失败: userId={}", userId, e);
+            writeError(response, 500, "服务器内部错误");
             return;
         }
 
         // Set user info in request attributes
-        request.setAttribute("userId", jwtUtil.getUserIdFromToken(token));
+        request.setAttribute("userId", userId);
         request.setAttribute("userRole", jwtUtil.getRoleFromToken(token));
         chain.doFilter(request, response);
+    }
+
+    /**
+     * Write JSON error response with the given status code and Chinese error message.
+     */
+    private void writeError(HttpServletResponse response, int status, String message) throws IOException {
+        response.setStatus(status);
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write("{\"error\":\"" + message + "\"}");
     }
 
     /**

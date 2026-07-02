@@ -25,7 +25,7 @@ class AuthServiceTest extends AbstractServiceTest {
     @BeforeEach
     void setUp() {
         passwordEncoder = new BCryptPasswordEncoder();
-        authService = new AuthService(userMapper, passwordEncoder, jwtUtil, auditLogMapper);
+        authService = new AuthService(userMapper, passwordEncoder, jwtUtil, auditLogMapper, borrowRecordMapper, fineMapper);
     }
 
     @Test
@@ -36,7 +36,7 @@ class AuthServiceTest extends AbstractServiceTest {
         req.setPassword("pass123");
         req.setName("Test User");
 
-        when(jwtUtil.generateToken(anyInt(), eq("reader"))).thenReturn("test-token");
+        when(jwtUtil.generateToken(anyInt(), eq("reader"), anyInt())).thenReturn("test-token");
 
         User savedUser = new User();
         savedUser.setId(42);
@@ -91,7 +91,7 @@ class AuthServiceTest extends AbstractServiceTest {
         user.setCreatedAt(LocalDateTime.now());
 
         when(userMapper.findByUsername("admin")).thenReturn(user);
-        when(jwtUtil.generateToken(1, "admin")).thenReturn("admin-token");
+        when(jwtUtil.generateToken(eq(1), eq("admin"), anyInt())).thenReturn("admin-token");
 
         LoginResponse response = authService.login("admin", "admin123");
 

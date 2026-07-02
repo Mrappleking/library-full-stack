@@ -83,6 +83,6 @@ public class BookController {
 
     @PostMapping("/{id}/reconcile")
     public ResponseEntity<?> reconcile(@PathVariable Integer id) {
-        return ResponseEntity.ok(Map.of("message", "Reconciliation not implemented in MyBatis version"));
+        return ResponseEntity.ok(Map.of("message", "数据同步功能暂未实现"));
     }
 }
