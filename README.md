@@ -31,6 +31,108 @@ npm run dev
 
 ---
 
+## 开发规范
+
+### 新增一个功能的标准流程
+
+```
+① Issue → ② Fork / 建分支 → ③ 实现 → ④ 自测 → ⑤ PR → ⑥ Review → ⑦ 合并
+```
+
+**① 提 Issue**：描述需求/问题，明确预期结果和验收标准。见 GitHub Issues 模板。
+
+**② 分支命名**：`fix/xxx`（修复）、`feat/xxx`（新功能）、`refactor/xxx`（重构）。
+
+**③ 实现检查清单**：
+
+| 检查项 | 说明 |
+|--------|------|
+| 数据库列名 | 用 `SHOW CREATE TABLE 表名` 确认实际列名（驼峰/下划线混用）**
+| 新增 API | Controller 参数用 `@RequestParam` 收集，禁止直接 `HttpServletRequest` |
+| 错误消息 | 全部中文，格式与 `AppException` 全局处理一致 |
+| 权限 | 写操作必须有鉴权，区分管理员/读者角色 |
+| 事务 | 多 DAO 写入必须加 `@Transactional` |
+| MyBatis SQL | 复杂动态 SQL 写到 XML 文件，不要嵌在注解字符串里 |
+
+**④ 自测标准**：
+
+```bash
+export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
+./mvnw test    # 全量测试必须通过
+```
+
+- 新增 >50 行功能代码：必须附带单元测试
+- 新增 >20 行：强烈建议加测试
+- 至少覆盖：正常路径 + 边界条件 + 错误路径
+
+**⑤ PR 编写**：
+
+```text
+PR 标题: <type>: <简短描述> (closes #N)
+PR 正文: 
+  - 改了什么（逐条）
+  - 关联 issue 编号
+  - 测试结果截图/日志
+```
+
+**⑥ Review 标准**：
+
+Reviewer 必须逐条对照 issue 原文验证，不可凭"扫视觉得没问题"就合并。详见 GitHub Projects 看板中的审查清单。
+
+**⑦ 合并**：squash merge，保持 main 历史干净。
+
+---
+
+### 多维度查询设计规范（重要）
+
+当新增多个同层级查询（如多个 facet 维度、多个统计聚合）时，**必须列出维度覆盖矩阵**逐格验证参数穿透，禁止凭直觉逐个写 SQL。
+
+正确做法示例（以 facet 查询为例）：
+
+```
+                 search  categoryId  language  yearMin  yearMax  campus  location
+language facet     ✅        ✅                  ✅       ✅
+subject facet      ✅                   ✅      ✅       ✅
+yearRange facet    ✅        ✅        ✅      ✅       ✅
+campus facet       ✅        ✅        ✅      ✅       ✅        —        ✅
+location facet     ✅        ✅        ✅      ✅       ✅        ✅        —
+```
+
+矩阵完成后，每个 `❌` 必须有一个设计理由（为什么这个维度不需要这个参数），否则就是遗漏。
+
+### 代码风格
+
+| 项 | 规范 |
+|----|------|
+| Java | Spring Boot 3 + MyBatis 标准三层 |
+| 前端 | Vue 3 Composition API + TypeScript |
+| 数据库列名 | 新表统一全小写下划线（`created_at`），与 MyBatis `map-underscore-to-camel-case` 配合 |
+| 错误消息 | 全中文，`AppException` 统一抛出 |
+| 测试 | Mockito + JUnit 5，service 层测试继承 `AbstractServiceTest` |
+| 提交信息 | `type: 中文描述`（type: fix/feat/refactor/docs/chore/test） |
+
+### 提交流程速查
+
+```bash
+# 假设在功能分支上
+git add -A
+git commit -m "fix: 修复XXX问题"
+git push origin <分支名>
+# → GitHub 上开 PR，关联 issue
+```
+
+### 环境变量
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `JAVA_HOME` | 必设 | WSL 必须指向 Java 21 |
+| `DB_PASSWORD` | `li200603` | 数据库密码（dev profile） |
+| `JWT_SECRET` | 内置默认 | 仅开发用，生产必须改 |
+
+**安全：** 禁止在注释、commit message、seed.sql 中写密码。禁止提交含密码的配置文件。
+
+---
+
 ## 项目状态
 
 45 API endpoints · 71 Java files · 31 Vue files · 8 XML mappers · 55 tests ✅
