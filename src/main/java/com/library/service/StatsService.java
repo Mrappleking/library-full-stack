@@ -72,8 +72,9 @@ public class StatsService {
     }
 
     public FacetsDTO getFacets(Map<String, Object> params) {
+        Map<String, Object> raw = bookService.getFacets(params);
         FacetsDTO dto = new FacetsDTO();
-        dto.setFacets(Map.of());
+        dto.setFacets((Map<String, List<Map<String, Object>>>) raw.get("facets"));
         return dto;
     }
 

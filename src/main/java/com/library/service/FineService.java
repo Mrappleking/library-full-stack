@@ -64,8 +64,8 @@ public class FineService {
     @Transactional
     public Fine markPaid(Integer fineId, Integer userId) {
         Fine fine = fineMapper.findById(fineId);
-        if (fine == null) throw AppException.notFound("罚款记录不存在");
-        if (fine.getPaid()) throw AppException.badRequest("已支付");
+        if (fine == null) throw AppException.notFound("Fine not found");
+        if (fine.getPaid()) throw AppException.badRequest("Already paid");
 
         // Ownership verification
         if (!fine.getUserId().equals(userId)) {

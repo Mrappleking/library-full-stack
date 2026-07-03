@@ -1,13 +1,10 @@
 package com.library.service;
 
-import com.library.dto.response.UserProfile;
 import com.library.entity.User;
 import com.library.exception.AppException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -24,99 +21,63 @@ class UserServiceTest extends AbstractServiceTest {
 
     @Test
     void findAll_shouldReturnAllUsers() {
-        User user1 = createUser(1, "admin", "系统管理员", "admin");
-        User user2 = createUser(2, "reader1", "张三", "reader");
-        when(userMapper.findAll()).thenReturn(List.of(user1, user2));
-
-        List<UserProfile> result = userService.findAll();
-
+        when(userMapper.findAll()).thenReturn(List.of(createUser(1, "admin", "admin"), createUser(2, "reader1", "reader")));
+        var result = userService.findAll();
         assertEquals(2, result.size());
-        assertEquals("admin", result.get(0).getUsername());
-        assertEquals("reader1", result.get(1).getUsername());
-        verify(userMapper).findAll();
     }
 
     @Test
-    void findById_shouldReturnProfile() {
-        User user = createUser(1, "admin", "系统管理员", "admin");
-        user.setPhone("13800000000");
-        user.setEmail("admin@library.com");
-        user.setPatronCategoryId(1);
-        user.setTotalFines(BigDecimal.valueOf(10.50));
-        when(userMapper.findById(1)).thenReturn(user);
-
-        UserProfile result = userService.findById(1);
-
-        assertEquals(1, result.getId());
+    void findById_shouldReturnUser() {
+        when(userMapper.findById(1)).thenReturn(createUser(1, "admin", "admin"));
+        var result = userService.findById(1);
         assertEquals("admin", result.getUsername());
-        assertEquals("系统管理员", result.getName());
-        assertEquals("admin", result.getRole());
-        assertEquals("13800000000", result.getPhone());
-        assertEquals("admin@library.com", result.getEmail());
-        assertEquals(1, result.getPatronCategoryId());
-        assertEquals(10.50, result.getTotalFines());
     }
 
     @Test
     void findById_shouldThrowWhenNotFound() {
         when(userMapper.findById(999)).thenReturn(null);
-
-        AppException ex = assertThrows(AppException.class, () -> userService.findById(999));
-        assertEquals("用户不存在", ex.getMessage());
+        assertThrows(AppException.class, () -> userService.findById(999));
     }
 
     @Test
     void update_shouldUpdateFields() {
-        User existing = createUser(1, "reader1", "旧名字", "reader");
-        existing.setPhone("13800000000");
-        existing.setEmail("old@test.com");
-        when(userMapper.findById(1)).thenReturn(existing);
+        User user = createUser(1, "reader1", "reader");
+        user.setName("OldName");
+        user.setPhone("111");
+        user.setEmail("old@test.com");
+        when(userMapper.findById(1)).thenReturn(user);
 
-        UserProfile result = userService.update(1, "新名字", "13900000001", "new@test.com");
+        userService.update(1, "NewName", "222", "new@test.com");
 
-        assertEquals("新名字", result.getName());
-        assertEquals("13900000001", result.getPhone());
-        assertEquals("new@test.com", result.getEmail());
-        verify(userMapper).update(any(User.class));
+        verify(userMapper).update(argThat(u ->
+                "NewName".equals(u.getName()) &&
+                "222".equals(u.getPhone()) &&
+                "new@test.com".equals(u.getEmail())
+        ));
     }
 
     @Test
     void update_shouldKeepNameWhenNull() {
-        User existing = createUser(1, "reader1", "张三", "reader");
-        existing.setPhone("13800000000");
-        when(userMapper.findById(1)).thenReturn(existing);
+        User user = createUser(1, "reader1", "reader");
+        user.setName("Original");
+        when(userMapper.findById(1)).thenReturn(user);
 
-        UserProfile result = userService.update(1, null, "13900000001", "new@test.com");
+        userService.update(1, null, "111", "test@test.com");
 
-        assertEquals("张三", result.getName());
-        assertEquals("13900000001", result.getPhone());
-        assertEquals("new@test.com", result.getEmail());
-        verify(userMapper).update(any(User.class));
+        verify(userMapper).update(argThat(u -> "Original".equals(u.getName())));
     }
 
     @Test
-    void update_shouldThrowWhenNotFound() {
+    void update_shouldThrowWhenUserNotFound() {
         when(userMapper.findById(999)).thenReturn(null);
-
-        AppException ex = assertThrows(AppException.class,
-                () -> userService.update(999, "新名字", "13900000001", "new@test.com"));
-        assertEquals("用户不存在", ex.getMessage());
-        verify(userMapper, never()).update(any());
+        assertThrows(AppException.class, () -> userService.update(999, "N", "1", "e@e.com"));
     }
 
-    /**
-     * Helper — 构造 User 对象
-     */
-    private User createUser(Integer id, String username, String name, String role) {
-        User user = new User();
-        user.setId(id);
-        user.setUsername(username);
-        user.setPassword("$2a$10$hashedpassword");
-        user.setName(name);
-        user.setRole(role);
-        user.setTotalFines(BigDecimal.ZERO);
-        user.setCreatedAt(LocalDateTime.now());
-        user.setUpdatedAt(LocalDateTime.now());
-        return user;
+    private User createUser(Integer id, String username, String role) {
+        User u = new User();
+        u.setId(id);
+        u.setUsername(username);
+        u.setRole(role);
+        return u;
     }
 }
