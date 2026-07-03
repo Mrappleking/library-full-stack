@@ -16,7 +16,7 @@ import { ref } from 'vue'
 import { NSpace, NSelect, NInput, NButton, NTag } from 'naive-ui'
 
 const props = defineProps<{ filters?: Record<string, string> }>()
-const emit = defineEmits<{ search: [query: string]; clearFilter: [key: string] }>()
+const emit = defineEmits<{ search: [query: string, type: string]; clearFilter: [key: string] }>()
 
 const query = ref('')
 const searchType = ref('all')
@@ -27,7 +27,7 @@ const typeOptions = [
   { label: 'ISBN', value: 'isbn' },
 ]
 
-function doSearch() { emit('search', query.value) }
+function doSearch() { emit('search', query.value, searchType.value) }
 function clearFilter(key: string) { emit('clearFilter', key) }
 </script>
 

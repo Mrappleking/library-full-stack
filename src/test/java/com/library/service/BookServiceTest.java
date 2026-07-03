@@ -17,7 +17,7 @@ class BookServiceTest extends AbstractServiceTest {
 
     @BeforeEach
     void setUp() {
-        bookService = new BookService(bookMapper, bookItemMapper);
+        bookService = new BookService(bookMapper, bookItemMapper, categoryMapper, borrowRecordMapper, auditLogMapper);
     }
 
     @Test
@@ -139,5 +139,85 @@ class BookServiceTest extends AbstractServiceTest {
     @Test
     void validateItemStatus_shouldThrowForInvalidTransition() {
         assertThrows(AppException.class, () -> bookService.validateItemStatus("available", "expired"));
+    }
+
+    @Test
+    void getFacets_shouldReturnFiveDimensions() {
+        Map<String, Object> params = new HashMap<>();
+        params.put("search", "test");
+
+        // Mock all 5 facet query responses
+        when(bookItemMapper.countByCampus(params)).thenReturn(List.of(
+                Map.of("value", "校本部", "count", 10L),
+                Map.of("value", "中心校区", "count", 5L)
+        ));
+        when(bookItemMapper.countByLocation(params)).thenReturn(List.of(
+                Map.of("value", "一层社科库", "count", 8L)
+        ));
+        when(bookMapper.countByLanguage(params)).thenReturn(List.of(
+                Map.of("value", "中文", "count", 15L)
+        ));
+        when(bookMapper.countByCategory(params)).thenReturn(List.of(
+                Map.of("value", "计算机", "count", 7L)
+        ));
+        when(bookMapper.countByYearDecade(params)).thenReturn(List.of(
+                Map.of("value", "2020s", "count", 12L)
+        ));
+
+        var result = bookService.getFacets(params);
+
+        assertNotNull(result);
+        assertTrue(result.containsKey("facets"));
+        @SuppressWarnings("unchecked")
+        Map<String, List<Map<String, Object>>> facets =
+                (Map<String, List<Map<String, Object>>>) result.get("facets");
+
+        // Verify all 5 dimensions present
+        assertEquals(5, facets.size());
+        assertTrue(facets.containsKey("campus"));
+        assertTrue(facets.containsKey("location"));
+        assertTrue(facets.containsKey("language"));
+        assertTrue(facets.containsKey("subject"));
+        assertTrue(facets.containsKey("yearRange"));
+
+        // Verify campus facet values
+        assertEquals(2, facets.get("campus").size());
+        assertEquals("校本部", facets.get("campus").get(0).get("value"));
+        assertEquals(10L, facets.get("campus").get(0).get("count"));
+
+        // Verify all mappers were called once
+        verify(bookItemMapper).countByCampus(params);
+        verify(bookItemMapper).countByLocation(params);
+        verify(bookMapper).countByLanguage(params);
+        verify(bookMapper).countByCategory(params);
+        verify(bookMapper).countByYearDecade(params);
+    }
+
+    @Test
+    void getFacets_shouldPassFilterParams() {
+        Map<String, Object> params = new HashMap<>();
+        params.put("search", "python");
+        params.put("categoryId", 2);
+        params.put("language", "中文");
+        params.put("yearMin", 2020);
+        params.put("yearMax", 2024);
+        params.put("campus", "校本部");
+        params.put("location", "一层社科库");
+
+        when(bookItemMapper.countByCampus(params)).thenReturn(List.of());
+        when(bookItemMapper.countByLocation(params)).thenReturn(List.of());
+        when(bookMapper.countByLanguage(params)).thenReturn(List.of());
+        when(bookMapper.countByCategory(params)).thenReturn(List.of());
+        when(bookMapper.countByYearDecade(params)).thenReturn(List.of());
+
+        var result = bookService.getFacets(params);
+
+        assertNotNull(result);
+        // Verify full params (including book-level filters) passed to campus/location
+        verify(bookItemMapper).countByCampus(params);
+        verify(bookItemMapper).countByLocation(params);
+        verify(bookMapper).countByLanguage(params);
+        verify(bookMapper).countByCategory(params);
+        verify(bookMapper).countByYearDecade(params);
     }
 }

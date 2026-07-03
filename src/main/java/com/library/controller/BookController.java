@@ -62,7 +62,7 @@ public class BookController {
 
     @GetMapping("/{id}/items")
     public ResponseEntity<?> getItems(@PathVariable Integer id) {
-        return ResponseEntity.ok(bookService.getById(id));
+        return ResponseEntity.ok(bookService.getItemsByBookId(id));
     }
 
     @PostMapping

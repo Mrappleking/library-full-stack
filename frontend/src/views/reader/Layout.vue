@@ -42,7 +42,7 @@ import { computed, h } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { NIcon } from 'naive-ui'
 import { BookOutline, ClipboardOutline, PersonOutline, LogOutOutline } from '@vicons/ionicons5'
-import { clearAuth } from '../../api'
+import { useAuthStore } from '../../stores/auth'
 import type { MenuOption } from 'naive-ui'
 
 const router = useRouter()
@@ -62,7 +62,7 @@ const activeKey = computed(() => {
 })
 
 function handleMenu(key: string) { router.push(key) }
-function handleLogout() { clearAuth(); router.push('/login') }
+function handleLogout() { useAuthStore().logout(); router.push('/login') }
 </script>
 
 <style scoped>

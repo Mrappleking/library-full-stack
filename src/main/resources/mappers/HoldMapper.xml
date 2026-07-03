@@ -45,6 +45,19 @@
     SELECT COUNT(*) FROM holds WHERE bookId = #{bookId} AND status = 'pending'
   </select>
 
+  <select id="findAllPage" resultMap="fullHold">
+    SELECT * FROM holds WHERE 1=1
+    <if test="status != null">AND status = #{status}</if>
+    <if test="bookId != null">AND bookId = #{bookId}</if>
+    ORDER BY request_date DESC LIMIT #{limit} OFFSET #{offset}
+  </select>
+
+  <select id="countAllPage" resultType="long">
+    SELECT COUNT(*) FROM holds WHERE 1=1
+    <if test="status != null">AND status = #{status}</if>
+    <if test="bookId != null">AND bookId = #{bookId}</if>
+  </select>
+
   <select id="findExpiredReadyHolds" resultType="com.library.entity.Hold">
     SELECT * FROM holds WHERE status = 'ready' AND expiry_date IS NOT NULL AND expiry_date &lt; NOW()
   </select>

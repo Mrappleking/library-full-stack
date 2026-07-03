@@ -1,5 +1,6 @@
 package com.library.service;
 
+import com.library.entity.AuditLog;
 import com.library.entity.*;
 import com.library.exception.AppException;
 import com.library.mapper.*;
@@ -7,21 +8,30 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 public class HoldService {
+
+    private static final Logger log = LoggerFactory.getLogger(HoldService.class);
 
     private final HoldMapper holdMapper;
     private final BookMapper bookMapper;
     private final BookItemMapper bookItemMapper;
     private final BookService bookService;
+    private final AuditLogMapper auditLogMapper;
     private static final int MAX_HOLDS = 3;
 
     public HoldService(HoldMapper holdMapper, BookMapper bookMapper,
-                       BookItemMapper bookItemMapper, BookService bookService) {
+                       BookItemMapper bookItemMapper, BookService bookService,
+                       AuditLogMapper auditLogMapper) {
         this.holdMapper = holdMapper;
         this.bookMapper = bookMapper;
         this.bookItemMapper = bookItemMapper;
         this.bookService = bookService;
+        this.auditLogMapper = auditLogMapper;
     }
 
     @Transactional
@@ -47,6 +57,7 @@ public class HoldService {
         hold.setUserId(userId);
         hold.setBookId(bookId);
         holdMapper.insert(hold);
+        audit("hold:create", "hold:" + hold.getId(), "Created hold for bookId=" + bookId);
         return holdMapper.findById(hold.getId());
     }
 
@@ -67,6 +78,7 @@ public class HoldService {
         }
 
         holdMapper.updateStatus(holdId, "cancelled");
+        audit("hold:cancel", "hold:" + holdId, "Cancelled hold");
     }
 
     public List<Hold> getMyHolds(Integer userId) {
@@ -76,8 +88,9 @@ public class HoldService {
 
     public Map<String, Object> listHolds(String status, Integer bookId, int page, int limit) {
         expireReadyHolds();
-        List<Hold> holds = holdMapper.findAll(status, bookId);
-        long total = holds.size();
+        int offset = (page - 1) * limit;
+        List<Hold> holds = holdMapper.findAllPage(status, bookId, offset, limit);
+        long total = holdMapper.countAllPage(status, bookId);
 
         Map<String, Object> result = new HashMap<>();
         result.put("holds", holds);
@@ -132,8 +145,20 @@ public class HoldService {
                     }
                 }
             } catch (Exception e) {
-                // Skip individual failures
+                log.warn("预约过期处理失败: holdId={}", h.getId(), e);
             }
+        }
+    }
+
+    private void audit(String action, String target, String detail) {
+        AuditLog auditLog = new AuditLog();
+        auditLog.setAction(action);
+        auditLog.setTarget(target);
+        auditLog.setDetail(detail);
+        try {
+            auditLogMapper.insert(auditLog);
+        } catch (Exception e) {
+            log.error("审计日志写入失败: action={}, target={}", action, target, e);
         }
     }
 }

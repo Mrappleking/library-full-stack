@@ -12,7 +12,7 @@
             <n-descriptions-item label="状态">
               <StatusBadge :status="currentItem.status" />
             </n-descriptions-item>
-            <n-descriptions-item label="当前位置">{{ currentBorrow ? '借出 (' + currentBorrow.userId + ')' : '在架' }}</n-descriptions-item>
+            <n-descriptions-item label="当前位置">{{ currentBorrow ? '借出 (' + (currentBorrow.user?.name || '读者#' + currentBorrow.userId) + ')' : '在架' }}</n-descriptions-item>
           </n-descriptions>
           <n-space v-if="currentItem" style="margin-top:12px">
             <n-button v-if="!currentBorrow" type="success" @click="addToQueue('borrow')">借书</n-button>
@@ -57,8 +57,8 @@ const queue = ref<any[]>([])
 async function onScan(barcode: string) {
   try {
     const { data } = await api.get(`/book-items/${encodeURIComponent(barcode)}`)
-    currentItem.value = data
-    currentBorrow.value = data.currentBorrow
+    currentItem.value = data.item
+    currentBorrow.value = data.currentBorrow ?? null
     playBeep(data.currentBorrow ? 'return' : 'borrow')
   } catch { message.error('条码未找到') }
 }
@@ -68,7 +68,7 @@ function addToQueue(action: string) {
   queue.value.push({
     action,
     barcode: currentItem.value.barcode,
-    bookName: currentItem.value.bookName,
+    bookName: currentItem.value.book?.title || currentItem.value.barcode,
     itemId: currentItem.value.id,
     currentBorrowId: currentBorrow.value?.id
   })
@@ -93,9 +93,14 @@ async function commitAll() {
   queue.value = []
 }
 
+let audioCtx: AudioContext | null = null
+function getAudioContext() {
+  if (!audioCtx) audioCtx = new AudioContext()
+  return audioCtx
+}
 function playBeep(type: string) {
   try {
-    const ctx = new AudioContext()
+    const ctx = getAudioContext()
     const osc = ctx.createOscillator()
     osc.frequency.value = type === 'borrow' ? 880 : 660
     osc.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + 0.1)

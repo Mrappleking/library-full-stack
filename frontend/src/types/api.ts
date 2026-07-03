@@ -4,7 +4,8 @@ export interface PaginatedResponse<T> { data: T[]; total: number; page: number; 
 
 export interface UserProfile {
   id: number; username: string; name: string; role: 'admin' | 'reader'
-  phone?: string | null; email?: string | null; createdAt: string
+  phone?: string | null; email?: string | null; patronCategoryId?: number | null
+  totalFines?: number; createdAt: string
 }
 export interface LoginResponse { user: UserProfile; token: string }
 
@@ -27,6 +28,7 @@ export interface BookItemSummary {
   id: number; barcode: string; callNumber?: string | null
   location?: string | null; campus?: string | null; status: string
   requests: number; price?: number | null
+  condition?: string | null
 }
 export interface BookItemsResponse { book: { id: number; title: string; isbn: string }; items: BookItemSummary[] }
 

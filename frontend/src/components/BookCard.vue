@@ -3,7 +3,7 @@
     <div class="cover-wrap">
       <img v-if="book.cover" :src="book.cover" class="cover-img" loading="lazy" />
       <div v-else class="cover-placeholder">
-        <span class="cover-letter">{{ book.title[0] }}</span>
+        <span class="cover-letter">{{ book.title?.[0] || '?' }}</span>
       </div>
     </div>
     <div class="info">
@@ -12,7 +12,7 @@
       </n-ellipsis>
       <span class="author">{{ book.author }}</span>
       <div class="meta">
-        <StatusBadge :status="book.available > 0 ? 'available' : 'borrowed'" />
+        <StatusBadge :status="book.status" />
         <span class="avail">{{ book.available }}/{{ book.total }}可借</span>
       </div>
     </div>
