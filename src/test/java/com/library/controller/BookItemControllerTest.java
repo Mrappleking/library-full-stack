@@ -1,7 +1,6 @@
 package com.library.controller;
 
-import com.library.entity.Hold;
-import com.library.service.HoldService;
+import com.library.service.BookService;
 import com.library.util.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -9,25 +8,25 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import java.util.Map;
+
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-class HoldControllerTest {
+class BookItemControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockBean
-    private HoldService holdService;
+    private BookService bookService;
 
     @MockBean
     private JwtUtil jwtUtil;
@@ -42,22 +41,19 @@ class HoldControllerTest {
     }
 
     @Test
-    void createHold_shouldReturnHold() throws Exception {
-        Hold hold = new Hold();
-        hold.setId(1);
-        hold.setUserId(1);
-        hold.setBookId(1);
-        hold.setStatus("pending");
+    void lookupByBarcode_shouldReturnItem() throws Exception {
+        when(bookService.lookupByBarcode("BAR001")).thenReturn(Map.of("item", Map.of("barcode", "BAR001", "status", "available")));
 
-        when(holdService.createHold(anyInt(), anyInt())).thenReturn(hold);
+        mockMvc.perform(get("/api/book-items/BAR001").header("Authorization", readerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.item.barcode").value("BAR001"));
+    }
 
-        String body = "{\"bookId\":1}";
-        mockMvc.perform(post("/api/holds")
-                        .header("Authorization", readerToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(body))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.status").value("pending"));
+    @Test
+    void lookupByBarcode_shouldReturn404WhenNotFound() throws Exception {
+        when(bookService.lookupByBarcode("INVALID")).thenReturn(null);
+
+        mockMvc.perform(get("/api/book-items/INVALID").header("Authorization", readerToken))
+                .andExpect(status().isNotFound());
     }
 }

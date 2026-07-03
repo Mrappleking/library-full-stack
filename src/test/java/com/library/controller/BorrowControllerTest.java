@@ -2,8 +2,6 @@ package com.library.controller;
 
 import com.library.dto.request.BorrowRequest;
 import com.library.entity.BorrowRecord;
-import com.library.entity.User;
-import com.library.mapper.UserMapper;
 import com.library.service.BorrowService;
 import com.library.util.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,9 +35,6 @@ class BorrowControllerTest {
     @MockBean
     private JwtUtil jwtUtil;
 
-    @MockBean
-    private UserMapper userMapper;
-
     private final String readerToken = "Bearer test-reader-token";
 
     @BeforeEach
@@ -47,10 +42,6 @@ class BorrowControllerTest {
         when(jwtUtil.validateToken(anyString())).thenReturn(true);
         when(jwtUtil.getUserIdFromToken(anyString())).thenReturn(1);
         when(jwtUtil.getRoleFromToken(anyString())).thenReturn("reader");
-        User mockUser = new User();
-        mockUser.setId(1);
-        mockUser.setTokenVersion(0);
-        when(userMapper.findById(1)).thenReturn(mockUser);
     }
 
     @Test

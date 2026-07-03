@@ -9,7 +9,7 @@
 图书馆全栈管理系统（Spring Boot 3 版）。四层架构：Vue3+NaiveUI（`frontend/`）→ Controller → Service → Mapper(MyBatis+XML) → MySQL。
 
 Origin: https://github.com/Mrappleking/library-full-stack
-Status: 45 API endpoints | 71 Java files | 31 Vue files | 8 XML mappers | 55 tests
+Status: 45 API endpoints | 71 Java files | 31 Vue files | 9 XML mappers | 96 tests
 
 ## 2. Error Zone
 
@@ -49,10 +49,11 @@ Status: 45 API endpoints | 71 Java files | 31 Vue files | 8 XML mappers | 55 tes
 
 ```bash
 # Backend
-./mvnw compile                   # compile (uses mvnw, no JAVA_HOME needed)
-./mvnw test                      # run 55 tests (51 service + 4 controller)
-./start.sh                       # build JAR + start -> :8080 (profile:dev)
-./start.sh prod                  # start in production mode
+./mvnw compile                                          # compile
+./mvnw test                                             # 96 tests, 0 failures required
+./mvnw clean package -DskipTests                        # build JAR (skip tests)
+./start.sh                                              # build + run -> :8080 (dev)
+./start.sh prod                                         # build + run -> :8080 (prod)
 
 # Seed database (prerequisite: CREATE DATABASE library; must exist first)
 mysql -h127.0.0.1 -uroot -p library < seed.sql
@@ -99,6 +100,10 @@ frontend/                        # Vue 3 + Vite + Naive UI
     views/       17 files
     App.vue
 ```
+*Static resources:*
+`src/main/resources/static/covers/` — 20 book cover images (local, no external CDN).
+Seed data stores `cover` as `/covers/{id}-{title}.{ext}` (e.g. `/covers/1-算法导论.jpg`).
+Spring Boot auto-serves via `:8080/covers/...`. Frontend renders via `<img :src="book.cover">` — no extra config needed.
 
 ## 6. API Route Table (45 endpoints)
 

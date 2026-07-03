@@ -29,16 +29,12 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final AuditLogMapper auditLogMapper;
-    private final BorrowRecordMapper borrowRecordMapper;
-    private final FineMapper fineMapper;
 
-    public AuthService(UserMapper userMapper, PasswordEncoder passwordEncoder, JwtUtil jwtUtil, AuditLogMapper auditLogMapper, BorrowRecordMapper borrowRecordMapper, FineMapper fineMapper) {
+    public AuthService(UserMapper userMapper, PasswordEncoder passwordEncoder, JwtUtil jwtUtil, AuditLogMapper auditLogMapper) {
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
         this.auditLogMapper = auditLogMapper;
-        this.borrowRecordMapper = borrowRecordMapper;
-        this.fineMapper = fineMapper;
     }
 
     @Transactional
@@ -58,7 +54,7 @@ public class AuthService {
         }
 
         UserProfile profile = toProfile(user);
-        String token = jwtUtil.generateToken(user.getId(), user.getRole(), user.getTokenVersion() != null ? user.getTokenVersion() : 0);
+        String token = jwtUtil.generateToken(user.getId(), user.getRole());
         audit("register", "user:" + user.getId(), "Registered user: " + user.getUsername());
         return new LoginResponse(profile, token);
     }
