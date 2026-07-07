@@ -4,6 +4,7 @@ import com.library.dto.request.BorrowRequest;
 import com.library.entity.BorrowRecord;
 import com.library.service.BorrowService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,15 +30,27 @@ public class BorrowController {
 
     @GetMapping
     public ResponseEntity<?> listBorrows(@RequestParam(defaultValue = "1") int page,
-                                          @RequestParam(defaultValue = "20") int limit) {
+                                          @RequestParam(defaultValue = "20") int limit,
+                                          @RequestParam(required = false) String export,
+                                          HttpServletResponse response) {
+        if ("csv".equals(export)) {
+            borrowService.exportCsv(null, response);
+            return ResponseEntity.ok().build();
+        }
         return ResponseEntity.ok(borrowService.listBorrows(page, limit));
     }
 
     @GetMapping("/history")
     public ResponseEntity<?> getHistory(HttpServletRequest request,
                                          @RequestParam(defaultValue = "1") int page,
-                                         @RequestParam(defaultValue = "20") int limit) {
+                                         @RequestParam(defaultValue = "20") int limit,
+                                         @RequestParam(required = false) String export,
+                                         HttpServletResponse response) {
         Integer userId = (Integer) request.getAttribute("userId");
+        if ("csv".equals(export)) {
+            borrowService.exportCsv(userId, response);
+            return ResponseEntity.ok().build();
+        }
         return ResponseEntity.ok(borrowService.getHistory(userId, page, limit));
     }
 

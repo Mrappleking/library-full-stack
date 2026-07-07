@@ -11,6 +11,11 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -260,5 +265,58 @@ public class BorrowService {
         } catch (Exception e) {
             logger.error("审计日志写入失败: action={}, target={}", action, target, e);
         }
+    }
+
+    /**
+     * Export borrow records as CSV stream.
+     * @param userId  null for admin (all records), non-null for reader
+     */
+    public void exportCsv(Integer userId, HttpServletResponse response) {
+        List<Map<String, Object>> records;
+        String filename;
+
+        if (userId == null) {
+            records = borrowRecordMapper.findAllForExport();
+            filename = "borrows-all.csv";
+        } else {
+            records = borrowRecordMapper.findByUserIdForExport(userId);
+            filename = "borrows-my.csv";
+        }
+
+        response.setContentType("text/csv; charset=UTF-8");
+        response.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
+
+        try (PrintWriter writer = new PrintWriter(
+                new OutputStreamWriter(response.getOutputStream(), StandardCharsets.UTF_8))) {
+            // BOM for Excel UTF-8 compatibility
+            writer.write('\uFEFF');
+            // Header
+            writer.println("书名,借阅日期,应还日期,实际归还日期,罚款金额");
+
+            // Data rows
+            for (Map<String, Object> row : records) {
+                writer.print(escapeCsv(row.get("bookTitle")));
+                writer.print(',');
+                writer.print(escapeCsv(row.get("borrowDate")));
+                writer.print(',');
+                writer.print(escapeCsv(row.get("dueDate")));
+                writer.print(',');
+                writer.print(escapeCsv(row.get("returnDate")));
+                writer.print(',');
+                writer.print(row.get("fineAmount"));
+                writer.println();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("CSV export failed", e);
+        }
+    }
+
+    private String escapeCsv(Object val) {
+        if (val == null) return "";
+        String s = val.toString();
+        if (s.contains(",") || s.contains("\"") || s.contains("\n")) {
+            return "\"" + s.replace("\"", "\"\"") + "\"";
+        }
+        return s;
     }
 }
