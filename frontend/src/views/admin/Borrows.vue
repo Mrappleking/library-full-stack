@@ -1,6 +1,15 @@
 <template>
   <div>
-    <n-h1 prefix="bar" style="margin-bottom: 20px;"><n-text type="primary">借阅管理</n-text></n-h1>
+    <n-h1 prefix="bar" style="margin-bottom: 20px;">
+      <n-text type="primary">借阅管理</n-text>
+    </n-h1>
+
+    <div style="margin-bottom: 12px; display: flex; gap: 8px;">
+      <n-button @click="exportCsv" :loading="exporting" secondary type="info">
+        <template #icon><n-icon><download-outline /></n-icon></template>
+        导出 CSV
+      </n-button>
+    </div>
 
     <n-data-table
       :columns="columns"
@@ -13,13 +22,15 @@
 
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
-import { useMessage, NTag, NButton, NPopconfirm } from 'naive-ui'
+import { useMessage, NTag, NButton, NPopconfirm, NIcon } from 'naive-ui'
+import { DownloadOutline } from '@vicons/ionicons5'
 import api from '@/api'
 import type { DataTableColumn } from 'naive-ui'
 
 const message = useMessage()
 const records = ref<any[]>([])
 const loading = ref(false)
+const exporting = ref(false)
 
 const statusMap: Record<string, { type: 'success' | 'warning' | 'error' | 'info' | 'default'; label: string }> = {
   active: { type: 'success', label: '在借' },
@@ -77,6 +88,19 @@ async function fetchRecords() {
 async function handleReturn(id: number) {
   try { await api.post(`/borrows/return/${id}`); message.success('已还书'); fetchRecords() }
   catch (e: unknown) { message.error((e as Error).message) }
+}
+
+async function exportCsv() {
+  exporting.value = true
+  try {
+    const resp = await api.get('/borrows', { params: { export: 'csv' }, responseType: 'blob' })
+    const url = window.URL.createObjectURL(new Blob([resp.data], { type: 'text/csv;charset=utf-8' }))
+    const a = document.createElement('a')
+    a.href = url; a.download = 'borrows-all.csv'; a.click()
+    window.URL.revokeObjectURL(url)
+    message.success('导出成功')
+  } catch { message.error('导出失败') }
+  exporting.value = false
 }
 
 onMounted(() => fetchRecords())
