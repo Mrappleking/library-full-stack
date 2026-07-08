@@ -19,7 +19,7 @@
             <n-text depth="3">{{ form.createdAt ? new Date(form.createdAt).toLocaleString('zh-CN') : '-' }}</n-text>
           </n-form-item>
         </n-form>
-        <n-button type="primary" :loading="saving" @click="handleSave" style="margin-top: 16px;" :disabled="!hasChanged">保存修改</n-button>
+        <n-button type="primary" :loading="saving" @click="handleSave" style="margin-top: 16px;">保存修改</n-button>
       </n-spin>
     </n-card>
   </div>
