@@ -32,8 +32,8 @@ public class UserService {
         User user = userMapper.findById(id);
         if (user == null) throw AppException.notFound("User not found");
         user.setName(name != null ? name : user.getName());
-        user.setPhone(phone);
-        user.setEmail(email);
+        user.setPhone(phone != null ? phone : user.getPhone());
+        user.setEmail(email != null ? email : user.getEmail());
         userMapper.update(user);
     }
 }
