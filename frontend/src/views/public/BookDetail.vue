@@ -94,16 +94,16 @@ onMounted(async () => {
 })
 
 async function handleBorrow() {
-  if (!hasToken()) { window.location.href = '/login'; return }
+  if (!hasToken()) { router.push('/login'); return }
   if (!book.value) return
   try {
     await api.post('/borrows/borrow', { bookId: book.value.id })
     message.success('借阅成功')
-    window.location.href = '/reader/books'
+    router.push('/reader/books')
   } catch (e: unknown) { message.error((e as Error).message) }
 }
 async function handleHold() {
-  if (!hasToken()) { window.location.href = '/login'; return }
+  if (!hasToken()) { router.push('/login'); return }
   if (!book.value) return
   holdLoading.value = true
   try {

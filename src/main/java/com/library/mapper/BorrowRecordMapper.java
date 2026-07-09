@@ -33,4 +33,8 @@ public interface BorrowRecordMapper {
 
     // For circulation barcode scan
     BorrowRecord findActiveByBookItemId(@Param("bookItemId") Integer bookItemId);
+
+    // For CSV export
+    List<Map<String, Object>> findAllForExport();
+    List<Map<String, Object>> findByUserIdForExport(@Param("userId") Integer userId);
 }
