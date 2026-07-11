@@ -51,6 +51,11 @@
             <n-pagination v-model:page="store.page" :page-count="totalPages" :page-size="20" @update:page="onPage" />
           </div>
           <BookGrid :books="store.results" :loading="store.loading" @select="onBookSelect" />
+          <n-empty v-if="!store.loading && store.results.length === 0" description="未找到相关图书" style="margin-top: 40px;">
+            <template #extra>
+              <n-button size="small" @click="searchInput = ''; onSearch('')">清空筛选条件</n-button>
+            </template>
+          </n-empty>
           <n-pagination v-if="store.total > 20" v-model:page="store.page" :page-count="totalPages" :page-size="20" @update:page="onPage" style="justify-content:center;margin-top:16px" />
         </main>
       </div>
@@ -96,7 +101,9 @@ async function onFacetSelect(key: string, value: string) {
     activeFilters.value[key] = value
   }
   const params: BookListParams = { search: store.searchQuery || undefined }
-  if (activeFilters.value.campus) params.campus = activeFilters.value.campus
+  for (const k of Object.keys(activeFilters.value)) {
+    params[k as keyof BookListParams] = activeFilters.value[k] as any
+  }
   await store.search(params)
 }
 

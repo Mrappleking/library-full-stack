@@ -4,7 +4,7 @@ import { getUser } from '../api'
 
 const routes = [
   { path: '/', redirect: '/books' },
-  { path: '/login', name: 'Login', component: () => import('../views/Login.vue') },
+  { path: '/login', name: 'Login', component: () => import('../views/public/Login.vue') },
   { path: '/books', name: 'Search', component: () => import('../views/public/Search.vue') },
   { path: '/books/:id', name: 'BookDetail', component: () => import('../views/public/BookDetail.vue') },
   {
