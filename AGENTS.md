@@ -197,7 +197,7 @@ Spring Boot auto-serves via `:8080/covers/...`. Frontend renders via `<img :src=
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | / | admin | Overview (20,8,10,5,1) |
+| GET | / | admin | Overview (totalBooks, totalReaders, totalCategories, activeBorrows, overdueCount) |
 | GET | /popular | admin | Top 20 (JOIN books + category) |
 | GET | /monthly | admin | Monthly (12 months) |
 
