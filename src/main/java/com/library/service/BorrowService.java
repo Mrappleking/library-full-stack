@@ -84,7 +84,7 @@ public class BorrowService {
         Integer bookItemId = params.getBookItemId();
 
         if (bookId == null && bookItemId == null) {
-            throw AppException.badRequest("bookId or bookItemId required");
+            throw AppException.badRequest("bookId或bookItemId不能为空");
         }
 
         Integer targetBookId = bookId;
@@ -93,19 +93,19 @@ public class BorrowService {
         // Find the item if only bookId was given
         if (targetItemId != null) {
             BookItem item = bookItemMapper.findById(targetItemId);
-            if (item == null) throw AppException.notFound("Book item not found");
+            if (item == null) throw AppException.notFound("馆藏复本不存在");
             if (!"available".equals(item.getStatus())) {
-                throw AppException.badRequest("This copy is not available");
+                throw AppException.badRequest("该复本不可借");
             }
             targetBookId = item.getBookId();
         } else {
             Book book = bookMapper.findById(targetBookId);
-            if (book == null) throw AppException.notFound("Book not found");
+            if (book == null) throw AppException.notFound("图书不存在");
             BookItem firstItem = bookItemMapper.findFirstAvailableByBookId(targetBookId);
             if (firstItem != null) targetItemId = firstItem.getId();
         }
 
-        if (targetBookId == null) throw AppException.notFound("Book not found");
+        if (targetBookId == null) throw AppException.notFound("图书不存在");
 
         User user = userMapper.findById(userId);
         BookItem item = targetItemId != null ? bookItemMapper.findById(targetItemId) : null;
@@ -118,19 +118,19 @@ public class BorrowService {
         // Transaction-level checks: re-verify availability atomically
         BorrowRecord existing = borrowRecordMapper.findActiveByUserAndBook(userId, targetBookId);
         if (existing != null) {
-            throw AppException.badRequest("You already borrowed this book");
+            throw AppException.badRequest("您已借阅过此书");
         }
 
         long currentCount = borrowRecordMapper.countActiveByUserId(userId);
         if (currentCount >= rule.getMaxBorrows()) {
-            throw AppException.badRequest("Borrow limit exceeded: max " + rule.getMaxBorrows());
+            throw AppException.badRequest("借阅数量已达上限: " + rule.getMaxBorrows());
         }
 
         // Re-verify item is still available
         if (targetItemId != null) {
             BookItem itemCheck = bookItemMapper.findById(targetItemId);
             if (itemCheck == null || !"available".equals(itemCheck.getStatus())) {
-                throw AppException.badRequest("Copy no longer available");
+                throw AppException.badRequest("复本已不可用");
             }
             bookService.validateItemStatus("available", "borrowed");
         }
@@ -164,12 +164,12 @@ public class BorrowService {
     @Transactional
     public BorrowRecord returnBook(Integer borrowRecordId, Integer userId, boolean isAdmin) {
         BorrowRecord record = borrowRecordMapper.findById(borrowRecordId);
-        if (record == null) throw AppException.notFound("Borrow record not found");
+        if (record == null) throw AppException.notFound("借阅记录不存在");
         if (!"active".equals(record.getStatus())) {
-            throw AppException.badRequest("Already returned");
+            throw AppException.badRequest("已归还");
         }
         if (!record.getUserId().equals(userId) && !isAdmin) {
-            throw AppException.forbidden("Unauthorized");
+            throw AppException.forbidden("无权操作");
         }
 
         LocalDateTime now = LocalDateTime.now();
@@ -217,9 +217,9 @@ public class BorrowService {
     @Transactional
     public Map<String, Object> renew(Integer recordId, Integer userId) {
         BorrowRecord record = borrowRecordMapper.findById(recordId);
-        if (record == null) throw AppException.notFound("Borrow record not found");
-        if (!"active".equals(record.getStatus())) throw AppException.badRequest("Cannot renew");
-        if (!record.getUserId().equals(userId)) throw AppException.forbidden("Unauthorized");
+        if (record == null) throw AppException.notFound("借阅记录不存在");
+        if (!"active".equals(record.getStatus())) throw AppException.badRequest("无法续借");
+        if (!record.getUserId().equals(userId)) throw AppException.forbidden("无权操作");
 
         CirculationRule rule = ruleService.getRule(
                 record.getUser() != null ? record.getUser().getPatronCategoryId() : null,
@@ -227,7 +227,7 @@ public class BorrowService {
         );
 
         if (record.getRenewed()) {
-            throw AppException.badRequest("Already renewed (limit: " + rule.getRenewals() + "x)");
+            throw AppException.badRequest("已达续借上限: " + rule.getRenewals() + "次");
         }
 
         LocalDateTime newDue = record.getDueDate().plusDays(rule.getRenewalDays());

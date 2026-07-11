@@ -40,7 +40,7 @@ public class CategoryService {
     @Transactional
     public Category update(Integer id, String name, String desc) {
         Category category = categoryMapper.findById(id);
-        if (category == null) throw AppException.notFound("Category not found");
+        if (category == null) throw AppException.notFound("分类不存在");
         category.setName(name);
         category.setDesc(desc);
         categoryMapper.update(category);
@@ -51,7 +51,7 @@ public class CategoryService {
     public void delete(Integer id) {
         long bookCount = categoryMapper.countBooksByCategory(id);
         if (bookCount > 0) {
-            throw AppException.badRequest("Cannot delete category with " + bookCount + " books");
+            throw AppException.badRequest("无法删除，该分类下有 " + bookCount + " 本图书");
         }
         categoryMapper.deleteById(id);
     }

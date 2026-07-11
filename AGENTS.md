@@ -11,12 +11,43 @@
 Origin: https://github.com/Mrappleking/library-full-stack
 Status: 45 API endpoints | 71 Java files | 31 Vue files | 9 XML mappers | 96 tests
 
-## 2. Commands
+## 2. Error Zone
+
+| # | 错误的操作 | 后果 | 正确做法 |
+|---|-----------|------|---------|
+| 1 | `mvn spring-boot:run` 直接运行 | 被 OOM killer 杀 (exit 137) | 用 `./start.sh` 或 `java -jar target/*.jar` |
+| 2 | DB 列名写成 snake_case | MyBatis 报 Unknown column | 对照 `SHOW CREATE TABLE` 确认实际列名（混合 camelCase/snake_case） |
+| 3 | SQL 嵌在 Java 注解字符串中 | 超 5 行的动态 SQL 不可读不可调 | 抽到 `src/main/resources/mappers/*.xml` |
+| 4 | `@Transactional` 缺失 | 并发 borrow 导致 available 变负数 | 所有多 DAO 写入操作加 `@Transactional` |
+| 5 | 注解 SQL 和 XML 同时定义同一 statement | `Mapped Statements collection already contains key` | 移除 Java 注解中的 `@Select`/`@Insert`/`@Update`/`@Delete` |
+| 6 | 数组 `transaction([])` 外部检查可用性 | 竞态条件下双借同一本 | `borrow()` 需在 `$transaction` 内重查可用性 |
+| 7 | Mapper XML 中列名写成 camelCase 但数据库是 snake_case | `Unknown column` SQL 错误导致 `Internal Server Error` | 对照 `SHOW CREATE TABLE` 确认实际列名（如 `users` 表是 `total_fines` 不是 `totalFines`） |
+| 8 | 后端错误消息用英文 | 中文用户看不懂报错信息 | 使用中文错误消息（如 `"用户名或密码错误"`） |
+
+## 3. Architecture Decisions
+
+先于所有规则。只追加不删旧记录。决策后立即写入。
+
+| Date | Decision | Rationale |
+|------|----------|-----------|
+| 2026-06-29 | MyBatis over JPA | Course teaches MyBatis |
+| 2026-06-29 | Custom JwtAuthFilter over Spring Security | Keep dependencies minimal |
+| 2026-06-29 | @Transactional over Prisma $transaction | Declarative transactions cleaner |
+| 2026-06-29 | Naive UI over Element Plus | Align with original version |
+| 2026-06-29 | Axios over fetch() | Course teaches Axios |
+| 2026-06-30 | CORS for 5175 (Java) + 5173 (original TS) | Migration coexistence (two frontends) |
+| 2026-06-30 | seed.sql over Java CommandLineRunner | Reproducible, no recompile needed |
+| 2026-06-30 | SQL from annotations to XML mappers | Readability + maintainability |
+| 2026-06-30 | Maven Wrapper (./mvnw) | Consistent builds across env |
+| 2026-06-30 | java -jar over mvn spring-boot:run | Avoids OOM killer |
+| 2026-06-30 | application-dev/prod profiles | Password isolation |
+| 2026-06-30 | H2 in-memory DB for tests | No MySQL dependency in CI |
+| 2026-06-30 | 后端错误消息使用中文 | 目标用户为中文使用者 |
+| 2026-06-30 | UserMapper.xml 列名 `totalFines` → `total_fines` | 对齐实际数据库 snake_case 列名 |
+
+## 4. Commands
 
 ```bash
-# 关键：必须先设置 JAVA_HOME（WSL Java 25 不兼容此项目）
-export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
-
 # Backend
 ./mvnw compile                                          # compile
 ./mvnw test                                             # 96 tests, 0 failures required
@@ -24,27 +55,25 @@ export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
 ./start.sh                                              # build + run -> :8080 (dev)
 ./start.sh prod                                         # build + run -> :8080 (prod)
 
-# Seed database
-mysql -uroot -p -e "CREATE DATABASE IF NOT EXISTS library"
-mysql -uroot -p library < seed.sql
+# Seed database (prerequisite: CREATE DATABASE library; must exist first)
+mysql -h127.0.0.1 -uroot -p library < seed.sql
 
 # Frontend
 cd frontend
 npm install --registry=https://registry.npmmirror.com
-npm run dev                           # -> :5175
-npm run build                         # production build
+npm run dev                      # -> :5175 (proxies /api -> :8080)
+npm run build                    # production build to dist/
+
+# Rebuild
+./mvnw clean package -DskipTests        # 构建 JAR（跳过测试）
+./mvnw test                              # 运行全部 55 测试
 
 # Kill
-kill -9 $(lsof -ti:8080) $(lsof -ti:5175)
+kill -9 $(lsof -ti:8080)
+kill -9 $(lsof -ti:5175)
 ```
 
-**`./start.sh` 内部流程：** `./mvnw clean package -DskipTests -q && java -jar target/*.jar --spring.profiles.active=dev`
-
-**数据库密码传入：** `DB_PASSWORD=yourpwd ./start.sh`
-
-**前端导入路径注意：** `views/admin/Books.vue` 引用 `components/` → `../../components/XXX`。迁移 Vue 文件后必须 `npm run build` 全量验证。
-
-## 3. Architecture
+## 5. Architecture
 
 ```
 src/                             # Spring Boot + MyBatis + MySQL
@@ -76,25 +105,7 @@ frontend/                        # Vue 3 + Vite + Naive UI
 Seed data stores `cover` as `/covers/{id}-{title}.{ext}` (e.g. `/covers/1-算法导论.jpg`).
 Spring Boot auto-serves via `:8080/covers/...`. Frontend renders via `<img :src="book.cover">` — no extra config needed.
 
-### 3.1 认证流程
-
-```
-JwtAuthFilter (OncePerRequestFilter)
-  ├── isPublicPath()? → 放行
-  └── 需认证 → 解析 Bearer token → request attributes (userId, userRole)
-       └── Controller @RequestAttribute 获取 → Service 层用 Interceptor 校验角色
-```
-
-**Public paths**（新增公共端点时同步更新 `JwtAuthFilter.isPublicPath()`）:
-`POST /api/auth/login`, `POST /api/auth/register`, `GET /api/health`,
-`GET /api/books/**`, `GET /api/categories/**`, `GET /api/rules/**`,
-`GET /api/holds/count`
-
-### 3.2 CORS
-
-`WebConfig.java` 允许来源 5173+5175（allowCredentials=true 禁通配符）。新增端口同步添加。
-
-## 4. API Route Table (45 endpoints)
+## 6. API Route Table (45 endpoints)
 
 ### Auth (`/api/auth`)
 
@@ -196,192 +207,141 @@ JwtAuthFilter (OncePerRequestFilter)
 |--------|------|------|-------------|
 | GET | /api/health | public | `{ status: 'ok' }` |
 
-## 5. Environment
+## 7. Frontend Routing
 
-| 配置 | 位置 | 说明 |
-|------|------|------|
-| application.yml | src/main/resources/ | 通用：server.port=8080, MyBatis map-underscore-to-camel-case=true |
-| application-dev.yml | src/main/resources/ | Dev：Druid 数据源、DB 密码 `${DB_PASSWORD:li200603}`、JWT 密钥 `${JWT_SECRET:LibraryFullStack2024JWTSecretKeyForSpringBoot}` |
-| application-prod.yml | src/main/resources/ | Prod：DB 密码 `${DB_PASSWORD}`、JWT 密钥 `${JWT_SECRET}` |
+```
+/                  -> redirect to /books (public)
+/books             -> BookGrid + FacetPanel + SearchBar (no auth)
+/books/:id         -> BookDetailSection + HoldingsTable + borrow/hold
+/login             -> LoginBg + dark glassmorphism + register modal
+/admin/*           -> admin layout (role:admin)
+/admin/dashboard   -> stat cards + quick actions + system info
+/admin/books       -> CRUD table + expandable items + add copy
+/admin/borrows     -> borrow table + return with overdue warning
+/admin/categories  -> CRUD table
+/admin/circulation -> barcode scan + borrow/return queue
+/admin/fines       -> filterable table + pay action
+/admin/readers     -> expandable reader list + edit modal
+/admin/settings    -> rules/patron types/item types tables
+/admin/stats       -> top 20 popular + monthly stats tables
+/reader/*          -> reader layout (role:reader)
+/reader/books      -> search + category filter + borrow
+/reader/my-borrows -> fine alert + holds tab + renew
+/reader/profile    -> editable form
+/:pathMatch(.*)*   -> 404 redirect to /books
+```
 
-**安全警告：** dev.yml 用 `${VAR:default}` 占位符。禁止在注释中写密码、禁止硬编码密码字符串、禁止提交含密码的 dev.yml 到 GitHub。
+## 8. Environment
 
-**Java 版本：** pom.xml target=17，但本地环境是 Java 21。**Java 25 不兼容** — `./mvnw test` 前必须设 `export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64`。
+Configuration split across profiles (`spring.profiles.active=dev` default):
 
-**Druid 数据源警告：** 日志 `testWhileIdle is true, validationQuery not set` 是良性警告。去除可加 `spring.datasource.druid.validation-query: SELECT 1`。
+| File | Scope | DB Password | JWT Secret |
+|------|-------|-------------|------------|
+| application.yml | All | — | — |
+| application-dev.yml | Dev | `${DB_PASSWORD:li200603}` | `${JWT_SECRET:LibraryFullStack2024JWTSecretKeyForSpringBoot}` |
+| application-prod.yml | Prod | `${DB_PASSWORD}` | `${JWT_SECRET}` |
 
-## 6. Error Handling
+> **JWT Secret**: The default secret in `application-dev.yml` is a dev-only placeholder. Production must use `${JWT_SECRET}` from environment variable — never hardcode secrets in committed config.
 
-| Condition | HTTP | ErrorResponse |
-|-----------|------|---------------|
-| `@Valid` fails | 400 | `{ error: "请求参数校验失败", detail: "字段1: 错误消息" }` |
-| `AppException.notFound()` | 404 | `{ error: "用户不存在", detail: null }` |
-| `AppException.conflict()` | 409 | `{ error: "用户名已存在", detail: null }` |
-| JWT auth fail | 401 | `{ error: "Unauthorized" }` |
-| Role mismatch | 403 | `{ error: "Forbidden" }` |
-| Other Exception | 500 | `{ error: "Internal Server Error" }` |
+## 9. Error Handling
 
-用户可见错误消息全部用中文。所有 `throw AppException.*()` 处检查是否已中文化。
+| Condition | HTTP Status |
+|-----------|-------------|
+| `@Valid` validation fails | 400 |
+| `AppException.notFound()` | 404 |
+| `AppException.conflict()` | 409 |
+| JWT auth fail | 401 |
+| Role mismatch | 403 |
+| Other `AppException` | see code |
+| Any other Exception | 500 |
 
-## 7. Coding Conventions
-
-### Java
-
-- **Services:** `@Service`, constructor injection, `@Transactional` for multi-DAO writes
-- **Controllers:** `@RestController`, thin dispatch, no mapper calls. Get userId/role via `@RequestAttribute`
-- **Mappers:** Interface only. **所有 SQL 在 XML** — 不在 Java 注解写 `@Select`/`@Insert` 等（注解+XML 重复会报 `Mapped Statements collection already contains key`）
-- **DTOs:** POST/PUT 全部用 `@Valid` + `jakarta.validation` 注解
-- **Errors:** `AppException` 带中文描述
-- **@Transactional 方法列表（15 个）：** `HoldService.create/cancel/fulfill`, `FineService.create/pay`, `UserService.updateByAdmin`, `BookService.create/update/delete/reconcile`, `BorrowService.borrow/returnBook/renew`, `CategoryService.create/update/delete`
+## 10. Coding Conventions
 
 ### SQL (XML mappers only)
+- All MyBatis SQL in `src/main/resources/mappers/*.xml`, NOT in Java annotations
+- Use `<resultMap>` for `@Results` equivalent
+- Dynamic SQL uses `<if>`, `<choose>`, `<where>` tags
+- Column names in SQL must match actual DB column names (SHOW CREATE TABLE to verify)
 
-- **9 个 Mapper XML：** `BookMapper.xml`, `BookItemMapper.xml`, `BorrowRecordMapper.xml`, `CategoryMapper.xml`, `CirculationRuleMapper.xml`, `FineMapper.xml`, `HoldMapper.xml`, `UserMapper.xml`
-- **DOCTYPE 必须用官方格式：** `-//mybatis.org//DTD Mapper 3.0//EN`
-- **Mapper 接口 `@Param` 名必须与 XML `#{xxx}` 完全一致** — 如 `updateToReady` 有 3 个参数但没 `status`，XML 不能写 `#{status}`
-- **动态 SQL：** `<if>`, `<choose>`, `<where>` 标签
-- `<resultMap>` 替代 `@Results` 注解
+### DB column naming hazard
+Database has mixed naming: `categoryId` (camelCase) vs `created_at` (snake_case). Always verify actual column names before writing SQL.
 
-### 数据库列名陷阱（CRITICAL）
-
-数据库列名混用 `categoryId`（camelCase）和 `created_at`（snake_case）。**永远不要猜测列名，必须 `SHOW CREATE TABLE` 确认。**
-
-**关键规则：** `map-underscore-to-camel-case: true` 只帮 MyBatis 映射查询结果（`total_fines` → Java `totalFines`），
-**但 INSERT/UPDATE SQL 中的列名必须是实际 DB 列名**。写错 `totalFines` 报 `Unknown column`。
-
-全表列名对照：
-
-| 表 | camelCase | snake_case |
-|----|-----------|------------|
+**已知列名对照**（`SHOW CREATE TABLE` 验证）：
+| 表 | camelCase 列 | snake_case 列 |
+|----|-------------|---------------|
 | users | `patronCategoryId` | `total_fines`, `created_at`, `updated_at` |
 | books | `categoryId`, `clcNumber`, `physicalDesc` | `created_at`, `updated_at` |
 | book_items | `bookId`, `itemTypeId`, `callNumber` | `acquired_at`, `created_at`, `updated_at` |
-| borrow_records | `userId`, `bookId`, `bookItemId` | `borrow_date`, `due_date`, `return_date`, `created_at`, `updated_at` |
-| circulation_rules | `patronCategoryId`, `itemTypeId`, `maxBorrows`, `loanDays`, `renewals`, `renewalDays`, `finePerDay` | `created_at` |
-| fines | `borrowRecordId`, `userId` | `paid_at`, `created_at` |
-| holds | `userId`, `bookId`, `bookItemId` | `request_date`, `expiry_date`, `fulfilled_at`, `created_at` |
-| item_types | `loanDays`, `fineRate` | `created_at` |
-| categories/patron_categories | — | `created_at`, `updated_at` |
 
-### 前端
+> ⚠️ `UserMapper.xml` 中的列名必须全部使用 snake_case（如 `total_fines`），否则 INSERT/UPDATE 会报 `Unknown column` 错误。
 
-- **UI：** Naive UI（`n-data-table`, `n-button`, `n-modal` 等）
-- **Icons：** `@vicons/ionicons5` — 不用 emoji，用 SVG 线条图标
-- **API：** Axios via `api/index.ts` — interceptor 自动加 Bearer token
-- **Auth：** localStorage (token + user JSON), Pinia store
-- **Routing：** 必须匹配原版精确。守卫逻辑：
+### Java
+- Services: `@Service`, constructor injection, `@Transactional` for multi-DAO writes
+- Controllers: `@RestController`, thin dispatch, no Mapper calls
+- Mappers: interface only, SQL in XML via namespace
+- All POST/PUT use `@Valid` DTOs
+- Use `AppException` with descriptive messages
 
-```
-/login, /books, /books/:id — public，已登录从 /login 跳角色首页
-其他路径 — 未登录跳 /login
-meta.role 校验 — 角色不匹配跳角色首页
-/:pathMatch(.*)* → 404 redirect to /books
-```
+### Data Integrity
+- `borrow()` / `returnBook()` / `payFine()` / `cancelHold()` / `fulfillHold()` MUST be `@Transactional`
+- `returnBook` when hold exists: item goes `borrowed -> on_hold`, available unchanged
+- Cancel hold when ready: release item to available, increment book count
+- Book delete: check copies+borrows before allowing
+- Concurrent borrow: must recheck availability inside `@Transactional` (not outside)
 
-- **Axios vs fetch 注意：** 原版 fetch 直出 body（`res.data` = 业务数据），Axios 封装（`res.data` = HTTP body 如 `{ book, items }`）。迁移时检查每个 `.data` 层级是否匹配。
-
-**前端路由表：**
-
-```
-/                  → /books (public)
-/books             → BookGrid + FacetPanel + SearchBar
-/books/:id         → BookDetail + HoldingsTable + borrow/hold
-/login             → LoginBg + glassmorphism + register modal
-/admin/*           → admin layout (role:admin)
-  /admin/dashboard, /admin/books, /admin/borrows, /admin/categories
-  /admin/circulation, /admin/fines, /admin/readers, /admin/settings, /admin/stats
-/reader/*          → reader layout (role:reader)
-  /reader/books, /reader/my-borrows, /reader/profile
-/:pathMatch(.*)*   → /books
-```
-
-### 数据完整性
-
-- 并发 borrow：必须在 `@Transactional` **事务内**重查可用性，不在外部检查
-- `returnBook` 有 pending hold 时：item `borrowed → on_hold`，book.available 不变
-- Cancel hold(ready)：item `on_hold → available`，增加 book.available
-- Book delete：检查 copies+borrows，有则拒绝
-
-**Hold/Borrow 状态机：**
+**Hold/Borrow state machine:**
 ```
 borrow() → available → borrowed
-
-returnBook() WITH pending hold → borrowed → on_hold (→ fulfill → borrowed)
-returnBook() WITHOUT hold     → borrowed → available
-cancelHold(ready)             → on_hold → available
-cancelHold(pending)           → 仅取消预约，item 不变
+returnBook() WITH pending hold → borrowed → on_hold (→ ready after admin fulfills)
+returnBook() WITHOUT hold → borrowed → available
+cancelHold(ready) → on_hold → available (item released)
+cancelHold(pending) → pending hold cancelled, no item state change
+fulfillHold(ready) → on_hold → borrowed (reader picks up the held item)
 ```
 
-**预约提升流程：** `BorrowService.returnBook()` 中 `findNextPendingByBookId` → `updateToReady(bookItemId, now+3d)` → `updateStatus('on_hold')`。`updateToReady` 接口没有 `status` 参数，XML 必须硬编码 `status='ready'`，不能用 `#{status}`。
+### Frontend
+- UI: Naive UI (`n-data-table`, `n-button`, etc.)
+- Icons: `@vicons/ionicons5`
+- API: Axios via `api/index.ts`
+- Auth: Pinia store + localStorage JWT
+- Routing: matches original exactly (public /books, /admin/*, /reader/*)
+- No emoji - use SVG icons
 
-### 测试
+### Tests
+- Service layer: `@ExtendWith(MockitoExtension.class)`, mock all mappers
+- Controller layer: `@SpringBootTest` + `@AutoConfigureMockMvc` + `@ActiveProfiles("test")`
+  - Controllers use `@MockBean` for services — no real DB needed
+  - No `application-test.yml` exists yet; if integration tests (real DB) are added later, create `src/test/resources/application-test.yml` with H2 config
+- 55 total tests: 51 service + 4 controller
 
-- Service：`@ExtendWith(MockitoExtension.class)`，mock 所有 mapper
-- Controller：`@SpringBootTest + @AutoConfigureMockMvc + @ActiveProfiles("test")`，`@MockBean` mock service
-- 未来集成测试：`src/test/resources/application-test.yml` 配 H2（`MODE=MYSQL`）
-- **提交前必须 `./mvnw test`，55 tests 0 failure**
+## 11. Database Tables (11 tables)
 
-## 8. Error Zone（Pitfalls）
+patron_categories, item_types, categories, circulation_rules, users, books, book_items, borrow_records, fines, holds, audit_logs.
 
-| # | 错误的操作 | 后果 | 正确做法 |
-|---|-----------|------|---------|
-| 1 | `mvn spring-boot:run` 直接运行 | OOM killer (exit 137) | `./start.sh` 或 `java -jar target/*.jar` |
-| 2 | 数据库列名写成 camelCase | MyBatis `Unknown column` | `SHOW CREATE TABLE` 确认，INSERT/UPDATE 用实际列名 |
-| 3 | SQL 嵌在 Java 注解字符串中 | 动态 SQL 不可读不可调 | 抽到 `mappers/*.xml` |
-| 4 | `@Transactional` 缺失 | 并发导致 available 负数 | 多 DAO 写入全加 `@Transactional` |
-| 5 | 注解+XML 同一定义同一 statement | `Mapped Statements collection already contains key` | 移除 Java 注解中的 `@Select`/`@Insert` 等 |
-| 6 | 事务外部查可用性 | 竞态双借同一本 | `@Transactional` 内重查 |
-| 7 | Mapper 参数与 XML #{xxx} 不匹配 | MyBatis binding 异常，500 | `updateToReady` 无 `status` 参数，XML 用 `status='ready'` |
-| 8 | XML DOCTYPE 格式错 | 解析器不兼容 | `-//mybatis.org//DTD Mapper 3.0//EN` |
-| 9 | dev.yml 密码泄漏 | Git 提交暴露敏感信息 | `${DB_PASSWORD:default}` 占位符 |
-| 10 | 新 API 未加 public path | 未登录用户 401 | 同步更新 `JwtAuthFilter.isPublicPath()` |
-| 11 | seed.sql 前没建库 | `No database selected` | 先 `CREATE DATABASE IF NOT EXISTS library` |
-| 12 | Java 25 编译 | `release version 17 not supported` | `export JAVA_HOME=.../java-21-openjdk-amd64` |
-| 13 | 错误消息未中文化 | 用户看不懂提示 | 扫 `throw AppException.*()` 全翻译 |
-| 14 | 连续 mvn 命令 | exit 137 OOM | 一次 `package` 替代多次 `compile` |
+Seed data via `seed.sql`: 3 patron types, 3 item types, 9 rules, 9 users, 20 books, 63 items, 23 borrows, 2 fines, 3 holds.
 
-## 9. Architecture Decisions
+## 12. Build & Startup
 
-只追加不删旧记录。
+`./mvnw` in project root. No global Maven install needed. Java 21.
 
-| Date | Decision | Rationale |
-|------|----------|-----------|
-| 2026-06-29 | MyBatis over JPA | Course teaches MyBatis |
-| 2026-06-29 | Custom JwtAuthFilter over Spring Security | Keep dependencies minimal |
-| 2026-06-29 | @Transactional over Prisma $transaction | Declarative transactions cleaner |
-| 2026-06-29 | Naive UI over Element Plus | Align with original version |
-| 2026-06-29 | Axios over fetch() | Course teaches Axios |
-| 2026-06-30 | CORS for 5175 + 5173 | Migration coexistence |
-| 2026-06-30 | seed.sql over Java CommandLineRunner | Reproducible, no recompile |
-| 2026-06-30 | SQL from annotations to XML mappers | Readability + maintainability |
-| 2026-06-30 | Maven Wrapper (./mvnw) | Consistent builds |
-| 2026-06-30 | java -jar over mvn spring-boot:run | Avoids OOM |
-| 2026-06-30 | application-dev/prod profiles | Password isolation |
-| 2026-06-30 | H2 for tests | No MySQL in CI |
-| 2026-06-30 | 后端错误消息使用中文 | 目标用户中文 |
-| 2026-06-30 | UserMapper.xml 列名 totalFines → total_fines | 对齐实际列名 |
+Startup: `./start.sh` builds JAR then runs `java -jar target/*.jar`. Avoid `mvn spring-boot:run` (OOM risk).
 
-## 10. Database & Seed
+> 数据库密码通过环境变量传入：`DB_PASSWORD=yourpwd ./start.sh` 或 `DB_PASSWORD=yourpwd java -jar target/*.jar`
 
-11 张表：`patron_categories`, `item_types`, `categories`, `circulation_rules`, `users`, `books`, `book_items`, `borrow_records`, `fines`, `holds`, `audit_logs`。
+---
 
-Seed data（`seed.sql`）：3 patron types, 3 item types, 9 rules, 9 users, 20 books, 63 items, 23 borrows, 2 fines, 3 holds。
-
-**schema.sql：** 简化版 DDL（省略 FK/索引/ENUM/部分 NOT NULL）。完整 DDL 用 `mysqldump --no-data library` 导出。
-
-## 11. File Count Verification
-
-每次变更后验证：
+## Data Verification (每次变更后运行)
 
 ```bash
 # API endpoints
-grep -rn '@\(GetMapping\|PostMapping\|PutMapping\|DeleteMapping\)' src/main/java/com/library/controller/ | wc -l    # 45
-# Tests
-grep -rn '@Test' src/test/ --include='*.java' | wc -l      # 55
+grep -rn '@\(GetMapping\|PostMapping\|PutMapping\|DeleteMapping\)' src/main/java/com/library/controller/ | wc -l
+# Test count
+grep -rn '@Test' src/test/ --include='*.java' | wc -l
 # Java files
-find src/main -name '*.java' | wc -l                       # 71
+find src/main -name '*.java' | wc -l
 # Vue files
-find frontend/src -name '*.vue' | wc -l                    # 31
+find frontend/src -name '*.vue' | wc -l
 # XML mappers
-find src -name '*.xml' -path '*/mappers/*' | wc -l         # 9
+find src -name '*.xml' -path '*/mappers/*' | wc -l
 ```
+注意：- **提交前跑测试。** `./mvnw test`（55 个测试全部通过再提交），可以拓展测试集，但要保证适用性和通用性。

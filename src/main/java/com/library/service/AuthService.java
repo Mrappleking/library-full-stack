@@ -5,6 +5,8 @@ import com.library.dto.response.LoginResponse;
 import com.library.dto.response.UserProfile;
 import com.library.entity.AuditLog;
 import com.library.entity.User;
+import com.library.mapper.BorrowRecordMapper;
+import com.library.mapper.FineMapper;
 import com.library.exception.AppException;
 import com.library.mapper.AuditLogMapper;
 import com.library.mapper.UserMapper;
@@ -27,12 +29,16 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final AuditLogMapper auditLogMapper;
+    private final BorrowRecordMapper borrowRecordMapper;
+    private final FineMapper fineMapper;
 
-    public AuthService(UserMapper userMapper, PasswordEncoder passwordEncoder, JwtUtil jwtUtil, AuditLogMapper auditLogMapper) {
+    public AuthService(UserMapper userMapper, PasswordEncoder passwordEncoder, JwtUtil jwtUtil, AuditLogMapper auditLogMapper, BorrowRecordMapper borrowRecordMapper, FineMapper fineMapper) {
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
         this.auditLogMapper = auditLogMapper;
+        this.borrowRecordMapper = borrowRecordMapper;
+        this.fineMapper = fineMapper;
     }
 
     @Transactional
@@ -52,7 +58,7 @@ public class AuthService {
         }
 
         UserProfile profile = toProfile(user);
-        String token = jwtUtil.generateToken(user.getId(), user.getRole());
+        String token = jwtUtil.generateToken(user.getId(), user.getRole(), user.getTokenVersion() != null ? user.getTokenVersion() : 0);
         audit("register", "user:" + user.getId(), "Registered user: " + user.getUsername());
         return new LoginResponse(profile, token);
     }
@@ -64,7 +70,7 @@ public class AuthService {
         }
 
         UserProfile profile = toProfile(user);
-        String token = jwtUtil.generateToken(user.getId(), user.getRole());
+        String token = jwtUtil.generateToken(user.getId(), user.getRole(), user.getTokenVersion() != null ? user.getTokenVersion() : 0);
         return new LoginResponse(profile, token);
     }
 
@@ -98,6 +104,77 @@ public class AuthService {
 
         audit("createAdmin", "user:" + user.getId(), "Created admin: " + user.getUsername());
         return toProfile(user);
+    }
+
+    @Transactional
+    public void changePassword(Integer userId, String oldPassword, String newPassword) {
+        User user = userMapper.findById(userId);
+        if (user == null) throw AppException.notFound("用户不存在");
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw AppException.badRequest("原密码错误");
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userMapper.updatePassword(user);
+        audit("changePassword", "user:" + userId, "Password changed");
+    }
+
+    @Transactional
+    public void logout(Integer userId) {
+        userMapper.incrementTokenVersion(userId);
+        audit("logout", "user:" + userId, "User logged out");
+    }
+
+    @Transactional
+    public void cancelAccount(Integer userId, String password) {
+        User user = userMapper.findById(userId);
+        if (user == null) throw AppException.notFound("用户不存在");
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw AppException.badRequest("密码错误");
+        }
+        if ("admin".equals(user.getRole())) {
+            throw AppException.forbidden("管理员账户不能自行注销");
+        }
+        // 检查是否有未还的借阅
+        long activeBorrows = borrowRecordMapper.countActiveByUserId(userId);
+        if (activeBorrows > 0) {
+            throw AppException.badRequest("您有 " + activeBorrows + " 本书未归还，无法注销账户");
+        }
+        // 检查是否有未缴罚款
+        List<com.library.entity.Fine> fines = fineMapper.findByUserId(userId);
+        boolean hasUnpaid = fines.stream().anyMatch(f -> !f.getPaid());
+        if (hasUnpaid) {
+            throw AppException.badRequest("您有未缴罚款，无法注销账户");
+        }
+        userMapper.deleteById(userId);
+        audit("cancelAccount", "user:" + userId, "Account cancelled: " + user.getUsername());
+    }
+
+    @Transactional
+    public void forceLogout(Integer userId) {
+        User user = userMapper.findById(userId);
+        if (user == null) throw AppException.notFound("用户不存在");
+        userMapper.incrementTokenVersion(userId);
+        audit("forceLogout", "user:" + userId, "Admin force-logged out: " + user.getUsername());
+    }
+
+    @Transactional
+    public void adminDeleteUser(Integer userId) {
+        User user = userMapper.findById(userId);
+        if (user == null) throw AppException.notFound("用户不存在");
+        if ("admin".equals(user.getRole())) {
+            throw AppException.forbidden("不能删除管理员账户");
+        }
+        long activeBorrows = borrowRecordMapper.countActiveByUserId(userId);
+        if (activeBorrows > 0) {
+            throw AppException.badRequest("该用户有 " + activeBorrows + " 本书未归还，无法删除");
+        }
+        List<com.library.entity.Fine> fines = fineMapper.findByUserId(userId);
+        boolean hasUnpaid = fines.stream().anyMatch(f -> !f.getPaid());
+        if (hasUnpaid) {
+            throw AppException.badRequest("该用户有未缴罚款，无法删除");
+        }
+        userMapper.deleteById(userId);
+        audit("adminDeleteUser", "user:" + userId, "Admin deleted user: " + user.getUsername());
     }
 
     private UserProfile toProfile(User user) {
