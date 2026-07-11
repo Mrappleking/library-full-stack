@@ -1,4 +1,9 @@
 spring:
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema-h2.sql
+      data-locations: classpath:seed-h2.sql
   datasource:
     url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=MYSQL
     driver-class-name: org.h2.Driver
