@@ -4,8 +4,13 @@
       <n-text type="primary">借阅管理</n-text>
     </n-h1>
 
-    <div style="margin-bottom: 12px; display: flex; gap: 8px;">
-      <n-button @click="exportCsv" :loading="exporting" secondary type="info">
+    <div style="margin-bottom: 12px; display: flex; gap: 8px; align-items: center;">
+      <n-input v-model:value="searchQuery" placeholder="搜索读者名/用户名/书名" clearable style="width: 260px;" @keyup.enter="fetchRecords">
+        <template #prefix><n-icon><search-outline /></n-icon></template>
+      </n-input>
+      <n-select v-model:value="filterStatus" :options="statusOptions" placeholder="全部状态" clearable style="width: 120px;" @update:value="fetchRecords" />
+      <n-button @click="fetchRecords" secondary>搜索</n-button>
+      <n-button @click="exportCsv" :loading="exporting" secondary type="info" style="margin-left: auto;">
         <template #icon><n-icon><download-outline /></n-icon></template>
         导出 CSV
       </n-button>
@@ -17,13 +22,21 @@
       :loading="loading"
       :row-key="(r: any) => r.id"
     />
+    <n-pagination
+      v-if="total > 0"
+      v-model:page="page"
+      :page-count="totalPages"
+      :page-size="20"
+      style="justify-content: center; margin-top: 16px;"
+      @update:page="fetchRecords"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, h } from 'vue'
+import { ref, computed, onMounted, h } from 'vue'
 import { useMessage, NTag, NButton, NPopconfirm, NIcon } from 'naive-ui'
-import { DownloadOutline } from '@vicons/ionicons5'
+import { DownloadOutline, SearchOutline } from '@vicons/ionicons5'
 import api from '@/api'
 import type { DataTableColumn } from 'naive-ui'
 
@@ -31,6 +44,19 @@ const message = useMessage()
 const records = ref<any[]>([])
 const loading = ref(false)
 const exporting = ref(false)
+const page = ref(1)
+const total = ref(0)
+const searchQuery = ref('')
+const filterStatus = ref('')
+
+const totalPages = computed(() => Math.max(1, Math.ceil(total.value / 20)))
+
+const statusOptions = [
+  { label: '全部状态', value: '' },
+  { label: '在借', value: 'active' },
+  { label: '已还', value: 'returned' },
+  { label: '逾期', value: 'overdue' }
+]
 
 const statusMap: Record<string, { type: 'success' | 'warning' | 'error' | 'info' | 'default'; label: string }> = {
   active: { type: 'success', label: '在借' },
@@ -79,8 +105,11 @@ const columns: DataTableColumn[] = [
 async function fetchRecords() {
   loading.value = true
   try {
-    const { data } = await api.get('/borrows')
+    const { data } = await api.get('/borrows', {
+      params: { page: page.value, limit: 20, search: searchQuery.value || undefined, status: filterStatus.value || undefined }
+    })
     records.value = data.borrows || []
+    total.value = data.total || 0
   } catch { /* ignore */ }
   loading.value = false
 }

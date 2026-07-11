@@ -48,7 +48,17 @@
   </select>
 
   <select id="findAllPage" resultMap="fullBorrow">
-    SELECT * FROM borrow_records ORDER BY borrow_date DESC LIMIT #{limit} OFFSET #{offset}
+    SELECT * FROM borrow_records
+    <where>
+      <if test="status != null and status != ''">
+        AND status = #{status}
+      </if>
+      <if test="search != null and search != ''">
+        AND (userId IN (SELECT id FROM users WHERE name LIKE CONCAT('%', #{search}, '%') OR username LIKE CONCAT('%', #{search}, '%'))
+        OR bookId IN (SELECT id FROM books WHERE title LIKE CONCAT('%', #{search}, '%')))
+      </if>
+    </where>
+    ORDER BY borrow_date DESC LIMIT #{limit} OFFSET #{offset}
   </select>
 
   <select id="countByUserId" resultType="long">
@@ -57,6 +67,15 @@
 
   <select id="countAll" resultType="long">
     SELECT COUNT(*) FROM borrow_records
+    <where>
+      <if test="status != null and status != ''">
+        AND status = #{status}
+      </if>
+      <if test="search != null and search != ''">
+        AND (userId IN (SELECT id FROM users WHERE name LIKE CONCAT('%', #{search}, '%') OR username LIKE CONCAT('%', #{search}, '%'))
+        OR bookId IN (SELECT id FROM books WHERE title LIKE CONCAT('%', #{search}, '%')))
+      </if>
+    </where>
   </select>
 
   <insert id="insert" useGeneratedKeys="true" keyProperty="id">

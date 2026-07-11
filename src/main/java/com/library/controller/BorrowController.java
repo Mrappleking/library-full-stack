@@ -31,13 +31,15 @@ public class BorrowController {
     @GetMapping
     public ResponseEntity<?> listBorrows(@RequestParam(defaultValue = "1") int page,
                                           @RequestParam(defaultValue = "20") int limit,
+                                          @RequestParam(required = false) String search,
+                                          @RequestParam(required = false) String status,
                                           @RequestParam(required = false) String export,
                                           HttpServletResponse response) {
         if ("csv".equals(export)) {
             borrowService.exportCsv(null, response);
             return ResponseEntity.ok().build();
         }
-        return ResponseEntity.ok(borrowService.listBorrows(page, limit));
+        return ResponseEntity.ok(borrowService.listBorrows(page, limit, search, status));
     }
 
     @GetMapping("/history")
