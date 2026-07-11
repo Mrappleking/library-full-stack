@@ -45,8 +45,8 @@ public class UserService {
         User user = userMapper.findById(id);
         if (user == null) throw AppException.notFound("用户不存在");
         user.setName(name != null ? name : user.getName());
-        user.setPhone(phone);
-        user.setEmail(email);
+        user.setPhone(phone != null ? phone : user.getPhone());
+        user.setEmail(email != null ? email : user.getEmail());
         userMapper.update(user);
         return toProfile(user);
     }

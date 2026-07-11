@@ -1,6 +1,12 @@
 <template>
   <div>
     <h1 class="page-title">我的借阅</h1>
+    <div style="margin-bottom: 12px; display: flex; gap: 8px;">
+      <n-button @click="exportCsv" :loading="exporting" secondary type="info" size="small">
+        <template #icon><n-icon><download-outline /></n-icon></template>
+        导出借阅历史 CSV
+      </n-button>
+    </div>
     <n-alert v-if="totalFines > 0" type="error" :bordered="false" style="margin-bottom: 20px; border-radius: 10px;">
       <template #header>
         <span style="font-size:15px;font-weight:600">欠费提醒</span>
@@ -31,7 +37,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
-import { useMessage, NTag, NButton, NPopconfirm } from 'naive-ui'
+import { useMessage, NTag, NButton, NPopconfirm, NIcon } from 'naive-ui'
+import { DownloadOutline } from '@vicons/ionicons5'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/api'
 import type { DataTableColumn } from 'naive-ui'
@@ -41,6 +48,7 @@ const auth = useAuthStore()
 const records = ref<any[]>([])
 const holds = ref<any[]>([])
 const loading = ref(false)
+const exporting = ref(false)
 const totalFines = ref(0)
 
 const columns: DataTableColumn[] = [
@@ -134,6 +142,19 @@ async function handleRenew(id: number) {
 async function handleCancelHold(id: number) {
   try { await api.delete(`/holds/${id}`); message.success('已取消预约'); fetchData() }
   catch (e: unknown) { message.error((e as Error).message) }
+}
+
+async function exportCsv() {
+  exporting.value = true
+  try {
+    const resp = await api.get('/borrows/history', { params: { export: 'csv' }, responseType: 'blob' })
+    const url = window.URL.createObjectURL(new Blob([resp.data], { type: 'text/csv;charset=utf-8' }))
+    const a = document.createElement('a')
+    a.href = url; a.download = 'borrows-my.csv'; a.click()
+    window.URL.revokeObjectURL(url)
+    message.success('导出成功')
+  } catch { message.error('导出失败') }
+  exporting.value = false
 }
 
 onMounted(() => fetchData())
