@@ -2,7 +2,17 @@
 
 图书馆全栈管理系统。从原版 TypeScript（Fastify + Prisma + NaiveUI）完整迁移，功能画面完全对齐。
 
-**技术栈：** Vue 3 + Naive UI · Spring Boot 3.x + MyBatis · MySQL 8.0 · Maven
+本仓库是从原版 TypeScript（Fastify + Prisma + Naive UI）迁移至 **Spring Boot 3 + MyBatis + Vue 3** 的版本，功能和画面完全对齐。
+
+---
+## 技术栈
+
+| 层 | 技术 |
+|---|------|
+| 前端 | Vue 3 · Vite · Naive UI · Pinia · Vue Router · Axios |
+| 后端 | Spring Boot 3.2 · MyBatis 3.0 · Maven · MySQL 8.0 |
+| 测试 | Mockito · JUnit 5 · Spring Boot Test · H2 |
+| 工具 | Maven Wrapper · BCrypt · JWT · Druid · PageHelper |
 
 ---
 

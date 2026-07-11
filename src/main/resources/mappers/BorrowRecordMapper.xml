@@ -103,4 +103,26 @@
     FROM borrow_records WHERE status = 'active' AND due_date &lt; NOW()
   </select>
 
+  <!-- CSV export queries -->
+  <select id="findAllForExport" resultType="map">
+    SELECT b.title AS bookTitle, br.borrow_date AS borrowDate, br.due_date AS dueDate,
+           br.return_date AS returnDate, COALESCE(SUM(f.amount), 0) AS fineAmount
+    FROM borrow_records br
+    JOIN books b ON br.bookId = b.id
+    LEFT JOIN fines f ON f.borrowRecordId = br.id
+    GROUP BY br.id, b.title, br.borrow_date, br.due_date, br.return_date
+    ORDER BY br.borrow_date DESC
+  </select>
+
+  <select id="findByUserIdForExport" resultType="map">
+    SELECT b.title AS bookTitle, br.borrow_date AS borrowDate, br.due_date AS dueDate,
+           br.return_date AS returnDate, COALESCE(SUM(f.amount), 0) AS fineAmount
+    FROM borrow_records br
+    JOIN books b ON br.bookId = b.id
+    LEFT JOIN fines f ON f.borrowRecordId = br.id
+    WHERE br.userId = #{userId}
+    GROUP BY br.id, b.title, br.borrow_date, br.due_date, br.return_date
+    ORDER BY br.borrow_date DESC
+  </select>
+
 </mapper>
