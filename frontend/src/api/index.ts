@@ -1,5 +1,6 @@
 import axios from 'axios'
 import type { LoginResponse, UserProfile } from '@/types/api'
+import router from '@/router'
 
 const api = axios.create({ baseURL: '/api' })
 
@@ -12,12 +13,15 @@ api.interceptors.request.use(config => {
 api.interceptors.response.use(
   res => res,
   err => {
-    if (err.response?.status === 401) {
+    // 登录接口 401 = 密码错误，不跳转，直接显示后端错误消息
+    if (err.response?.status === 401 && err.config?.url !== '/auth/login') {
       clearAuth()
-      window.location.href = '/login'
+      router.push('/login')
       return Promise.reject(new Error('登录已过期，请重新登录'))
     }
-    const msg = err.response?.data?.error || err.message || 'Request failed'
+    const msg = err.response?.data?.error
+      || (typeof err.response?.data === 'string' ? '服务器错误' : null)
+      || '请求失败'
     return Promise.reject(new Error(msg))
   }
 )

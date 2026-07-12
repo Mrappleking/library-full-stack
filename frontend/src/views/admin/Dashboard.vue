@@ -57,10 +57,10 @@
           </template>
           <n-descriptions :column="1" size="small" label-placement="left">
             <n-descriptions-item label="API 端点">
-              <n-tag size="small" type="info">40</n-tag>
+              <n-tag size="small" type="info">{{ apiCount }}</n-tag>
             </n-descriptions-item>
             <n-descriptions-item label="测试覆盖">
-              <n-tag size="small" type="success">51/51 通过</n-tag>
+              <n-tag size="small" type="success">移除</n-tag>
             </n-descriptions-item>
             <n-descriptions-item label="构建状态">
               <n-tag size="small" type="success">✅ PASS</n-tag>
@@ -92,7 +92,7 @@ import api from '@/api'
 
 const colors = ['#5e6ad2', '#f0a020', '#18a058', '#2080f0', '#d03050']
 const icons = [LibraryOutline, SwapHorizontalOutline, PeopleOutline, GridOutline, AlertCircleOutline]
-
+const apiCount = ref(0);
 const stats = ref([
   { label: '总藏书', value: '-' },
   { label: '在借数量', value: '-' },
@@ -104,6 +104,7 @@ const stats = ref([
 onMounted(async () => {
   try {
     const { data } = await api.get('/stats')
+
     stats.value = [
       { label: '总藏书', value: data.totalBooks || 0 },
       { label: '在借数量', value: data.activeBorrows || 0 },
@@ -112,6 +113,10 @@ onMounted(async () => {
       { label: '逾期未还', value: data.overdueCount || 0 }
     ]
   } catch (e) { console.error('fetchStats failed:', e) }
+  try{
+    const {data:sysData}=await api.get('/system/info');
+    apiCount.value=sysData.endpoints||0;
+  }catch(e){console.error('fetchSysInfo failed:',e)}
 })
 </script>
 

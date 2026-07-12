@@ -11,6 +11,11 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,10 +63,10 @@ public class BorrowService {
         return result;
     }
 
-    public Map<String, Object> listBorrows(int page, int limit) {
+    public Map<String, Object> listBorrows(int page, int limit, String search, String status) {
         int offset = (page - 1) * limit;
-        List<BorrowRecord> records = borrowRecordMapper.findAllPage(offset, limit);
-        long total = borrowRecordMapper.countAll();
+        List<BorrowRecord> records = borrowRecordMapper.findAllPage(offset, limit, search, status);
+        long total = borrowRecordMapper.countAll(search, status);
 
         Map<String, Object> result = new HashMap<>();
         result.put("borrows", records);
@@ -79,7 +84,7 @@ public class BorrowService {
         Integer bookItemId = params.getBookItemId();
 
         if (bookId == null && bookItemId == null) {
-            throw AppException.badRequest("bookId or bookItemId required");
+            throw AppException.badRequest("bookId或bookItemId不能为空");
         }
 
         Integer targetBookId = bookId;
@@ -88,19 +93,19 @@ public class BorrowService {
         // Find the item if only bookId was given
         if (targetItemId != null) {
             BookItem item = bookItemMapper.findById(targetItemId);
-            if (item == null) throw AppException.notFound("Book item not found");
+            if (item == null) throw AppException.notFound("馆藏复本不存在");
             if (!"available".equals(item.getStatus())) {
-                throw AppException.badRequest("This copy is not available");
+                throw AppException.badRequest("该复本不可借");
             }
             targetBookId = item.getBookId();
         } else {
             Book book = bookMapper.findById(targetBookId);
-            if (book == null) throw AppException.notFound("Book not found");
+            if (book == null) throw AppException.notFound("图书不存在");
             BookItem firstItem = bookItemMapper.findFirstAvailableByBookId(targetBookId);
             if (firstItem != null) targetItemId = firstItem.getId();
         }
 
-        if (targetBookId == null) throw AppException.notFound("Book not found");
+        if (targetBookId == null) throw AppException.notFound("图书不存在");
 
         User user = userMapper.findById(userId);
         BookItem item = targetItemId != null ? bookItemMapper.findById(targetItemId) : null;
@@ -113,19 +118,19 @@ public class BorrowService {
         // Transaction-level checks: re-verify availability atomically
         BorrowRecord existing = borrowRecordMapper.findActiveByUserAndBook(userId, targetBookId);
         if (existing != null) {
-            throw AppException.badRequest("You already borrowed this book");
+            throw AppException.badRequest("您已借阅过此书");
         }
 
         long currentCount = borrowRecordMapper.countActiveByUserId(userId);
         if (currentCount >= rule.getMaxBorrows()) {
-            throw AppException.badRequest("Borrow limit exceeded: max " + rule.getMaxBorrows());
+            throw AppException.badRequest("借阅数量已达上限: " + rule.getMaxBorrows());
         }
 
         // Re-verify item is still available
         if (targetItemId != null) {
             BookItem itemCheck = bookItemMapper.findById(targetItemId);
             if (itemCheck == null || !"available".equals(itemCheck.getStatus())) {
-                throw AppException.badRequest("Copy no longer available");
+                throw AppException.badRequest("复本已不可用");
             }
             bookService.validateItemStatus("available", "borrowed");
         }
@@ -159,12 +164,12 @@ public class BorrowService {
     @Transactional
     public BorrowRecord returnBook(Integer borrowRecordId, Integer userId, boolean isAdmin) {
         BorrowRecord record = borrowRecordMapper.findById(borrowRecordId);
-        if (record == null) throw AppException.notFound("Borrow record not found");
+        if (record == null) throw AppException.notFound("借阅记录不存在");
         if (!"active".equals(record.getStatus())) {
-            throw AppException.badRequest("Already returned");
+            throw AppException.badRequest("已归还");
         }
         if (!record.getUserId().equals(userId) && !isAdmin) {
-            throw AppException.forbidden("Unauthorized");
+            throw AppException.forbidden("无权操作");
         }
 
         LocalDateTime now = LocalDateTime.now();
@@ -212,9 +217,9 @@ public class BorrowService {
     @Transactional
     public Map<String, Object> renew(Integer recordId, Integer userId) {
         BorrowRecord record = borrowRecordMapper.findById(recordId);
-        if (record == null) throw AppException.notFound("Borrow record not found");
-        if (!"active".equals(record.getStatus())) throw AppException.badRequest("Cannot renew");
-        if (!record.getUserId().equals(userId)) throw AppException.forbidden("Unauthorized");
+        if (record == null) throw AppException.notFound("借阅记录不存在");
+        if (!"active".equals(record.getStatus())) throw AppException.badRequest("无法续借");
+        if (!record.getUserId().equals(userId)) throw AppException.forbidden("无权操作");
 
         CirculationRule rule = ruleService.getRule(
                 record.getUser() != null ? record.getUser().getPatronCategoryId() : null,
@@ -222,7 +227,7 @@ public class BorrowService {
         );
 
         if (record.getRenewed()) {
-            throw AppException.badRequest("Already renewed (limit: " + rule.getRenewals() + "x)");
+            throw AppException.badRequest("已达续借上限: " + rule.getRenewals() + "次");
         }
 
         LocalDateTime newDue = record.getDueDate().plusDays(rule.getRenewalDays());
@@ -260,5 +265,58 @@ public class BorrowService {
         } catch (Exception e) {
             logger.error("审计日志写入失败: action={}, target={}", action, target, e);
         }
+    }
+
+    /**
+     * Export borrow records as CSV stream.
+     * @param userId  null for admin (all records), non-null for reader
+     */
+    public void exportCsv(Integer userId, HttpServletResponse response) {
+        List<Map<String, Object>> records;
+        String filename;
+
+        if (userId == null) {
+            records = borrowRecordMapper.findAllForExport();
+            filename = "borrows-all.csv";
+        } else {
+            records = borrowRecordMapper.findByUserIdForExport(userId);
+            filename = "borrows-my.csv";
+        }
+
+        response.setContentType("text/csv; charset=UTF-8");
+        response.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
+
+        try (PrintWriter writer = new PrintWriter(
+                new OutputStreamWriter(response.getOutputStream(), StandardCharsets.UTF_8))) {
+            // BOM for Excel UTF-8 compatibility
+            writer.write('\uFEFF');
+            // Header
+            writer.println("书名,借阅日期,应还日期,实际归还日期,罚款金额");
+
+            // Data rows
+            for (Map<String, Object> row : records) {
+                writer.print(escapeCsv(row.get("bookTitle")));
+                writer.print(',');
+                writer.print(escapeCsv(row.get("borrowDate")));
+                writer.print(',');
+                writer.print(escapeCsv(row.get("dueDate")));
+                writer.print(',');
+                writer.print(escapeCsv(row.get("returnDate")));
+                writer.print(',');
+                writer.print(row.get("fineAmount"));
+                writer.println();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("CSV export failed", e);
+        }
+    }
+
+    private String escapeCsv(Object val) {
+        if (val == null) return "";
+        String s = val.toString();
+        if (s.contains(",") || s.contains("\"") || s.contains("\n")) {
+            return "\"" + s.replace("\"", "\"\"") + "\"";
+        }
+        return s;
     }
 }

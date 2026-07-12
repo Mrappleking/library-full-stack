@@ -62,13 +62,13 @@ public class FineService {
     }
 
     @Transactional
-    public Fine markPaid(Integer fineId, Integer userId) {
+    public Fine markPaid(Integer fineId, Integer userId, String userRole) {
         Fine fine = fineMapper.findById(fineId);
         if (fine == null) throw AppException.notFound("Fine not found");
         if (fine.getPaid()) throw AppException.badRequest("Already paid");
 
-        // Ownership verification
-        if (!fine.getUserId().equals(userId)) {
+        // 管理员可处理所有罚款，读者只能处理自己的
+        if (!"admin".equals(userRole) && !fine.getUserId().equals(userId)) {
             throw AppException.forbidden("无权操作该罚款记录");
         }
 

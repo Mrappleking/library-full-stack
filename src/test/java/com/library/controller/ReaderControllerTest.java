@@ -1,6 +1,6 @@
 package com.library.controller;
 
-import com.library.entity.User;
+import com.library.dto.response.UserProfile;
 import com.library.service.UserService;
 import com.library.util.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,7 +45,7 @@ class ReaderControllerTest {
 
     @Test
     void list_shouldReturnReaders() throws Exception {
-        User u = new User();
+        UserProfile u = new UserProfile();
         u.setId(1);
         u.setUsername("reader1");
         u.setRole("reader");
@@ -58,7 +58,7 @@ class ReaderControllerTest {
 
     @Test
     void getById_shouldReturnReader() throws Exception {
-        User u = new User();
+        UserProfile u = new UserProfile();
         u.setId(1);
         u.setUsername("reader1");
         when(userService.findById(1)).thenReturn(u);
@@ -78,7 +78,7 @@ class ReaderControllerTest {
 
     @Test
     void updateByAdmin_shouldUpdateReader() throws Exception {
-        User u = new User();
+        UserProfile u = new UserProfile();
         u.setId(1);
         u.setName("Updated");
         when(userService.findById(1)).thenReturn(u);

@@ -50,10 +50,10 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage, NIcon, darkTheme } from 'naive-ui'
 import { PersonOutline, LockClosedOutline } from '@vicons/ionicons5'
-import api from '../api'
-import LoginBg from '../components/LoginBg.vue'
-import { useAuthStore } from '../stores/auth'
-import type { LoginResponse, UserProfile } from '../types/api'
+import api from '../../api'
+import LoginBg from '../../components/LoginBg.vue'
+import { useAuthStore } from '../../stores/auth'
+import type { LoginResponse, UserProfile } from '../../types/api'
 const router = useRouter(); const message = useMessage()
 const form = ref({ username: '', password: '' }); const loading = ref(false)
 const rules = { username: [{ required: true, message: '请输入用户名' }], password: [{ required: true, message: '请输入密码' }] }

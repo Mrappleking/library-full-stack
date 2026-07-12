@@ -1,10 +1,14 @@
 package com.library.controller;
 
 import com.library.dto.request.ReaderUpdateRequest;
+import com.library.dto.response.UserProfile;
 import com.library.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/readers")
@@ -18,7 +22,11 @@ public class ReaderController {
 
     @GetMapping
     public ResponseEntity<?> list() {
-        return ResponseEntity.ok(userService.findAll());
+        List<UserProfile> all = userService.findAll();
+        List<UserProfile> readers = all.stream()
+                .filter(u -> "reader".equals(u.getRole()))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(readers);
     }
 
     @GetMapping("/{id}")

@@ -48,7 +48,17 @@
   </select>
 
   <select id="findAllPage" resultMap="fullBorrow">
-    SELECT * FROM borrow_records ORDER BY borrow_date DESC LIMIT #{limit} OFFSET #{offset}
+    SELECT * FROM borrow_records
+    <where>
+      <if test="status != null and status != ''">
+        AND status = #{status}
+      </if>
+      <if test="search != null and search != ''">
+        AND (userId IN (SELECT id FROM users WHERE name LIKE CONCAT('%', #{search}, '%') OR username LIKE CONCAT('%', #{search}, '%'))
+        OR bookId IN (SELECT id FROM books WHERE title LIKE CONCAT('%', #{search}, '%')))
+      </if>
+    </where>
+    ORDER BY borrow_date DESC LIMIT #{limit} OFFSET #{offset}
   </select>
 
   <select id="countByUserId" resultType="long">
@@ -57,6 +67,15 @@
 
   <select id="countAll" resultType="long">
     SELECT COUNT(*) FROM borrow_records
+    <where>
+      <if test="status != null and status != ''">
+        AND status = #{status}
+      </if>
+      <if test="search != null and search != ''">
+        AND (userId IN (SELECT id FROM users WHERE name LIKE CONCAT('%', #{search}, '%') OR username LIKE CONCAT('%', #{search}, '%'))
+        OR bookId IN (SELECT id FROM books WHERE title LIKE CONCAT('%', #{search}, '%')))
+      </if>
+    </where>
   </select>
 
   <insert id="insert" useGeneratedKeys="true" keyProperty="id">
@@ -101,6 +120,28 @@
     SELECT id, userId, bookId, bookItemId, borrow_date AS borrowDate, due_date AS dueDate,
            return_date AS returnDate, status, renewed, created_at AS createdAt, updated_at AS updatedAt
     FROM borrow_records WHERE status = 'active' AND due_date &lt; NOW()
+  </select>
+
+  <!-- CSV export queries -->
+  <select id="findAllForExport" resultType="map">
+    SELECT b.title AS bookTitle, br.borrow_date AS borrowDate, br.due_date AS dueDate,
+           br.return_date AS returnDate, COALESCE(SUM(f.amount), 0) AS fineAmount
+    FROM borrow_records br
+    JOIN books b ON br.bookId = b.id
+    LEFT JOIN fines f ON f.borrowRecordId = br.id
+    GROUP BY br.id, b.title, br.borrow_date, br.due_date, br.return_date
+    ORDER BY br.borrow_date DESC
+  </select>
+
+  <select id="findByUserIdForExport" resultType="map">
+    SELECT b.title AS bookTitle, br.borrow_date AS borrowDate, br.due_date AS dueDate,
+           br.return_date AS returnDate, COALESCE(SUM(f.amount), 0) AS fineAmount
+    FROM borrow_records br
+    JOIN books b ON br.bookId = b.id
+    LEFT JOIN fines f ON f.borrowRecordId = br.id
+    WHERE br.userId = #{userId}
+    GROUP BY br.id, b.title, br.borrow_date, br.due_date, br.return_date
+    ORDER BY br.borrow_date DESC
   </select>
 
 </mapper>
