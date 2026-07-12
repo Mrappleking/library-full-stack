@@ -25,6 +25,16 @@ Status: 45 API endpoints | 71 Java files | 31 Vue files | 9 XML mappers | 102 te
 | 8 | 后端错误消息用英文 | 中文用户看不懂报错信息 | 使用中文错误消息（如 "用户名或密码错误"） |
 | 9 | WSL 默认 JDK 25 下 `mvn compile` | `release version 17 not supported` 编译失败 | 先 `export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64` 再编译 |
 | 10 | `@EnableScheduling` 同时放在 `LibraryApplication.java` 和 `WebConfig.java` | 重复注解，启动时加载两次调度器 | 只保留 `LibraryApplication.java` 上的 `@EnableScheduling`，移除 `WebConfig.java` 上的 |
+| 11 | 图片上传只检查 Content-Type/扩展名 | 恶意文件可以伪装 | 用 ImageIO.read() 检查真实内容 |
+| 12 | OverdueFineScheduler 不查找用户 patronCategoryId | 罚款规则计算错误 | 查找用户和图书类型再找规则 |
+| 13 | 审计日志使用默认事务传播级别 | 主业务失败审计也丢失 | 用 @Transactional(propagation=REQUIRES_NEW) |
+| 14 | WebConfig 同时定义 CorsFilter 和 addCorsMappings | CORS 配置混乱冲突 | 只保留 WebMvcConfigurer 的 addCorsMappings |
+| 15 | 管理员重置密码硬编码 "reader123" | 安全隐患大 | 使用 SecureRandom 生成临时密码 |
+| 16 | 密码验证只有长度限制 | 弱密码易被破解 | 要求 3/4 类字符组合（大写/小写/数字/特殊） |
+| 17 | BookUpdateRequest 缺少验证注解 | 无效数据被接受 | 添加 @Size、@Min 等验证注解 |
+| 18 | BookController PUT 无 @Valid | 与 Create 不一致 | PUT 也添加 @Valid 验证 |
+| 19 | 限流使用已废弃的 Bucket4j API | 未来版本不兼容 | 使用现代 Builder 模式 |
+| 20 | JWT 使用旧的 jjwt 0.11.x 单包 | 安全性不足 | 升级到 0.12.x 模块化版本 |
 
 ## 3. Architecture Decisions
 
@@ -46,6 +56,18 @@ Status: 45 API endpoints | 71 Java files | 31 Vue files | 9 XML mappers | 102 te
 | 2026-06-30 | H2 in-memory DB for tests | No MySQL dependency in CI |
 | 2026-06-30 | 后端错误消息使用中文 | 目标用户为中文使用者 |
 | 2026-06-30 | UserMapper.xml 列名 `totalFines` → `total_fines` | 对齐实际数据库 snake_case 列名 |
+| 2026-07-12 | 添加 RateLimitFilter 请求限流 | 防止暴力攻击 |
+| 2026-07-12 | 密码复杂度验证 | 提升安全标准 |
+| 2026-07-12 | 图片文件真实内容验证 | 防止恶意文件上传 |
+| 2026-07-12 | 更新 JWT 库版本到 0.12.6 | 安全性与兼容性 |
+| 2026-07-12 | 审计日志独立事务 @Transactional(REQUIRES_NEW) | 审计不影响主业务 |
+| 2026-07-12 | 管理员重置密码使用随机生成 | 无硬编码密码 |
+| 2026-07-12 | 统一 CORS 配置仅使用 WebMvcConfigurer | 移除重复配置避免冲突 |
+| 2026-07-12 | OverdueFineScheduler 根据用户和图书类型计算罚款 | 确保准确性与公平性 |
+| 2026-07-12 | 主题色从蓝紫色渐变 | 现代美观 |
+| 2026-07-12 | 图书卡片悬停有查看详情按钮 | 用户体验更好 |
+| 2026-07-12 | BookUpdateRequest 完整验证注解 | 数据完整性 |
+| 2026-07-12 | BookController PUT 请求添加 @Valid | 防止无效输入 |
 
 ## 4. Commands
 
@@ -81,12 +103,12 @@ kill -9 $(lsof -ti:5175)
 src/                             # Spring Boot + MyBatis + MySQL
 main/java/com/library/
   LibraryApplication.java        # @SpringBootApplication
-  config/    3 files             JwtAuthFilter, WebConfig (CORS), JwtAuthInterceptor
-  controller/ 11 files           45 REST endpoints
-  service/   9 files             @Transactional business logic
+  config/    4 files             RateLimitFilter, JwtAuthFilter, WebConfig (CORS), JwtAuthInterceptor
+  controller/ 12 files           UploadController + 45 REST endpoints
+  service/   10 files            @Transactional business logic
   mapper/    11 files            MyBatis @Mapper interfaces (SQL in XML)
   entity/    11 files            POJO matching MySQL tables
-  dto/request/  6 files          @Valid request bodies
+  dto/request/  9 files          @Valid request bodies
   dto/response/ 16 files         Response DTOs
   exception/  2 files            AppException + @RestControllerAdvice
   util/      1 file              JwtUtil
@@ -94,11 +116,11 @@ main/java/com/library/
 frontend/                        # Vue 3 + Vite + Naive UI
   src/
     api/      index.ts, books.ts  Axios + typed API
-    stores/   auth.ts, books.ts   Pinia
+    stores/   auth.ts, books.ts, theme.ts   Pinia
     router/   index.ts            vue-router (matches original)
     types/    api.ts              TypeScript interfaces
     composables/  index.ts        usePagination, useDebounce
-    components/  13 files         All original components ported
+    components/  13 files         All original components ported (AnimatedBackground, BookCard enhanced)
     views/       17 files
     App.vue
 ```
