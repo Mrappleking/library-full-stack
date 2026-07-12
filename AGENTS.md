@@ -9,7 +9,7 @@
 图书馆全栈管理系统（Spring Boot 3 版）。四层架构：Vue3+NaiveUI（`frontend/`）→ Controller → Service → Mapper(MyBatis+XML) → MySQL。
 
 Origin: https://github.com/Mrappleking/library-full-stack
-Status: 45 API endpoints | 71 Java files | 31 Vue files | 9 XML mappers | 102 tests
+Status: 52 API endpoints | 92 Java files | 35 Vue files | 8 XML mappers | 102 tests
 
 ## 2. Error Zone
 
@@ -35,6 +35,9 @@ Status: 45 API endpoints | 71 Java files | 31 Vue files | 9 XML mappers | 102 te
 | 18 | BookController PUT 无 @Valid | 与 Create 不一致 | PUT 也添加 @Valid 验证 |
 | 19 | 限流使用已废弃的 Bucket4j API | 未来版本不兼容 | 使用现代 Builder 模式 |
 | 20 | JWT 使用旧的 jjwt 0.11.x 单包 | 安全性不足 | 升级到 0.12.x 模块化版本 |
+| 21 | `ResponseEntity<?>` 泛型未指定 | 前端反序列化依赖猜测 | 使用 `ApiResponse<T>` 统一响应格式 |
+| 22 | BookController.getFacets() 删除参数 | facets 忽略搜索过滤，功能回归 | 保留 `@RequestParam search/categoryId` 传递到 service |
+| 23 | 后端改了 ApiResponse 但前端未同步 | 前端解包异常导致空白页 | 前后端 API 契约变更必须联动更新（DTO/VO/TS 接口） |
 
 ## 3. Architecture Decisions
 
@@ -68,6 +71,13 @@ Status: 45 API endpoints | 71 Java files | 31 Vue files | 9 XML mappers | 102 te
 | 2026-07-12 | 图书卡片悬停有查看详情按钮 | 用户体验更好 |
 | 2026-07-12 | BookUpdateRequest 完整验证注解 | 数据完整性 |
 | 2026-07-12 | BookController PUT 请求添加 @Valid | 防止无效输入 |
+| 2026-07-12 | Redis 缓存层（CacheService） | 减少数据库查询，提升响应速度 |
+| 2026-07-12 | API 模块化拆分（borrows.ts/readers.ts 等） | 前端 API 调用类型化，模块职责清晰 |
+| 2026-07-12 | 统一 ApiResponse 响应格式 | 前后端契约标准化，前端统一解包 |
+| 2026-07-12 | 仪表盘 ECharts 图表（月度趋势/分类占比） | 直观展示借阅统计 |
+| 2026-07-12 | 前端深色模式（theme store） | 跟随系统主题偏好，提升用户体验 |
+| 2026-07-12 | 抽取 BaseLayout 共享布局组件 | 消除 admin/reader Layout 代码重复 |
+| 2026-07-12 | HoldService SELECT FOR UPDATE 悲观锁 | 防止并发操作导致预约状态不一致 |
 
 ## 4. Commands
 
@@ -103,9 +113,9 @@ kill -9 $(lsof -ti:5175)
 src/                             # Spring Boot + MyBatis + MySQL
 main/java/com/library/
   LibraryApplication.java        # @SpringBootApplication
-  config/    4 files             RateLimitFilter, JwtAuthFilter, WebConfig (CORS), JwtAuthInterceptor
-  controller/ 12 files           UploadController + 45 REST endpoints
-  service/   10 files            @Transactional business logic
+  config/    6 files             RateLimitFilter, JwtAuthFilter, OpenApiConfig, RedisConfig, WebConfig (CORS), JwtAuthInterceptor
+  controller/ 13 files           UploadController + 52 REST endpoints
+  service/   12 files            @Transactional business logic (AuditService, CacheService added)
   mapper/    11 files            MyBatis @Mapper interfaces (SQL in XML)
   entity/    11 files            POJO matching MySQL tables
   dto/request/  9 files          @Valid request bodies
@@ -115,11 +125,11 @@ main/java/com/library/
 
 frontend/                        # Vue 3 + Vite + Naive UI
   src/
-    api/      index.ts, books.ts  Axios + typed API
+    api/      index.ts, books.ts, borrows.ts, readers.ts, categories.ts, stats.ts, fines.ts, holds.ts  Axios + typed API
     stores/   auth.ts, books.ts, theme.ts   Pinia
     router/   index.ts            vue-router (matches original)
     types/    api.ts              TypeScript interfaces
-    composables/  index.ts        usePagination, useDebounce
+    composables/  useToast.ts, index.ts     Toast notifications, usePagination, useDebounce
     components/  13 files         All original components ported (AnimatedBackground, BookCard enhanced)
     views/       17 files
     App.vue
@@ -129,7 +139,7 @@ frontend/                        # Vue 3 + Vite + Naive UI
 Seed data stores `cover` as `/covers/{id}-{title}.{ext}` (e.g. `/covers/1-算法导论.jpg`).
 Spring Boot auto-serves via `:8080/covers/...`. Frontend renders via `<img :src="book.cover">` — no extra config needed.
 
-## 6. API Route Table (45 endpoints)
+## 6. API Route Table (52 endpoints)
 
 ### Auth (`/api/auth`)
 
@@ -230,6 +240,8 @@ Spring Boot auto-serves via `:8080/covers/...`. Frontend renders via `<img :src=
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | /api/health | public | `{ status: 'ok' }` |
+| POST | /api/system/clear-cache | admin | Clear all Redis cache |
+| POST | /api/system/clear-cache/{key} | admin | Clear specific cache key |
 
 ## 7. Frontend Routing
 
@@ -239,7 +251,7 @@ Spring Boot auto-serves via `:8080/covers/...`. Frontend renders via `<img :src=
 /books/:id         -> BookDetailSection + HoldingsTable + borrow/hold
 /login             -> LoginBg + dark glassmorphism + register modal
 /admin/*           -> admin layout (role:admin)
-/admin/dashboard   -> stat cards + quick actions + system info
+/admin/dashboard   -> stat cards + ECharts charts (monthly borrow trend + category pie) + quick actions + system info
 /admin/books       -> CRUD table + expandable items + add copy
 /admin/borrows     -> borrow table + return with overdue warning
 /admin/categories  -> CRUD table
@@ -276,6 +288,7 @@ Configuration split across profiles (`spring.profiles.active=dev` default):
 | `AppException.conflict()` | 409 |
 | JWT auth fail | 401 |
 | Role mismatch | 403 |
+| Rate limit exceeded | 429 |
 | Other `AppException` | see code |
 | Any other Exception | 500 |
 
@@ -305,6 +318,9 @@ Database has mixed naming: `categoryId` (camelCase) vs `created_at` (snake_case)
 - Mappers: interface only, SQL in XML via namespace
 - All POST/PUT use `@Valid` DTOs
 - Use `AppException` with descriptive messages
+- Response: `ResponseEntity<ApiResponse<T>>` uniform format for all endpoints
+- Cache: `CacheService` for Redis operations (user token, book detail, rules)
+- Audit: `AuditService` extracted with `@Transactional(REQUIRES_NEW)`
 
 ### Data Integrity
 - `borrow()` / `returnBook()` / `payFine()` / `cancelHold()` / `fulfillHold()` MUST be `@Transactional`
@@ -326,9 +342,12 @@ fulfillHold(ready) → on_hold → borrowed (reader picks up the held item)
 ### Frontend
 - UI: Naive UI (`n-data-table`, `n-button`, etc.)
 - Icons: `@vicons/ionicons5`
-- API: Axios via `api/index.ts`
+- Charts: ECharts via vue-echarts (MonthlyBorrowChart, CategoryPieChart)
+- API: Axios via `api/index.ts` + per-module API files (`books.ts`, `borrows.ts`, etc.)
 - Auth: Pinia store + localStorage JWT
 - Routing: matches original exactly (public /books, /admin/*, /reader/*)
+- Dark mode: theme store (auto-detect system preference + manual toggle)
+- Toast: useToast composable + ToastContainer component (success/error/warning/info)
 - No emoji - use SVG icons
 
 ### Tests

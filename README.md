@@ -9,10 +9,10 @@
 
 | 层 | 技术 |
 |---|------|
-| 前端 | Vue 3 · Vite · Naive UI · Pinia · Vue Router · Axios |
-| 后端 | Spring Boot 3.2 · MyBatis 3.0 · Maven · MySQL 8.0 |
+| 前端 | Vue 3 · Vite · Naive UI · Pinia · Vue Router · Axios · ECharts |
+| 后端 | Spring Boot 3.2 · MyBatis 3.0 · Maven · MySQL 8.0 · Redis |
 | 测试 | Mockito · JUnit 5 · Spring Boot Test · H2 |
-| 工具 | Maven Wrapper · BCrypt · JWT · Druid · PageHelper |
+| 工具 | Maven Wrapper · BCrypt · JWT · Bucket4j · Druid · PageHelper · SpringDoc OpenAPI |
 
 ---
 
@@ -69,7 +69,7 @@ npm run dev
 | 读者管理 | `/admin/readers` | 读者列表、详情编辑 |
 | 罚款管理 | `/admin/fines` | 罚款记录、缴费处理（按类型/已缴状态筛选） |
 | 设置 | `/admin/settings` | 流通规则矩阵、读者类型、资料类型配置 |
-| 统计分析 | `/admin/stats` | 热门图书 Top 20、月度借阅统计 |
+| 统计分析 | `/admin/stats` | 热门图书 Top 20、月度借阅统计（ECharts 折线图 + 饼图） |
 
 ### 读者
 
@@ -99,32 +99,33 @@ library-full-stack/
 ├── AGENTS.md                   # AI 开发参考（给 AI agent 看的）
 │
 ├── src/main/java/com/library/
-│   ├── config/                 # JwtAuthFilter, CORS, 角色拦截器
-│   ├── controller/             # 45 个 REST API 端点
-│   ├── service/                # 业务逻辑层，@Transactional 事务管理
+│   ├── config/                 # JwtAuthFilter, CORS, 角色拦截器, OpenAPI, 限流, Redis配置
+│   ├── controller/             # 52 个 REST API 端点（含 SystemController）
+│   ├── service/                # 12 个 Service（含 AuditService, CacheService）
 │   ├── mapper/                 # MyBatis Mapper 接口
 │   ├── entity/                 # POJO 数据实体
-│   ├── dto/request|response/   # 请求/响应 DTO
+│   ├── dto/request|response/   # 请求/响应 DTO（含 ApiResponse 统一格式）
 │   └── exception/              # 统一异常处理 + 中文错误消息
 │
 ├── src/main/resources/
-│   ├── mappers/                # 9 个 MyBatis XML 映射文件
-│   ├── static/covers/          # 20 张图书封面本地图片
+│   ├── mappers/                # 8 个 MyBatis XML 映射文件
+│   ├── static/covers/          # 封面图片（本地托管，无外部 CDN）
 │   ├── application.yml         # 通用配置
-│   ├── application-dev.yml     # 开发环境（Druid + MySQL）
+│   ├── application-dev.yml     # 开发环境（Druid + MySQL + Redis）
 │   └── application-prod.yml    # 生产环境
 │
 ├── frontend/
 │   └── src/
-│       ├── api/                # Axios 封装 + 类型化 API
-│       ├── stores/             # Pinia 状态管理
+│       ├── api/                # 8 个模块化 API 文件 + Axios 封装
+│       ├── stores/             # Pinia 状态管理（auth, books, theme）
 │       ├── router/             # Vue Router（含路由守卫）
-│       ├── components/         # 13 个通用组件
-│       └── views/              # 17 个页面（public/admin/reader）
+│       ├── components/         # 通用组件（含 Toast, 图表, BaseLayout）
+│       ├── composables/        # 组合式函数（useToast, usePagination 等）
+│       └── views/              # 35 个页面（public/admin/reader）
 │
 └── src/test/java/com/library/
-    ├── service/                # 51 个 Service 单元测试
-    └── controller/             # 4 个 Controller 集成测试
+    ├── service/                # 8 个 Service 测试文件
+    └── controller/             # 12 个 Controller 测试文件
 ```
 
 ---
@@ -135,7 +136,7 @@ library-full-stack/
 
 | 模块 | 端点数 | 公共 | 需认证（读者） | 需认证（管理员） |
 |------|--------|------|---------------|----------------|
-| Auth | 5 | 2 | 1 | 2 |
+| Auth | 6 | 2 | 1 | 3 |
 | Books | 8 | 4 | — | 4 |
 | BookItems | 1 | — | 1 | — |
 | Categories | 4 | 1 | — | 3 |
@@ -145,6 +146,8 @@ library-full-stack/
 | Fines | 3 | — | 1 | 2 |
 | Rules | 4 | 3 | — | 1 |
 | Stats | 3 | — | — | 3 |
+| Upload | 1 | — | — | 1 |
+| System | 2 | — | — | 2 |
 | Health | 1 | 1 | — | — |
 
 **认证方式：** Bearer Token（JWT），登录后返回，存 localStorage，Axios interceptor 自动注入。
@@ -166,7 +169,7 @@ library-full-stack/
 
 ### CORS
 
-前端开发服务器在 :5175 运行，后端配置了跨域来源 :5173（原版 TypeScript）和 :5175（Java 版）。
+前端开发服务器在 :5175 运行，后端配置了跨域来源 :5173（原版 TypeScript）和 :5175（Java 版）。所有来源可通过 `app.cors.allowed-origins` 配置。
 
 ---
 
@@ -322,7 +325,7 @@ git push origin <分支名>
 
 ## 项目状态
 
-45 API · 71 Java 文件 · 31 Vue 文件 · 9 XML Mapper · **96 测试** ✅
+52 API · 92 Java 文件 · 35 Vue 文件 · 8 XML Mapper · **102 测试** ✅ · Redis 缓存 · 统一响应格式 · 深色模式 · ECharts 图表 · 限流保护
 
 ---
 
@@ -348,7 +351,7 @@ mysql -h127.0.0.1 -uroot -p library < seed.sql
 
 ### 全栈
 
-- **提交前跑测试。** `./mvnw test`（55 个测试全部通过再提交）
+- **提交前跑测试。** `./mvnw test`（102 个测试全部通过再提交）
 
 ---
 
