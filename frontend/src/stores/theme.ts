@@ -19,8 +19,7 @@ export const useThemeStore = defineStore('theme', () => {
       placeholderColor: '#bbb',
       borderColor: '#e0e0e0',
       dividerColor: '#f0f0f0',
-      backgroundColor: '#ffffff',
-      backgroundColorOverlay: '#ffffff',
+      baseColor: '#ffffff',
     },
     Card: { borderRadius: '10px', paddingMedium: '20px 24px', color: '#ffffff' },
     DataTable: {
@@ -46,8 +45,7 @@ export const useThemeStore = defineStore('theme', () => {
       placeholderColor: '#555',
       borderColor: '#333',
       dividerColor: '#2a2a2a',
-      backgroundColor: '#1a1a1a',
-      backgroundColorOverlay: '#222',
+      baseColor: '#1a1a1a',
     },
     Card: { borderRadius: '10px', paddingMedium: '20px 24px', color: '#222' },
     DataTable: {
