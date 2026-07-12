@@ -62,7 +62,7 @@ class RuleControllerTest {
 
         mockMvc.perform(get("/api/rules"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].maxBorrows").value(5));
+                .andExpect(jsonPath("$.data[0].maxBorrows").value(5));
     }
 
     @Test
@@ -74,7 +74,7 @@ class RuleControllerTest {
 
         mockMvc.perform(get("/api/rules/patron-categories"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("本科生"));
+                .andExpect(jsonPath("$.data[0].name").value("本科生"));
     }
 
     @Test
@@ -86,7 +86,7 @@ class RuleControllerTest {
 
         mockMvc.perform(get("/api/rules/item-types"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("普通图书"));
+                .andExpect(jsonPath("$.data[0].name").value("普通图书"));
     }
 
     @Test
@@ -102,7 +102,7 @@ class RuleControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"patronCategoryId\":1,\"itemTypeId\":1,\"maxBorrows\":5,\"loanDays\":30,\"renewals\":1,\"renewalDays\":15,\"finePerDay\":0.10}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.maxBorrows").value(5));
+                .andExpect(jsonPath("$.data.maxBorrows").value(5));
 
         verify(ruleMapper).upsert(any(CirculationRule.class));
     }
@@ -116,3 +116,4 @@ class RuleControllerTest {
                 .andExpect(status().isBadRequest());
     }
 }
+

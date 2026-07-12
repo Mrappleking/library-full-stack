@@ -1,9 +1,10 @@
 package com.library.controller;
 
 import com.library.dto.request.RuleUpsertRequest;
+import com.library.dto.response.ApiResponse;
+import com.library.entity.CirculationRule;
 import com.library.entity.PatronCategory;
 import com.library.entity.ItemType;
-import com.library.entity.CirculationRule;
 import com.library.mapper.PatronCategoryMapper;
 import com.library.mapper.ItemTypeMapper;
 import com.library.mapper.CirculationRuleMapper;
@@ -17,44 +18,42 @@ import java.util.List;
 @RequestMapping("/api/rules")
 public class RuleController {
 
-    private final CirculationRuleMapper ruleMapper;
     private final PatronCategoryMapper patronCategoryMapper;
     private final ItemTypeMapper itemTypeMapper;
+    private final CirculationRuleMapper ruleMapper;
 
-    public RuleController(CirculationRuleMapper ruleMapper,
-                          PatronCategoryMapper patronCategoryMapper,
-                          ItemTypeMapper itemTypeMapper) {
-        this.ruleMapper = ruleMapper;
+    public RuleController(PatronCategoryMapper patronCategoryMapper, ItemTypeMapper itemTypeMapper, CirculationRuleMapper ruleMapper) {
         this.patronCategoryMapper = patronCategoryMapper;
         this.itemTypeMapper = itemTypeMapper;
+        this.ruleMapper = ruleMapper;
     }
 
     @GetMapping
-    public ResponseEntity<List<CirculationRule>> list() {
-        return ResponseEntity.ok(ruleMapper.findAll());
+    public ResponseEntity<ApiResponse<List<CirculationRule>>> listRules() {
+        return ResponseEntity.ok(ApiResponse.success(ruleMapper.findAll()));
     }
 
     @GetMapping("/patron-categories")
-    public ResponseEntity<List<PatronCategory>> getPatronCategories() {
-        return ResponseEntity.ok(patronCategoryMapper.findAll());
+    public ResponseEntity<ApiResponse<List<PatronCategory>>> listPatronCategories() {
+        return ResponseEntity.ok(ApiResponse.success(patronCategoryMapper.findAll()));
     }
 
     @GetMapping("/item-types")
-    public ResponseEntity<List<ItemType>> getItemTypes() {
-        return ResponseEntity.ok(itemTypeMapper.findAll());
+    public ResponseEntity<ApiResponse<List<ItemType>>> listItemTypes() {
+        return ResponseEntity.ok(ApiResponse.success(itemTypeMapper.findAll()));
     }
 
     @PutMapping
-    public ResponseEntity<CirculationRule> upsert(@Valid @RequestBody RuleUpsertRequest request) {
+    public ResponseEntity<ApiResponse<CirculationRule>> upsert(@Valid @RequestBody RuleUpsertRequest data) {
         CirculationRule rule = new CirculationRule();
-        rule.setPatronCategoryId(request.getPatronCategoryId());
-        rule.setItemTypeId(request.getItemTypeId());
-        rule.setMaxBorrows(request.getMaxBorrows());
-        rule.setLoanDays(request.getLoanDays());
-        rule.setRenewals(request.getRenewals());
-        rule.setRenewalDays(request.getRenewalDays());
-        rule.setFinePerDay(request.getFinePerDay());
+        rule.setPatronCategoryId(data.getPatronCategoryId());
+        rule.setItemTypeId(data.getItemTypeId());
+        rule.setMaxBorrows(data.getMaxBorrows());
+        rule.setLoanDays(data.getLoanDays());
+        rule.setRenewals(data.getRenewals());
+        rule.setRenewalDays(data.getRenewalDays());
+        rule.setFinePerDay(data.getFinePerDay());
         ruleMapper.upsert(rule);
-        return ResponseEntity.ok(rule);
+        return ResponseEntity.ok(ApiResponse.success("规则已更新", rule));
     }
 }

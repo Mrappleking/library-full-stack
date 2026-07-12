@@ -91,7 +91,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private void writeError(HttpServletResponse response, int status, String message) throws IOException {
         response.setStatus(status);
         response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write("{\"error\":\"" + message + "\"}");
+        response.getWriter().write("{\"code\":" + status + ",\"message\":\"" + message + "\",\"data\":null,\"timestamp\":\"" + java.time.LocalDateTime.now().toString() + "\"}");
     }
 
     /**
@@ -102,7 +102,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 || path.equals("/api/auth/register")
                 || path.equals("/api/health")
                 || path.equals("/")
-                || path.startsWith("/covers");
+                || path.startsWith("/covers")
+                || path.startsWith("/swagger-ui")
+                || path.startsWith("/api-docs")
+                || path.startsWith("/v3/api-docs");
     }
 
     /**

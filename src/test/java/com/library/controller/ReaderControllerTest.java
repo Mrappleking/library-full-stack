@@ -49,13 +49,12 @@ class ReaderControllerTest {
         u.setId(1);
         u.setUsername("reader1");
         u.setRole("reader");
-        java.util.Map<String, Object> result = new java.util.HashMap<>();
-        result.put("data", java.util.List.of(u));
-        result.put("total", 1L);
-        when(userService.searchReaders(any(), any(), anyInt(), anyInt(), any(), any())).thenReturn(result);
+
+        when(userService.findAll()).thenReturn(List.of(u));
 
         mockMvc.perform(get("/api/readers").header("Authorization", adminToken))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data[0].username").value("reader1"));
     }
 
@@ -68,7 +67,8 @@ class ReaderControllerTest {
 
         mockMvc.perform(get("/api/readers/1").header("Authorization", adminToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value("reader1"));
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.username").value("reader1"));
     }
 
     @Test
@@ -76,7 +76,8 @@ class ReaderControllerTest {
         when(userService.findById(999)).thenThrow(new com.library.exception.AppException(404, "用户不存在"));
 
         mockMvc.perform(get("/api/readers/999").header("Authorization", adminToken))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value(404));
     }
 
     @Test
@@ -84,14 +85,15 @@ class ReaderControllerTest {
         UserProfile u = new UserProfile();
         u.setId(1);
         u.setName("Updated");
-        when(userService.findById(1)).thenReturn(u);
+        when(userService.update(eq(1), eq("Updated"), eq("13800138000"), eq("a@a.com"))).thenReturn(u);
 
         mockMvc.perform(put("/api/readers/1")
                         .header("Authorization", adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"Updated\",\"phone\":\"13800138000\",\"email\":\"a@a.com\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Updated"));
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.name").value("Updated"));
 
         verify(userService).update(eq(1), eq("Updated"), eq("13800138000"), eq("a@a.com"));
     }
