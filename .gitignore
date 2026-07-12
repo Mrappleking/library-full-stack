@@ -20,6 +20,9 @@ frontend/node_modules/
 frontend/dist/
 frontend/.vite/
 
+### Old backend (intermediate, never committed) ###
+backend/
+
 ### OS ###
 .DS_Store
 Thumbs.db
