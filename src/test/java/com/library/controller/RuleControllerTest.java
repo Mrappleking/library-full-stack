@@ -6,6 +6,7 @@ import com.library.entity.PatronCategory;
 import com.library.mapper.CirculationRuleMapper;
 import com.library.mapper.ItemTypeMapper;
 import com.library.mapper.PatronCategoryMapper;
+import com.library.service.CacheService;
 import com.library.util.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,7 +18,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
@@ -39,6 +39,8 @@ class RuleControllerTest {
     private PatronCategoryMapper patronCategoryMapper;
     @MockBean
     private ItemTypeMapper itemTypeMapper;
+    @MockBean
+    private CacheService cacheService;
 
     @MockBean
     private JwtUtil jwtUtil;
@@ -62,7 +64,8 @@ class RuleControllerTest {
 
         mockMvc.perform(get("/api/rules"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].maxBorrows").value(5));
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data[0].maxBorrows").value(5));
     }
 
     @Test
@@ -74,7 +77,8 @@ class RuleControllerTest {
 
         mockMvc.perform(get("/api/rules/patron-categories"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("本科生"));
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data[0].name").value("本科生"));
     }
 
     @Test
@@ -86,10 +90,12 @@ class RuleControllerTest {
 
         mockMvc.perform(get("/api/rules/item-types"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("普通图书"));
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data[0].name").value("普通图书"));
     }
 
     @Test
+    @SuppressWarnings("null")
     void upsert_shouldCreateRule() throws Exception {
         doAnswer(inv -> {
             CirculationRule r = inv.getArgument(0);
@@ -102,12 +108,14 @@ class RuleControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"patronCategoryId\":1,\"itemTypeId\":1,\"maxBorrows\":5,\"loanDays\":30,\"renewals\":1,\"renewalDays\":15,\"finePerDay\":0.10}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.maxBorrows").value(5));
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.maxBorrows").value(5));
 
         verify(ruleMapper).upsert(any(CirculationRule.class));
     }
 
     @Test
+    @SuppressWarnings("null")
     void upsert_shouldRejectInvalidInput() throws Exception {
         mockMvc.perform(put("/api/rules")
                         .header("Authorization", adminToken)

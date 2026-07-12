@@ -30,7 +30,8 @@
 import { h, ref, onMounted } from 'vue'
 import { NIcon } from 'naive-ui'
 import { LibraryOutline, SwapHorizontalOutline, PeopleOutline, GridOutline, AlertCircleOutline } from '@vicons/ionicons5'
-import api from '@/api'
+import { statsApi } from '@/api'
+import type { StatsOverviewResponse, PopularBook, MonthlyStat } from '@/types/api'
 import type { DataTableColumn } from 'naive-ui'
 
 const colors = ['#5e6ad2', '#f0a020', '#18a058', '#2080f0', '#d03050']
@@ -42,8 +43,8 @@ const statCards = ref([
   { label: '逾期未还', value: 0 }
 ])
 
-const popularBooks = ref<any[]>([])
-const monthlyData = ref<any[]>([])
+const popularBooks = ref<PopularBook[]>([])
+const monthlyData = ref<MonthlyStat[]>([])
 const loading = ref(false)
 
 const popularColumns: DataTableColumn[] = [
@@ -62,25 +63,25 @@ const monthlyColumns: DataTableColumn[] = [
 onMounted(async () => {
   loading.value = true
   try {
-    const [statsRes, popularRes, monthlyRes] = await Promise.allSettled([
-      api.get('/stats'),
-      api.get('/stats/popular'),
-      api.get('/stats/monthly')
+    const [stats, popular, monthly] = await Promise.allSettled([
+      statsApi.getOverview(),
+      statsApi.getPopular(),
+      statsApi.getMonthly()
     ])
-    if (statsRes.status === 'fulfilled') {
-      const stats = statsRes.value.data
-      if (stats) {
+    if (stats.status === 'fulfilled') {
+      const s = stats.value
+      if (s) {
         statCards.value = [
-          { label: '总藏书', value: stats.totalBooks || 0 },
-          { label: '在借数量', value: stats.activeBorrows || 0 },
-          { label: '读者总数', value: stats.totalReaders || 0 },
-          { label: '分类数', value: stats.totalCategories || 0 },
-          { label: '逾期未还', value: stats.overdueCount || 0 }
+          { label: '总藏书', value: s.totalBooks || 0 },
+          { label: '在借数量', value: s.activeBorrows || 0 },
+          { label: '读者总数', value: s.totalReaders || 0 },
+          { label: '分类数', value: s.totalCategories || 0 },
+          { label: '逾期未还', value: s.overdueCount || 0 }
         ]
       }
     }
-    popularBooks.value = popularRes.status === 'fulfilled' ? (popularRes.value.data || []) : []
-    monthlyData.value = monthlyRes.status === 'fulfilled' ? (monthlyRes.value.data || []) : []
+    popularBooks.value = popular.status === 'fulfilled' ? (popular.value || []) : []
+    monthlyData.value = monthly.status === 'fulfilled' ? (monthly.value || []) : []
   } catch (e) { console.error('fetchStats failed:', e) }
   loading.value = false
 })

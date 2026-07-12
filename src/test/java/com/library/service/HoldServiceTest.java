@@ -16,8 +16,10 @@ class HoldServiceTest extends AbstractServiceTest {
 
     @BeforeEach
     void setUp() {
-        bookService = new BookService(bookMapper, bookItemMapper, categoryMapper, borrowRecordMapper, auditLogMapper);
-        holdService = new HoldService(holdMapper, bookMapper, bookItemMapper, bookService, auditLogMapper);
+        CacheService cacheService = mock(CacheService.class);
+        AuditService auditService = new AuditService(auditLogMapper);
+        bookService = new BookService(bookMapper, bookItemMapper, categoryMapper, borrowRecordMapper, auditService, cacheService);
+        holdService = new HoldService(holdMapper, bookMapper, bookItemMapper, bookService, auditService);
     }
 
     @Test
@@ -93,7 +95,12 @@ class HoldServiceTest extends AbstractServiceTest {
         hold.setBookItemId(100);
         hold.setStatus("ready");
 
+        BookItem item = new BookItem();
+        item.setId(100);
+        item.setStatus("on_hold");
+
         when(holdMapper.findById(10)).thenReturn(hold);
+        when(bookItemMapper.findByIdForUpdate(100)).thenReturn(item);
 
         holdService.cancelHold(10, 1);
         verify(holdMapper).updateStatus(10, "cancelled");

@@ -3,8 +3,6 @@ package com.library.service;
 import com.library.entity.*;
 import com.library.exception.AppException;
 import com.library.mapper.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,17 +13,14 @@ import java.util.*;
 
 @Service
 public class FineService {
-
-    private static final Logger log = LoggerFactory.getLogger(FineService.class);
-
     private final FineMapper fineMapper;
     private final UserMapper userMapper;
-    private final AuditLogMapper auditLogMapper;
+    private final AuditService auditService;
 
-    public FineService(FineMapper fineMapper, UserMapper userMapper, AuditLogMapper auditLogMapper) {
+    public FineService(FineMapper fineMapper, UserMapper userMapper, AuditService auditService) {
         this.fineMapper = fineMapper;
         this.userMapper = userMapper;
-        this.auditLogMapper = auditLogMapper;
+        this.auditService = auditService;
     }
 
     public List<Fine> findAll(String type, Boolean paid) {
@@ -75,19 +70,7 @@ public class FineService {
         // Deduct from user's total_fines
         userMapper.addFine(fine.getUserId(), fine.getAmount().negate());
         fineMapper.markPaid(fineId, LocalDateTime.now());
-        audit("fine:pay", "fine:" + fineId, "Paid fine amount=" + fine.getAmount());
+        auditService.log("fine:pay", userId, "fine:" + fineId, "Paid fine amount=" + fine.getAmount());
         return fineMapper.findById(fineId);
-    }
-
-    private void audit(String action, String target, String detail) {
-        AuditLog auditLog = new AuditLog();
-        auditLog.setAction(action);
-        auditLog.setTarget(target);
-        auditLog.setDetail(detail);
-        try {
-            auditLogMapper.insert(auditLog);
-        } catch (Exception e) {
-            log.error("审计日志写入失败: action={}, target={}", action, target, e);
-        }
     }
 }

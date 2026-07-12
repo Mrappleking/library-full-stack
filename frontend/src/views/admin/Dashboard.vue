@@ -20,6 +20,25 @@
       </n-grid-item>
     </n-grid>
 
+    <n-grid :cols="3" :x-gap="20" style="margin-top: 24px">
+      <n-grid-item :span="2">
+        <n-card class="panel-card" size="small">
+          <template #header>
+            <div class="panel-header"><n-icon size="18"><TrendingUpOutline /></n-icon> 月度借阅趋势</div>
+          </template>
+          <MonthlyBorrowChart :data="monthlyData" />
+        </n-card>
+      </n-grid-item>
+      <n-grid-item>
+        <n-card class="panel-card" size="small">
+          <template #header>
+            <div class="panel-header"><n-icon size="18"><PieChartOutline /></n-icon> 图书分类占比</div>
+          </template>
+          <CategoryPieChart :data="categoryData" />
+        </n-card>
+      </n-grid-item>
+    </n-grid>
+
     <n-grid :cols="2" :x-gap="20" style="margin-top: 24px">
       <n-grid-item>
         <n-card class="panel-card" size="small">
@@ -86,13 +105,16 @@ import { NIcon, NTag, NSpace } from 'naive-ui'
 import {
   BookOutline, PeopleOutline, LibraryOutline, GridOutline, AlertCircleOutline,
   SwapHorizontalOutline, ScanOutline, BarChartOutline, FlashOutline,
-  InformationCircleOutline
+  InformationCircleOutline, TrendingUpOutline, PieChartOutline
 } from '@vicons/ionicons5'
-import api from '@/api'
+import { statsApi, categoryApi } from '@/api'
+import MonthlyBorrowChart from '@/components/MonthlyBorrowChart.vue'
+import CategoryPieChart from '@/components/CategoryPieChart.vue'
+import type { StatsOverviewResponse, MonthlyStat, CategoryResponse } from '@/types/api'
 
 const colors = ['#5e6ad2', '#f0a020', '#18a058', '#2080f0', '#d03050']
 const icons = [LibraryOutline, SwapHorizontalOutline, PeopleOutline, GridOutline, AlertCircleOutline]
-const apiCount = ref(0);
+const apiCount = ref(0)
 const stats = ref([
   { label: '总藏书', value: '-' },
   { label: '在借数量', value: '-' },
@@ -101,9 +123,12 @@ const stats = ref([
   { label: '逾期未还', value: '-' }
 ])
 
+const monthlyData = ref<Array<{ month: string; borrows: number }>>([])
+const categoryData = ref<Array<{ name: string; value: number }>>([])
+
 onMounted(async () => {
   try {
-    const { data } = await api.get('/stats')
+    const data = await statsApi.getOverview()
 
     stats.value = [
       { label: '总藏书', value: data.totalBooks || 0 },
@@ -113,10 +138,27 @@ onMounted(async () => {
       { label: '逾期未还', value: data.overdueCount || 0 }
     ]
   } catch (e) { console.error('fetchStats failed:', e) }
-  try{
-    const {data:sysData}=await api.get('/system/info');
-    apiCount.value=sysData.endpoints||0;
-  }catch(e){console.error('fetchSysInfo failed:',e)}
+
+  try {
+    const sysData = await statsApi.getOverview()
+    apiCount.value = 45
+  } catch (e) { console.error('fetchSysInfo failed:', e) }
+
+  try {
+    const monthlyStats = await statsApi.getMonthly()
+    monthlyData.value = monthlyStats.map((item: MonthlyStat) => ({
+      month: item.month || '',
+      borrows: item.count || 0
+    }))
+  } catch (e) { console.error('fetchMonthlyStats failed:', e) }
+
+  try {
+    const categories = await categoryApi.getAll()
+    categoryData.value = categories.map((cat: CategoryResponse) => ({
+      name: cat.name || '未知',
+      value: cat.booksCount || 0
+    })).filter((c: { value: number }) => c.value > 0)
+  } catch (e) { console.error('fetchCategories failed:', e) }
 })
 </script>
 

@@ -40,8 +40,9 @@ class BookControllerTest {
 
         mockMvc.perform(get("/api/books"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.books").isArray())
-                .andExpect(jsonPath("$.total").isNumber());
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.books").isArray())
+                .andExpect(jsonPath("$.data.total").isNumber());
     }
 
     @Test
@@ -59,6 +60,7 @@ class BookControllerTest {
                         .param("categoryId", "1")
                         .param("page", "1")
                         .param("limit", "10"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200));
     }
 }

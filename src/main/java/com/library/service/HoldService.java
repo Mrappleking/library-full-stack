@@ -1,6 +1,5 @@
 package com.library.service;
 
-import com.library.entity.AuditLog;
 import com.library.entity.*;
 import com.library.exception.AppException;
 import com.library.mapper.*;
@@ -21,17 +20,17 @@ public class HoldService {
     private final BookMapper bookMapper;
     private final BookItemMapper bookItemMapper;
     private final BookService bookService;
-    private final AuditLogMapper auditLogMapper;
+    private final AuditService auditService;
     private static final int MAX_HOLDS = 3;
 
     public HoldService(HoldMapper holdMapper, BookMapper bookMapper,
                        BookItemMapper bookItemMapper, BookService bookService,
-                       AuditLogMapper auditLogMapper) {
+                       AuditService auditService) {
         this.holdMapper = holdMapper;
         this.bookMapper = bookMapper;
         this.bookItemMapper = bookItemMapper;
         this.bookService = bookService;
-        this.auditLogMapper = auditLogMapper;
+        this.auditService = auditService;
     }
 
     @Transactional
@@ -57,7 +56,7 @@ public class HoldService {
         hold.setUserId(userId);
         hold.setBookId(bookId);
         holdMapper.insert(hold);
-        audit("hold:create", "hold:" + hold.getId(), "Created hold for bookId=" + bookId);
+        auditService.log("hold:create", userId, "hold:" + hold.getId(), "Created hold for bookId=" + bookId);
         return holdMapper.findById(hold.getId());
     }
 
@@ -72,13 +71,17 @@ public class HoldService {
 
         // Release reserved item if hold was ready
         if ("ready".equals(hold.getStatus()) && hold.getBookItemId() != null) {
+            BookItem item = bookItemMapper.findByIdForUpdate(hold.getBookItemId());
+            if (item == null || !"on_hold".equals(item.getStatus())) {
+                throw AppException.badRequest("复本状态异常");
+            }
             bookService.validateItemStatus("on_hold", "available");
             bookItemMapper.updateStatus(hold.getBookItemId(), "available");
             bookMapper.incrementAvailable(hold.getBookId());
         }
 
         holdMapper.updateStatus(holdId, "cancelled");
-        audit("hold:cancel", "hold:" + holdId, "Cancelled hold");
+        auditService.log("hold:cancel", userId, "hold:" + holdId, "Cancelled hold");
     }
 
     public List<Hold> getMyHolds(Integer userId) {
@@ -106,13 +109,16 @@ public class HoldService {
             throw AppException.badRequest("预约状态不是待取书，无法履约");
         }
 
-        bookService.validateItemStatus("on_hold", "borrowed");
-        holdMapper.fulfill(holdId, "fulfilled");
-
         if (hold.getBookItemId() != null) {
+            BookItem item = bookItemMapper.findByIdForUpdate(hold.getBookItemId());
+            if (item == null || !"on_hold".equals(item.getStatus())) {
+                throw AppException.badRequest("复本状态异常");
+            }
+            bookService.validateItemStatus("on_hold", "borrowed");
             bookItemMapper.updateStatus(hold.getBookItemId(), "borrowed");
         }
 
+        holdMapper.fulfill(holdId, "fulfilled");
         return holdMapper.findById(holdId);
     }
 
@@ -134,31 +140,23 @@ public class HoldService {
         List<Hold> expired = holdMapper.findExpiredReadyHolds();
         for (Hold h : expired) {
             try {
-                holdMapper.updateStatus(h.getId(), "expired");
-                // Release item back to available
-                if (h.getBookItemId() != null) {
-                    BookItem item = bookItemMapper.findById(h.getBookItemId());
-                    if (item != null && "on_hold".equals(item.getStatus())) {
-                        bookService.validateItemStatus("on_hold", "available");
-                        bookItemMapper.updateStatus(h.getBookItemId(), "available");
-                        bookMapper.incrementAvailable(h.getBookId());
-                    }
-                }
+                expireHold(h.getId(), h.getBookItemId(), h.getBookId());
             } catch (Exception e) {
                 log.warn("预约过期处理失败: holdId={}", h.getId(), e);
             }
         }
     }
 
-    private void audit(String action, String target, String detail) {
-        AuditLog auditLog = new AuditLog();
-        auditLog.setAction(action);
-        auditLog.setTarget(target);
-        auditLog.setDetail(detail);
-        try {
-            auditLogMapper.insert(auditLog);
-        } catch (Exception e) {
-            log.error("审计日志写入失败: action={}, target={}", action, target, e);
+    @Transactional
+    private void expireHold(Integer holdId, Integer bookItemId, Integer bookId) {
+        holdMapper.updateStatus(holdId, "expired");
+        if (bookItemId != null) {
+            BookItem item = bookItemMapper.findByIdForUpdate(bookItemId);
+            if (item != null && "on_hold".equals(item.getStatus())) {
+                bookService.validateItemStatus("on_hold", "available");
+                bookItemMapper.updateStatus(bookItemId, "available");
+                bookMapper.incrementAvailable(bookId);
+            }
         }
     }
 }

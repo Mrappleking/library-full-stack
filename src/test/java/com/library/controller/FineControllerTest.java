@@ -55,6 +55,7 @@ class FineControllerTest {
 
         mockMvc.perform(get("/api/fines").header("Authorization", adminToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].type").value("overdue"));
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data[0].type").value("overdue"));
     }
 }

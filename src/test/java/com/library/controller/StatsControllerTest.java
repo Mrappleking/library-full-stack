@@ -64,7 +64,9 @@ class StatsControllerTest {
 
         mockMvc.perform(get("/api/stats/popular").header("Authorization", adminToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].title").value("Test Book"))
-                .andExpect(jsonPath("$[0]._count.borrowRecords").value(5));
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data[0].title").value("Test Book"))
+                .andExpect(jsonPath("$.data[0]._count.borrowRecords").value(5));
     }
 }
+

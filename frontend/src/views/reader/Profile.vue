@@ -53,7 +53,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useMessage, type FormInst, type FormRules } from 'naive-ui'
-import api, { setAuth, getUser } from '@/api'
+import { readerApi, getMe, setAuth, getUser } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import type { UserProfile } from '@/types/api'
 
@@ -87,7 +87,7 @@ const rules: FormRules = {
 onMounted(async () => {
   loading.value = true
   try {
-    const { data } = await api.get<UserProfile>('/auth/me')
+    const data = await getMe()
     Object.assign(form, data)
     original.value = { name: data.name, phone: data.phone || '', email: data.email || '' }
   } catch { message.error('获取信息失败') }
@@ -100,12 +100,11 @@ async function handleSave() {
   } catch { return }
   saving.value = true
   try {
-    const { data } = await api.put<UserProfile>('/readers/profile', {
+    const data = await readerApi.updateProfile({
       name: form.name,
       phone: form.phone || null,
       email: form.email || null
     })
-    // 同步更新 auth store 和 localStorage
     const user = getUser()
     if (user) {
       user.name = data.name
@@ -146,7 +145,7 @@ async function handleChangePassword() {
   } catch { return }
   pwdSaving.value = true
   try {
-    await api.put('/auth/password', { oldPassword: pwdForm.oldPassword, newPassword: pwdForm.newPassword, confirmPassword: pwdForm.confirmPassword })
+    await readerApi.updatePassword({ oldPassword: pwdForm.oldPassword, newPassword: pwdForm.newPassword, confirmPassword: pwdForm.confirmPassword })
     message.success('密码修改成功')
     pwdForm.oldPassword = ''
     pwdForm.newPassword = ''
@@ -155,7 +154,6 @@ async function handleChangePassword() {
   pwdSaving.value = false
 }
 
-// ===== 注销账户 =====
 const cancelPwd = ref('')
 const cancelling = ref(false)
 
@@ -163,7 +161,7 @@ async function handleCancelAccount() {
   if (!cancelPwd.value) { message.warning('请输入密码确认'); return }
   cancelling.value = true
   try {
-    await api.post('/auth/cancel-account', { password: cancelPwd.value })
+    await readerApi.cancelAccount(cancelPwd.value)
     message.success('账户已删除')
     useAuthStore().logout()
     window.location.href = '/login'

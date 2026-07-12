@@ -1,7 +1,10 @@
 package com.library.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.library.dto.response.ApiResponse;
 import com.library.entity.User;
 import com.library.mapper.UserMapper;
+import com.library.service.CacheService;
 import com.library.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -10,6 +13,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -20,17 +24,23 @@ import java.io.IOException;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(JwtAuthFilter.class);
+    private static final String USER_CACHE_PREFIX = "user:";
+    private static final int USER_CACHE_TTL_SECONDS = 300;
 
     private final JwtUtil jwtUtil;
     private final UserMapper userMapper;
+    private final ObjectMapper objectMapper;
+    private final CacheService cacheService;
 
-    public JwtAuthFilter(JwtUtil jwtUtil, UserMapper userMapper) {
+    public JwtAuthFilter(JwtUtil jwtUtil, UserMapper userMapper, ObjectMapper objectMapper, CacheService cacheService) {
         this.jwtUtil = jwtUtil;
         this.userMapper = userMapper;
+        this.objectMapper = objectMapper;
+        this.cacheService = cacheService;
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain chain)
             throws ServletException, IOException {
 
         String path = request.getRequestURI();
@@ -67,9 +77,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         // Check token version — reject if user has been logged out / force-logged-out
         // 兼容旧数据库（无 token_version 列时视为 0）
         try {
-            User user = userMapper.findById(userId);
-            int currentVersion = user != null && user.getTokenVersion() != null ? user.getTokenVersion() : 0;
-            if (user == null || currentVersion != tokenVersion) {
+            Integer currentVersion = getUserTokenVersion(userId);
+            if (currentVersion == null || currentVersion != tokenVersion) {
                 writeError(response, 401, "Token已被注销");
                 return;
             }
@@ -91,7 +100,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private void writeError(HttpServletResponse response, int status, String message) throws IOException {
         response.setStatus(status);
         response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write("{\"error\":\"" + message + "\"}");
+        response.getWriter().write(objectMapper.writeValueAsString(ApiResponse.error(status, message)));
     }
 
     /**
@@ -102,7 +111,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 || path.equals("/api/auth/register")
                 || path.equals("/api/health")
                 || path.equals("/")
-                || path.startsWith("/covers");
+                || path.startsWith("/covers")
+                || path.startsWith("/swagger-ui")
+                || path.startsWith("/api-docs")
+                || path.startsWith("/v3/api-docs");
     }
 
     /**
@@ -115,5 +127,31 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 || path.startsWith("/api/categories")
                 || path.startsWith("/api/rules")
                 || path.startsWith("/api/holds/count");
+    }
+
+    /**
+     * Get user token version from cache, fallback to database.
+     */
+    private Integer getUserTokenVersion(int userId) {
+        String cacheKey = USER_CACHE_PREFIX + userId;
+        try {
+            Integer cachedVersion = cacheService.get(cacheKey);
+            if (cachedVersion != null) {
+                return cachedVersion;
+            }
+        } catch (Exception e) {
+            log.debug("Redis cache unavailable, falling back to database: {}", e.getMessage());
+        }
+        User user = userMapper.findById(userId);
+        if (user == null) {
+            return null;
+        }
+        int version = user.getTokenVersion() != null ? user.getTokenVersion() : 0;
+        try {
+            cacheService.set(cacheKey, version, USER_CACHE_TTL_SECONDS, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (Exception e) {
+            log.debug("Failed to set cache: {}", e.getMessage());
+        }
+        return version;
     }
 }

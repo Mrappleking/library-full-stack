@@ -40,25 +40,26 @@ import { ref, onMounted, h } from 'vue'
 import { useMessage, NTag, NButton, NPopconfirm, NIcon } from 'naive-ui'
 import { DownloadOutline } from '@vicons/ionicons5'
 import { useAuthStore } from '@/stores/auth'
-import api from '@/api'
+import { borrowApi, holdApi } from '@/api'
 import type { DataTableColumn } from 'naive-ui'
+import type { BorrowRecordResponse, HoldResponse } from '@/types/api'
 
 const message = useMessage()
 const auth = useAuthStore()
-const records = ref<any[]>([])
-const holds = ref<any[]>([])
+const records = ref<BorrowRecordResponse[]>([])
+const holds = ref<HoldResponse[]>([])
 const loading = ref(false)
 const exporting = ref(false)
 const totalFines = ref(0)
 
-const columns: DataTableColumn[] = [
+const columns: DataTableColumn<BorrowRecordResponse>[] = [
   { title: '图书', key: 'book.title', ellipsis: { tooltip: true } },
   { title: '作者', key: 'book.author', width: 100 },
-  { title: '借阅日', key: 'borrowDate', width: 110, render: (r: any) => new Date(r.borrowDate).toLocaleDateString('zh-CN') },
-  { title: '到期日', key: 'dueDate', width: 110, render: (r: any) => new Date(r.dueDate).toLocaleDateString('zh-CN') },
+  { title: '借阅日', key: 'borrowDate', width: 110, render: (r) => new Date(r.borrowDate).toLocaleDateString('zh-CN') },
+  { title: '到期日', key: 'dueDate', width: 110, render: (r) => new Date(r.dueDate).toLocaleDateString('zh-CN') },
   {
     title: '状态', key: 'status', width: 80,
-    render(row: any) {
+    render(row) {
       const m: Record<string, { type: 'success' | 'warning' | 'error' | 'info' | 'default'; label: string }> = {
         active: { type: 'success', label: '在借' },
         overdue: { type: 'error', label: '逾期' },
@@ -70,7 +71,7 @@ const columns: DataTableColumn[] = [
   },
   {
     title: '操作', key: 'actions', width: 100,
-    render(row: any) {
+    render(row) {
       if (row.status !== 'active') return ''
       return h('div', { style: 'display:flex;gap:6px' }, [
         h(NPopconfirm, { onPositiveClick: () => handleReturn(row.id) }, {
@@ -83,12 +84,12 @@ const columns: DataTableColumn[] = [
   }
 ]
 
-const holdColumns: DataTableColumn[] = [
+const holdColumns: DataTableColumn<HoldResponse>[] = [
   { title: '图书', key: 'book.title', ellipsis: { tooltip: true } },
-  { title: '申请时间', key: 'requestDate', width: 160, render: (r: any) => new Date(r.requestDate).toLocaleString('zh-CN') },
+  { title: '申请时间', key: 'requestDate', width: 160, render: (r) => new Date(r.requestDate).toLocaleString('zh-CN') },
   {
     title: '状态', key: 'status', width: 100,
-    render(row: any) {
+    render(row) {
       const m: Record<string, { type: 'success' | 'warning' | 'error' | 'info' | 'default'; label: string }> = {
         pending: { type: 'info', label: '等待中' },
         ready: { type: 'success', label: '可领取' },
@@ -101,7 +102,7 @@ const holdColumns: DataTableColumn[] = [
   },
   {
     title: '操作', key: 'actions', width: 80,
-    render(row: any) {
+    render(row) {
       if (row.status !== 'pending') return ''
       return h(NPopconfirm, { onPositiveClick: () => handleCancelHold(row.id) }, {
         trigger: () => h(NButton, { size: 'tiny', type: 'error' }, () => '取消'),
@@ -115,14 +116,14 @@ async function fetchData() {
   loading.value = true
   try {
     const [bRes, hRes] = await Promise.allSettled([
-      api.get('/borrows/my'),
-      api.get('/holds/my')
+      borrowApi.getMyBorrows(),
+      holdApi.getMyHolds()
     ])
     if (bRes.status === 'fulfilled') {
-      records.value = bRes.value.data.borrows || []
+      records.value = bRes.value.borrows || []
     }
     if (hRes.status === 'fulfilled') {
-      holds.value = hRes.value.data || []
+      holds.value = hRes.value || []
     }
     totalFines.value = auth.user?.totalFines || 0
   } catch { /* ignore */ }
@@ -130,25 +131,25 @@ async function fetchData() {
 }
 
 async function handleReturn(id: number) {
-  try { await api.post(`/borrows/return/${id}`); message.success('已还书'); fetchData() }
+  try { await borrowApi.returnBook(id); message.success('已还书'); fetchData() }
   catch (e: unknown) { message.error((e as Error).message) }
 }
 
 async function handleRenew(id: number) {
-  try { await api.post(`/borrows/renew/${id}`); message.success('已续借'); fetchData() }
+  try { await borrowApi.renew(id); message.success('已续借'); fetchData() }
   catch (e: unknown) { message.error((e as Error).message) }
 }
 
 async function handleCancelHold(id: number) {
-  try { await api.delete(`/holds/${id}`); message.success('已取消预约'); fetchData() }
+  try { await holdApi.cancel(id); message.success('已取消预约'); fetchData() }
   catch (e: unknown) { message.error((e as Error).message) }
 }
 
 async function exportCsv() {
   exporting.value = true
   try {
-    const resp = await api.get('/borrows/history', { params: { export: 'csv' }, responseType: 'blob' })
-    const url = window.URL.createObjectURL(new Blob([resp.data], { type: 'text/csv;charset=utf-8' }))
+    const resp = await borrowApi.getMyHistory({ export: 'csv' })
+    const url = window.URL.createObjectURL(new Blob([resp], { type: 'text/csv;charset=utf-8' }))
     const a = document.createElement('a')
     a.href = url; a.download = 'borrows-my.csv'; a.click()
     window.URL.revokeObjectURL(url)

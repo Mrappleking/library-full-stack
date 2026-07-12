@@ -45,6 +45,7 @@ class BorrowControllerTest {
     }
 
     @Test
+    @SuppressWarnings("null")
     void borrow_shouldReturnBorrowRecord() throws Exception {
         BorrowRecord record = new BorrowRecord();
         record.setId(100);
@@ -60,6 +61,7 @@ class BorrowControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(100));
+                .andExpect(jsonPath("$.code").value(201))
+                .andExpect(jsonPath("$.data.id").value(100));
     }
 }

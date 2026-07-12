@@ -1,6 +1,7 @@
 package com.library.service;
 
 import com.library.dto.request.BookCreateRequest;
+import com.library.dto.request.BookListRequest;
 import com.library.entity.*;
 import com.library.exception.AppException;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,18 +15,21 @@ import static org.mockito.Mockito.*;
 class BookServiceTest extends AbstractServiceTest {
 
     private BookService bookService;
+    private CacheService cacheService;
 
     @BeforeEach
     void setUp() {
-        bookService = new BookService(bookMapper, bookItemMapper, categoryMapper, borrowRecordMapper, auditLogMapper);
+        cacheService = mock(CacheService.class);
+        AuditService auditService = new AuditService(auditLogMapper);
+        bookService = new BookService(bookMapper, bookItemMapper, categoryMapper, borrowRecordMapper, auditService, cacheService);
     }
 
     @Test
     void list_shouldReturnPagedBooks() {
-        Map<String, Object> params = new HashMap<>();
-        params.put("search", "test");
-        params.put("page", 1);
-        params.put("limit", 20);
+        BookListRequest params = new BookListRequest();
+        params.setSearch("test");
+        params.setPage(1);
+        params.setLimit(20);
 
         Book book = new Book();
         book.setId(1);
@@ -43,9 +47,9 @@ class BookServiceTest extends AbstractServiceTest {
 
     @Test
     void list_shouldEnforcePaginationBounds() {
-        Map<String, Object> params = new HashMap<>();
-        params.put("page", 0);
-        params.put("limit", 100);
+        BookListRequest params = new BookListRequest();
+        params.setPage(0);
+        params.setLimit(100);
 
         when(bookMapper.searchBooks(any())).thenReturn(List.of());
         when(bookMapper.countBooks(any())).thenReturn(0L);

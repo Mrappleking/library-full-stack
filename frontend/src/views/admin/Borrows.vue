@@ -37,11 +37,12 @@
 import { ref, computed, onMounted, h } from 'vue'
 import { useMessage, NTag, NButton, NPopconfirm, NIcon } from 'naive-ui'
 import { DownloadOutline, SearchOutline } from '@vicons/ionicons5'
-import api from '@/api'
+import { borrowApi } from '@/api'
+import type { BorrowRecordResponse } from '@/types/api'
 import type { DataTableColumn } from 'naive-ui'
 
 const message = useMessage()
-const records = ref<any[]>([])
+const records = ref<BorrowRecordResponse[]>([])
 const loading = ref(false)
 const exporting = ref(false)
 const page = ref(1)
@@ -105,20 +106,19 @@ const columns: DataTableColumn[] = [
 async function fetchRecords() {
   loading.value = true
   try {
-    const { data } = await api.get('/borrows', {
-      params: { page: page.value, limit: 20, search: searchQuery.value || undefined, status: filterStatus.value || undefined }
-    })
-    records.value = data.borrows || []
-    total.value = data.total || 0
+    const res = await borrowApi.getAllBorrows({ page: page.value, limit: 20 })
+    records.value = res.borrows || []
+    total.value = res.total || 0
   } catch { /* ignore */ }
   loading.value = false
 }
 
 async function handleReturn(id: number) {
-  try { await api.post(`/borrows/return/${id}`); message.success('已还书'); fetchRecords() }
+  try { await borrowApi.returnBook(id); message.success('已还书'); fetchRecords() }
   catch (e: unknown) { message.error((e as Error).message) }
 }
 
+import api from '@/api'
 async function exportCsv() {
   exporting.value = true
   try {

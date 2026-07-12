@@ -1,9 +1,13 @@
 package com.library.service;
 
+import com.library.entity.BookItem;
 import com.library.entity.BorrowRecord;
 import com.library.entity.CirculationRule;
+import com.library.entity.User;
+import com.library.mapper.BookItemMapper;
 import com.library.mapper.BorrowRecordMapper;
 import com.library.mapper.FineMapper;
+import com.library.mapper.UserMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,7 +18,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -29,12 +33,16 @@ class OverdueFineSchedulerTest {
     private FineService fineService;
     @Mock
     private RuleService ruleService;
+    @Mock
+    private UserMapper userMapper;
+    @Mock
+    private BookItemMapper bookItemMapper;
 
     private OverdueFineScheduler scheduler;
 
     @BeforeEach
     void setUp() {
-        scheduler = new OverdueFineScheduler(borrowRecordMapper, fineMapper, fineService, ruleService);
+        scheduler = new OverdueFineScheduler(borrowRecordMapper, fineMapper, fineService, ruleService, userMapper, bookItemMapper);
     }
 
     @Test
@@ -42,11 +50,21 @@ class OverdueFineSchedulerTest {
         BorrowRecord overdue = new BorrowRecord();
         overdue.setId(1);
         overdue.setUserId(1);
+        overdue.setBookItemId(1);
         overdue.setDueDate(LocalDateTime.now().minusDays(10));
+
+        User mockUser = new User();
+        mockUser.setId(1);
+        mockUser.setPatronCategoryId(1);
+        BookItem mockBookItem = new BookItem();
+        mockBookItem.setId(1);
+        mockBookItem.setItemTypeId(1);
 
         when(borrowRecordMapper.findOverdueBorrows()).thenReturn(List.of(overdue));
         when(fineMapper.findByBorrowRecordId(1)).thenReturn(null);
-        when(ruleService.getRule(null, null)).thenReturn(createRule(BigDecimal.valueOf(0.50)));
+        when(userMapper.findById(1)).thenReturn(mockUser);
+        when(bookItemMapper.findById(1)).thenReturn(mockBookItem);
+        when(ruleService.getRule(1, 1)).thenReturn(createRule(BigDecimal.valueOf(0.50)));
 
         scheduler.autoFineOverdueBorrows();
 
@@ -58,6 +76,7 @@ class OverdueFineSchedulerTest {
         BorrowRecord overdue = new BorrowRecord();
         overdue.setId(1);
         overdue.setUserId(1);
+        overdue.setBookItemId(1);
         overdue.setDueDate(LocalDateTime.now().minusDays(5));
 
         when(borrowRecordMapper.findOverdueBorrows()).thenReturn(List.of(overdue));
@@ -91,11 +110,21 @@ class OverdueFineSchedulerTest {
         BorrowRecord overdue = new BorrowRecord();
         overdue.setId(1);
         overdue.setUserId(1);
+        overdue.setBookItemId(1);
         overdue.setDueDate(LocalDateTime.now().minusDays(3));
+
+        User mockUser = new User();
+        mockUser.setId(1);
+        mockUser.setPatronCategoryId(1);
+        BookItem mockBookItem = new BookItem();
+        mockBookItem.setId(1);
+        mockBookItem.setItemTypeId(1);
 
         when(borrowRecordMapper.findOverdueBorrows()).thenReturn(List.of(overdue));
         when(fineMapper.findByBorrowRecordId(1)).thenReturn(null);
-        when(ruleService.getRule(null, null)).thenThrow(new RuntimeException("DB error"));
+        when(userMapper.findById(1)).thenReturn(mockUser);
+        when(bookItemMapper.findById(1)).thenReturn(mockBookItem);
+        when(ruleService.getRule(1, 1)).thenThrow(new RuntimeException("DB error"));
 
         // Should not propagate exception
         scheduler.autoFineOverdueBorrows();
@@ -108,11 +137,21 @@ class OverdueFineSchedulerTest {
         BorrowRecord overdue = new BorrowRecord();
         overdue.setId(1);
         overdue.setUserId(1);
+        overdue.setBookItemId(1);
         overdue.setDueDate(LocalDateTime.now().minusDays(7));
+
+        User mockUser = new User();
+        mockUser.setId(1);
+        mockUser.setPatronCategoryId(1);
+        BookItem mockBookItem = new BookItem();
+        mockBookItem.setId(1);
+        mockBookItem.setItemTypeId(1);
 
         when(borrowRecordMapper.findOverdueBorrows()).thenReturn(List.of(overdue));
         when(fineMapper.findByBorrowRecordId(1)).thenReturn(null);
-        when(ruleService.getRule(null, null)).thenReturn(createRule(BigDecimal.valueOf(0.10)));
+        when(userMapper.findById(1)).thenReturn(mockUser);
+        when(bookItemMapper.findById(1)).thenReturn(mockBookItem);
+        when(ruleService.getRule(1, 1)).thenReturn(createRule(BigDecimal.valueOf(0.10)));
 
         scheduler.autoFineOverdueBorrows();
 
@@ -125,20 +164,31 @@ class OverdueFineSchedulerTest {
         BorrowRecord r1 = new BorrowRecord();
         r1.setId(1);
         r1.setUserId(1);
+        r1.setBookItemId(1);
         r1.setDueDate(LocalDateTime.now().minusDays(5));
 
         BorrowRecord r2 = new BorrowRecord();
         r2.setId(2);
         r2.setUserId(2);
+        r2.setBookItemId(2);
         r2.setDueDate(LocalDateTime.now().minusDays(3));
 
         BorrowRecord r3 = new BorrowRecord();
         r3.setId(3);
+        r3.setUserId(3);
+        r3.setBookItemId(3);
         r3.setDueDate(LocalDateTime.now().minusDays(1));
+
+        User mockUser = new User();
+        mockUser.setPatronCategoryId(1);
+        BookItem mockBookItem = new BookItem();
+        mockBookItem.setItemTypeId(1);
 
         when(borrowRecordMapper.findOverdueBorrows()).thenReturn(List.of(r1, r2, r3));
         when(fineMapper.findByBorrowRecordId(anyInt())).thenReturn(null);
-        when(ruleService.getRule(null, null)).thenReturn(createRule(BigDecimal.valueOf(0.10)));
+        when(userMapper.findById(anyInt())).thenReturn(mockUser);
+        when(bookItemMapper.findById(anyInt())).thenReturn(mockBookItem);
+        when(ruleService.getRule(1, 1)).thenReturn(createRule(BigDecimal.valueOf(0.10)));
 
         scheduler.autoFineOverdueBorrows();
 

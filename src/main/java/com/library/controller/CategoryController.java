@@ -1,13 +1,17 @@
 package com.library.controller;
 
+import com.library.dto.request.CategoryCreateRequest;
+import com.library.dto.request.CategoryUpdateRequest;
+import com.library.dto.response.ApiResponse;
+import com.library.dto.response.CategoryResponse;
 import com.library.entity.Category;
 import com.library.service.CategoryService;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import lombok.Data;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/categories")
@@ -20,31 +24,24 @@ public class CategoryController {
     }
 
     @GetMapping
-    public ResponseEntity<?> list() {
-        return ResponseEntity.ok(categoryService.findAll());
+    public ResponseEntity<ApiResponse<List<CategoryResponse>>> list() {
+        return ResponseEntity.ok(ApiResponse.success(categoryService.findAll()));
     }
 
     @PostMapping
-    public ResponseEntity<?> create(@Valid @RequestBody CreateCategoryRequest data) {
-        Category cat = categoryService.create(data.getName(), data.getDesc());
-        return ResponseEntity.status(HttpStatus.CREATED).body(cat);
+    public ResponseEntity<ApiResponse<Category>> create(@Valid @RequestBody CategoryCreateRequest data) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.created("分类创建成功", categoryService.create(data.getName(), data.getDesc())));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable Integer id, @Valid @RequestBody CreateCategoryRequest data) {
-        return ResponseEntity.ok(categoryService.update(id, data.getName(), data.getDesc()));
+    public ResponseEntity<ApiResponse<Category>> update(@PathVariable Integer id, @Valid @RequestBody CategoryUpdateRequest data) {
+        return ResponseEntity.ok(ApiResponse.success("分类更新成功", categoryService.update(id, data.getName(), data.getDesc())));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable Integer id) {
+    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Integer id) {
         categoryService.delete(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success("分类删除成功", null));
     }
-}
-
-@Data
-class CreateCategoryRequest {
-    @NotBlank
-    private String name;
-    private String desc;
 }

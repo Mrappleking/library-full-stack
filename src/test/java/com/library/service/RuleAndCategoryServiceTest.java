@@ -17,7 +17,8 @@ class RuleServiceTest extends AbstractServiceTest {
 
     @BeforeEach
     void setUp() {
-        ruleService = new RuleService(circulationRuleMapper);
+        CacheService cacheService = mock(CacheService.class);
+        ruleService = new RuleService(circulationRuleMapper, cacheService);
     }
 
     @Test

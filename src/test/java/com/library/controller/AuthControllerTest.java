@@ -28,6 +28,7 @@ class AuthControllerTest {
     private AuthService authService;
 
     @Test
+    @SuppressWarnings("null")
     void login_shouldReturnTokenAndUser() throws Exception {
         UserProfile userProfile = new UserProfile();
         userProfile.setId(1);
@@ -43,7 +44,8 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").isString())
-                .andExpect(jsonPath("$.user.role").value("admin"));
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.token").isString())
+                .andExpect(jsonPath("$.data.user.role").value("admin"));
     }
 }

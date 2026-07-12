@@ -3,7 +3,6 @@ package com.library.service;
 import com.library.dto.response.BookDetailResponse;
 import com.library.dto.response.BookItemResponse;
 import com.library.dto.response.CategoryResponse;
-import com.library.entity.AuditLog;
 import com.library.entity.Book;
 import com.library.entity.BookItem;
 import com.library.entity.BorrowRecord;
@@ -30,7 +29,11 @@ public class BookService {
     private final BookItemMapper bookItemMapper;
     private final CategoryMapper categoryMapper;
     private final BorrowRecordMapper borrowRecordMapper;
-    private final AuditLogMapper auditLogMapper;
+    private final AuditService auditService;
+    private final CacheService cacheService;
+    
+    private static final String BOOK_CACHE_PREFIX = "book:";
+    private static final int BOOK_CACHE_TTL_SECONDS = 300;
     
     // Status transition validation
     private static final Map<String, List<String>> STATUS_TRANSITIONS = new HashMap<>();
@@ -43,21 +46,35 @@ public class BookService {
         STATUS_TRANSITIONS.put("withdrawn", Collections.emptyList());
     }
 
-    public BookService(BookMapper bookMapper, BookItemMapper bookItemMapper, CategoryMapper categoryMapper, BorrowRecordMapper borrowRecordMapper, AuditLogMapper auditLogMapper) {
+    public BookService(BookMapper bookMapper, BookItemMapper bookItemMapper, CategoryMapper categoryMapper, BorrowRecordMapper borrowRecordMapper, AuditService auditService, CacheService cacheService) {
         this.bookMapper = bookMapper;
         this.bookItemMapper = bookItemMapper;
         this.categoryMapper = categoryMapper;
         this.borrowRecordMapper = borrowRecordMapper;
-        this.auditLogMapper = auditLogMapper;
+        this.auditService = auditService;
+        this.cacheService = cacheService;
     }
     
-    public Map<String, Object> list(Map<String, Object> params) {
-        int page = Math.max(1, params.get("page") != null ? (Integer) params.get("page") : 1);
-        int limit = Math.min(50, Math.max(1, params.get("limit") != null ? (Integer) params.get("limit") : 20));
-        params.put("offset", (page - 1) * limit);
+    public Map<String, Object> list(com.library.dto.request.BookListRequest params) {
+        int page = Math.max(1, params.getPage() != null ? params.getPage() : 1);
+        int limit = Math.min(50, Math.max(1, params.getLimit() != null ? params.getLimit() : 20));
 
-        List<Book> books = bookMapper.searchBooks(params);
-        long total = bookMapper.countBooks(params);
+        Map<String, Object> queryParams = new HashMap<>();
+        queryParams.put("offset", (page - 1) * limit);
+        queryParams.put("page", page);
+        queryParams.put("limit", limit);
+        queryParams.put("search", params.getSearch());
+        queryParams.put("categoryId", params.getCategoryId());
+        queryParams.put("language", params.getLanguage());
+        queryParams.put("yearMin", params.getYearMin());
+        queryParams.put("yearMax", params.getYearMax());
+        queryParams.put("campus", params.getCampus());
+        queryParams.put("location", params.getLocation());
+        queryParams.put("sortBy", params.getSortBy());
+        queryParams.put("sortOrder", params.getSortOrder());
+
+        List<Book> books = bookMapper.searchBooks(queryParams);
+        long total = bookMapper.countBooks(queryParams);
         int pages = (int) Math.ceil((double) total / limit);
 
         Map<String, Object> result = new HashMap<>();
@@ -70,6 +87,12 @@ public class BookService {
     }
 
     public BookDetailResponse getById(Integer id) {
+        String cacheKey = BOOK_CACHE_PREFIX + id;
+        BookDetailResponse cached = cacheService.get(cacheKey);
+        if (cached != null) {
+            return cached;
+        }
+
         Book book = bookMapper.findById(id);
         if (book == null) throw AppException.notFound("图书不存在");
 
@@ -101,54 +124,39 @@ public class BookService {
         }
 
         List<BookItem> items = bookItemMapper.findByBookId(id);
-        List<BookItemResponse> itemResponses = items.stream().map(item -> {
-            BookItemResponse ir = new BookItemResponse();
-            ir.setId(item.getId());
-            ir.setBarcode(item.getBarcode());
-            ir.setCallNumber(item.getCallNumber());
-            ir.setLocation(item.getLocation());
-            ir.setCampus(item.getCampus());
-            ir.setCondition(item.getCondition());
-            ir.setStatus(item.getStatus());
-            ir.setPrice(item.getPrice() != null ? item.getPrice().doubleValue() : null);
-            ir.setAcquiredAt(item.getAcquiredAt());
-            ir.setRequests(item.getRequests());
-            ir.setBookId(item.getBookId());
-            ir.setItemTypeId(item.getItemTypeId());
-            ir.setCreatedAt(item.getCreatedAt());
-            ir.setUpdatedAt(item.getUpdatedAt());
-            return ir;
-        }).collect(Collectors.toList());
+        List<BookItemResponse> itemResponses = items.stream().map(this::toBookItemResponse).collect(Collectors.toList());
         resp.setItems(itemResponses);
         resp.setItemsCount((int) bookItemMapper.countByBookId(id));
 
+        cacheService.set(cacheKey, resp, BOOK_CACHE_TTL_SECONDS, java.util.concurrent.TimeUnit.SECONDS);
         return resp;
     }
 
     public List<BookItemResponse> getItemsByBookId(Integer id) {
-        // Verify book exists
         Book book = bookMapper.findById(id);
-        if (book == null) throw AppException.notFound("Book not found");
+        if (book == null) throw AppException.notFound("图书不存在");
 
         List<BookItem> items = bookItemMapper.findByBookId(id);
-        return items.stream().map(item -> {
-            BookItemResponse ir = new BookItemResponse();
-            ir.setId(item.getId());
-            ir.setBarcode(item.getBarcode());
-            ir.setCallNumber(item.getCallNumber());
-            ir.setLocation(item.getLocation());
-            ir.setCampus(item.getCampus());
-            ir.setCondition(item.getCondition());
-            ir.setStatus(item.getStatus());
-            ir.setPrice(item.getPrice() != null ? item.getPrice().doubleValue() : null);
-            ir.setAcquiredAt(item.getAcquiredAt());
-            ir.setRequests(item.getRequests());
-            ir.setBookId(item.getBookId());
-            ir.setItemTypeId(item.getItemTypeId());
-            ir.setCreatedAt(item.getCreatedAt());
-            ir.setUpdatedAt(item.getUpdatedAt());
-            return ir;
-        }).collect(Collectors.toList());
+        return items.stream().map(this::toBookItemResponse).collect(Collectors.toList());
+    }
+
+    private BookItemResponse toBookItemResponse(BookItem item) {
+        BookItemResponse ir = new BookItemResponse();
+        ir.setId(item.getId());
+        ir.setBarcode(item.getBarcode());
+        ir.setCallNumber(item.getCallNumber());
+        ir.setLocation(item.getLocation());
+        ir.setCampus(item.getCampus());
+        ir.setCondition(item.getCondition());
+        ir.setStatus(item.getStatus());
+        ir.setPrice(item.getPrice() != null ? item.getPrice().doubleValue() : null);
+        ir.setAcquiredAt(item.getAcquiredAt());
+        ir.setRequests(item.getRequests());
+        ir.setBookId(item.getBookId());
+        ir.setItemTypeId(item.getItemTypeId());
+        ir.setCreatedAt(item.getCreatedAt());
+        ir.setUpdatedAt(item.getUpdatedAt());
+        return ir;
     }
 
     @Transactional
@@ -172,17 +180,18 @@ public class BookService {
         book.setCountry(data.getCountry());
         book.setCategoryId(data.getCategoryId());
         bookMapper.insert(book);
-        audit("create", "book:" + book.getId(), "Created book: " + book.getTitle());
+        auditService.log("create", null, "book:" + book.getId(), "Created book: " + book.getTitle());
+        cacheService.deletePattern(BOOK_CACHE_PREFIX + "*");
         return book;
     }
 
     @Transactional
-    public Book update(Integer id, Map<String, Object> data) {
+    public Book update(Integer id, com.library.dto.request.BookUpdateRequest data) {
         Book current = bookMapper.findById(id);
         if (current == null) throw AppException.notFound("图书不存在");
 
-        if (data.containsKey("total") && data.get("total") != null) {
-            int newTotal = (Integer) data.get("total");
+        if (data.getTotal() != null) {
+            int newTotal = data.getTotal();
             int borrowed = current.getTotal() - current.getAvailable();
             if (newTotal < borrowed) {
                 throw AppException.badRequest("总数不能低于 " + borrowed);
@@ -190,35 +199,31 @@ public class BookService {
             int diff = newTotal - current.getTotal();
             int newAvailable = current.getAvailable() + diff;
             bookMapper.updateTotalAndAvailable(id, newTotal, newAvailable);
-            data.remove("total");
         }
 
-
-        if (!data.isEmpty()) {
-            Book updateBook = new Book();
-            updateBook.setId(id);
-            if (data.containsKey("title")) updateBook.setTitle((String) data.get("title"));
-            if (data.containsKey("author")) updateBook.setAuthor((String) data.get("author"));
-            if (data.containsKey("isbn")) updateBook.setIsbn((String) data.get("isbn"));
-            if (data.containsKey("publisher")) updateBook.setPublisher((String) data.get("publisher"));
-            if (data.containsKey("location")) updateBook.setLocation((String) data.get("location"));
-            if (data.containsKey("cover")) {
-                String newCover = (String) data.get("cover");
-                updateBook.setCover(newCover);
-                removeOldCoverIfChanged(current.getCover(), newCover);
-            }
-            if (data.containsKey("desc")) updateBook.setDesc((String) data.get("desc"));
-            if (data.containsKey("clcNumber")) updateBook.setClcNumber((String) data.get("clcNumber"));
-            if (data.containsKey("physicalDesc")) updateBook.setPhysicalDesc((String) data.get("physicalDesc"));
-            if (data.containsKey("language")) updateBook.setLanguage((String) data.get("language"));
-            if (data.containsKey("country")) updateBook.setCountry((String) data.get("country"));
-            if (data.containsKey("categoryId")) updateBook.setCategoryId((Integer) data.get("categoryId"));
-            
-            bookMapper.update(updateBook);
+        Book updateBook = new Book();
+        updateBook.setId(id);
+        if (data.getTitle() != null) updateBook.setTitle(data.getTitle());
+        if (data.getAuthor() != null) updateBook.setAuthor(data.getAuthor());
+        if (data.getIsbn() != null) updateBook.setIsbn(data.getIsbn());
+        if (data.getPublisher() != null) updateBook.setPublisher(data.getPublisher());
+        if (data.getLocation() != null) updateBook.setLocation(data.getLocation());
+        if (data.getCover() != null) {
+            updateBook.setCover(data.getCover());
+            removeOldCoverIfChanged(current.getCover(), data.getCover());
         }
+        if (data.getDesc() != null) updateBook.setDesc(data.getDesc());
+        if (data.getClcNumber() != null) updateBook.setClcNumber(data.getClcNumber());
+        if (data.getPhysicalDesc() != null) updateBook.setPhysicalDesc(data.getPhysicalDesc());
+        if (data.getLanguage() != null) updateBook.setLanguage(data.getLanguage());
+        if (data.getCountry() != null) updateBook.setCountry(data.getCountry());
+        if (data.getCategoryId() != null) updateBook.setCategoryId(data.getCategoryId());
+
+        bookMapper.update(updateBook);
 
         Book updated = bookMapper.findById(id);
-        audit("update", "book:" + id, "Updated book: " + (updated != null ? updated.getTitle() : id));
+        auditService.log("update", null, "book:" + id, "Updated book: " + (updated != null ? updated.getTitle() : id));
+        cacheService.delete(BOOK_CACHE_PREFIX + id);
         return updated;
     }
 
@@ -227,7 +232,8 @@ public class BookService {
         long count = bookItemMapper.countByBookId(id);
         if (count > 0) throw AppException.badRequest("无法删除，该书有 " + count + " 个馆藏复本");
         bookMapper.deleteById(id);
-        audit("delete", "book:" + id, "Deleted book id: " + id);
+        auditService.log("delete", null, "book:" + id, "Deleted book id: " + id);
+        cacheService.delete(BOOK_CACHE_PREFIX + id);
     }
 
     public Map<String, Object> getFacets(Map<String, Object> params) {
@@ -277,22 +283,9 @@ public class BookService {
                 Path oldFile =Paths.get("src/main/resources/static"+oldCover);
                 Files.deleteIfExists(oldFile);
                 log.info("Deleted old cover:{}",oldCover);
-            }catch(IOException e){
-                log.warn("Failed to delete old cover:{}",oldCover,e);
+            } catch (IOException e) {
+                log.warn("Failed to delete old cover:{}", oldCover, e);
             }
-        }
-            
-    }
-
-    private void audit(String action, String target, String detail) {
-        AuditLog auditLog = new AuditLog();
-        auditLog.setAction(action);
-        auditLog.setTarget(target);
-        auditLog.setDetail(detail);
-        try {
-            auditLogMapper.insert(auditLog);
-        } catch (Exception e) {
-            log.error("审计日志写入失败: action={}, target={}", action, target, e);
         }
     }
 }

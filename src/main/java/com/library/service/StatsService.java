@@ -46,14 +46,12 @@ public class StatsService {
             dto.setAuthor((String) row.get("author"));
             dto.setIsbn((String) row.get("isbn"));
             dto.setCategoryId(toInt(row.get("categoryId")));
-            // Transform borrowCount to _count.borrowRecords
             Object bc = row.get("borrowCount");
             dto.set_count(Map.of("borrowRecords", bc != null ? bc : 0));
-            // Enrich with category name
-            Object catId = row.get("categoryId");
-            if (catId instanceof Number) {
-                var cat = categoryMapper.findById(((Number) catId).intValue());
-                dto.setCategory(cat != null ? new CategoryResponse(cat.getId(), cat.getName(), cat.getDesc(), 0) : null);
+            String categoryName = (String) row.get("categoryName");
+            String categoryDesc = (String) row.get("categoryDesc");
+            if (categoryName != null) {
+                dto.setCategory(new CategoryResponse(toInt(row.get("categoryId")), categoryName, categoryDesc, 0));
             }
             result.add(dto);
         }
@@ -74,6 +72,7 @@ public class StatsService {
         return result;
     }
 
+    @SuppressWarnings("unchecked")
     public FacetsDTO getFacets(Map<String, Object> params) {
         Map<String, Object> raw = bookService.getFacets(params);
         FacetsDTO dto = new FacetsDTO();

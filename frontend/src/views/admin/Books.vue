@@ -86,8 +86,8 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, h } from 'vue'
 import { useMessage, NTag, NButton, NPopconfirm, NUpload, NSpin } from 'naive-ui'
-import api from '@/api'
-import type { BookSummary, BookItemSummary } from '@/types/api'
+import { bookApi, categoryApi } from '@/api'
+import type { BookSummary, BookItemSummary, BookListResponse, BookItemsResponse } from '@/types/api'
 import type { DataTableColumn } from 'naive-ui'
 
 const message = useMessage()
@@ -133,7 +133,6 @@ const columns: DataTableColumn[] = [
   }
 ]
 
-// Expand panel for items
 const ExpandItems = {
   props: { bookId: Number },
   emits: ['refresh'],
@@ -141,8 +140,8 @@ const ExpandItems = {
     const items = ref<any[]>([])
     const load = async () => {
       try {
-        const { data } = await api.get(`/books/${_props.bookId}/items`)
-        items.value = data.items || []
+        const res: BookItemsResponse = await bookApi.getItems(_props.bookId)
+        items.value = res.items || []
       } catch { /* ignore */ }
     }
     onMounted(() => { load() })
@@ -182,18 +181,21 @@ const ExpandItems = {
 async function fetchBooks() {
   loading.value = true
   try {
-    const { data } = await api.get('/books', {
-      params: { page: pagination.page, limit: pagination.pageSize, search: search.value || undefined, categoryId: filterCategory.value ?? undefined }
+    const res: BookListResponse = await bookApi.list({
+      page: pagination.page,
+      limit: pagination.pageSize,
+      search: search.value || undefined,
+      categoryId: filterCategory.value ?? undefined
     })
-    books.value = data.books || []
-    pagination.itemCount = data.total || 0
+    books.value = res.books || []
+    pagination.itemCount = res.total || 0
   } catch { message.error('加载失败') }
   loading.value = false
 }
 
 async function fetchCategories() {
   try {
-    const { data } = await api.get('/categories')
+    const data = await categoryApi.getAll()
     catOptions.value = (data || []).map((c: any) => ({ label: c.name, value: c.id }))
   } catch { /* ignore */ }
 }
@@ -201,7 +203,6 @@ async function fetchCategories() {
 function onPage(page: number) { pagination.page = page; fetchBooks() }
 function onExpand(keys: number[]) { expandedKeys.value = keys }
 
-// Book Modal
 const showModal = ref(false)
 const editingId = ref<number | null>(null)
 const saving = ref(false)
@@ -248,19 +249,18 @@ function openEdit(row: any) { editingId.value = row.id; Object.assign(form, { is
 async function handleSave() {
   saving.value = true
   try {
-    if (editingId.value) { await api.put(`/books/${editingId.value}`, form); message.success('已更新') }
-    else { await api.post('/books', form); message.success('已添加') }
+    if (editingId.value) { await bookApi.update(editingId.value, form); message.success('已更新') }
+    else { await bookApi.create(form); message.success('已添加') }
     showModal.value = false; fetchBooks()
   } catch (e: unknown) { message.error((e as Error).message) }
   saving.value = false
 }
 
 async function handleDelete(id: number) {
-  try { await api.delete(`/books/${id}`); message.success('已删除'); fetchBooks() }
+  try { await bookApi.delete(id); message.success('已删除'); fetchBooks() }
   catch (e: unknown) { message.error((e as Error).message) }
 }
 
-// Copy Modal
 const showCopyModal = ref(false)
 const copyBookId = ref<number | null>(null)
 const copySaving = ref(false)
@@ -268,6 +268,7 @@ const copyForm = reactive({ barcode: '', callNumber: '', location: '', price: nu
 
 function openAddCopy(row: any) { copyBookId.value = row.id; copyForm.barcode = ''; copyForm.callNumber = ''; copyForm.location = ''; copyForm.price = null; showCopyModal.value = true }
 
+import api from '@/api'
 async function handleAddCopy() {
   if (!copyForm.barcode) { message.warning('条码号必填'); return }
   copySaving.value = true

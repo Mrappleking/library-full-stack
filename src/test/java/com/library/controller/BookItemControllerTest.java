@@ -46,7 +46,8 @@ class BookItemControllerTest {
 
         mockMvc.perform(get("/api/book-items/BAR001").header("Authorization", readerToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.item.barcode").value("BAR001"));
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.item.barcode").value("BAR001"));
     }
 
     @Test
@@ -54,6 +55,7 @@ class BookItemControllerTest {
         when(bookService.lookupByBarcode("INVALID")).thenReturn(null);
 
         mockMvc.perform(get("/api/book-items/INVALID").header("Authorization", readerToken))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value(404));
     }
 }

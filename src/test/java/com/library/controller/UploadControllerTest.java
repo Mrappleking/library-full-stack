@@ -7,10 +7,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -38,19 +43,32 @@ class UploadControllerTest {
         when(jwtUtil.getUserIdFromToken(anyString())).thenReturn(1);
     }
 
+    private byte[] createTestImage() throws IOException {
+        BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g2d = img.createGraphics();
+        g2d.setColor(Color.WHITE);
+        g2d.fillRect(0, 0, 1, 1);
+        g2d.dispose();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(img, "jpg", baos);
+        return baos.toByteArray();
+    }
+
     @Test
+    @SuppressWarnings("null")
     void uploadCover_byAdmin_shouldReturn200() throws Exception {
         when(jwtUtil.getRoleFromToken(anyString())).thenReturn("admin");
 
         MockMultipartFile file = new MockMultipartFile(
-                "file", "test.jpg", "image/jpeg", "fake-image-content".getBytes());
+                "file", "test.jpg", "image/jpeg", createTestImage());
 
         mockMvc.perform(multipart("/api/upload/cover")
                         .file(file)
                         .header("Authorization", adminToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.path").exists())
-                .andExpect(jsonPath("$.path").value(startsWith("/covers/")));
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.path").exists())
+                .andExpect(jsonPath("$.data.path").value(startsWith("/covers/")));
     }
 
     @Test
@@ -58,7 +76,7 @@ class UploadControllerTest {
         when(jwtUtil.getRoleFromToken(anyString())).thenReturn("reader");
 
         MockMultipartFile file = new MockMultipartFile(
-                "file", "test.jpg", "image/jpeg", "fake-image-content".getBytes());
+                "file", "test.jpg", "image/jpeg", createTestImage());
 
         mockMvc.perform(multipart("/api/upload/cover")
                         .file(file)
@@ -71,7 +89,7 @@ class UploadControllerTest {
         when(jwtUtil.getRoleFromToken(anyString())).thenReturn(null);
 
         MockMultipartFile file = new MockMultipartFile(
-                "file", "test.jpg", "image/jpeg", "fake-image-content".getBytes());
+                "file", "test.jpg", "image/jpeg", createTestImage());
 
         mockMvc.perform(multipart("/api/upload/cover")
                         .file(file))
@@ -108,7 +126,6 @@ class UploadControllerTest {
     void uploadCover_tooLarge_shouldReturn400() throws Exception {
         when(jwtUtil.getRoleFromToken(anyString())).thenReturn("admin");
 
-        // 6MB file — exceeds 5MB limit
         byte[] largeContent = new byte[6 * 1024 * 1024];
         MockMultipartFile largeFile = new MockMultipartFile(
                 "file", "large.jpg", "image/jpeg", largeContent);

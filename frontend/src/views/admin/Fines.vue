@@ -20,11 +20,12 @@
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
 import { useMessage, NTag, NButton } from 'naive-ui'
-import api from '@/api'
+import { fineApi } from '@/api'
+import type { FineResponse } from '@/types/api'
 import type { DataTableColumn } from 'naive-ui'
 
 const message = useMessage()
-const fines = ref<any[]>([])
+const fines = ref<FineResponse[]>([])
 const loading = ref(false)
 const filterType = ref<string | null>(null)
 const filterPaid = ref<string | null>(null)
@@ -77,15 +78,15 @@ async function fetchFines() {
   try {
     const params: any = {}
     if (filterType.value) params.type = filterType.value
-    if (filterPaid.value) params.paid = filterPaid.value
-    const { data } = await api.get('/fines', { params })
-    fines.value = Array.isArray(data) ? data : (data?.data ?? [])
+    if (filterPaid.value) params.paid = filterPaid.value === 'true'
+    const res = await fineApi.getAll(params)
+    fines.value = res.fines || []
   } catch { /* ignore */ }
   loading.value = false
 }
 
 async function handlePay(id: number) {
-  try { await api.post(`/fines/${id}/pay`); message.success('已确认缴费'); fetchFines() }
+  try { await fineApi.payFine(id); message.success('已确认缴费'); fetchFines() }
   catch (e: unknown) { message.error((e as Error).message) }
 }
 

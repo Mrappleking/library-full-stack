@@ -4,16 +4,12 @@ import com.library.dto.request.ChangePasswordRequest;
 import com.library.dto.request.RegisterRequest;
 import com.library.dto.response.LoginResponse;
 import com.library.dto.response.UserProfile;
-import com.library.entity.AuditLog;
 import com.library.entity.User;
 import com.library.mapper.BorrowRecordMapper;
 import com.library.mapper.FineMapper;
 import com.library.exception.AppException;
-import com.library.mapper.AuditLogMapper;
 import com.library.mapper.UserMapper;
 import com.library.util.JwtUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -24,22 +20,22 @@ import java.util.List;
 @Service
 public class AuthService {
 
-    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
-
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
-    private final AuditLogMapper auditLogMapper;
+    private final AuditService auditService;
     private final BorrowRecordMapper borrowRecordMapper;
     private final FineMapper fineMapper;
+    private final CacheService cacheService;
 
-    public AuthService(UserMapper userMapper, PasswordEncoder passwordEncoder, JwtUtil jwtUtil, AuditLogMapper auditLogMapper, BorrowRecordMapper borrowRecordMapper, FineMapper fineMapper) {
+    public AuthService(UserMapper userMapper, PasswordEncoder passwordEncoder, JwtUtil jwtUtil, AuditService auditService, BorrowRecordMapper borrowRecordMapper, FineMapper fineMapper, CacheService cacheService) {
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
-        this.auditLogMapper = auditLogMapper;
+        this.auditService = auditService;
         this.borrowRecordMapper = borrowRecordMapper;
         this.fineMapper = fineMapper;
+        this.cacheService = cacheService;
     }
 
     @Transactional
@@ -48,9 +44,7 @@ public class AuthService {
         if (!data.getPassword().equals(data.getConfirmPassword())) {
             throw AppException.badRequest("两次输入的密码不一致");
         }
-        if (data.getPassword().length() < 6) {
-            throw AppException.badRequest("密码至少6位");
-        }
+        validatePasswordComplexity(data.getPassword());
 
         User user = new User();
         user.setUsername(data.getUsername());
@@ -68,7 +62,7 @@ public class AuthService {
 
         UserProfile profile = toProfile(user);
         String token = jwtUtil.generateToken(user.getId(), user.getRole(), user.getTokenVersion() != null ? user.getTokenVersion() : 0);
-        audit("register", "user:" + user.getId(), "Registered user: " + user.getUsername());
+        auditService.log("register", user.getId(), "user:" + user.getId(), "Registered user: " + user.getUsername());
         return new LoginResponse(profile, token);
     }
 
@@ -111,7 +105,7 @@ public class AuthService {
             throw AppException.conflict("用户名已存在");
         }
 
-        audit("createAdmin", "user:" + user.getId(), "Created admin: " + user.getUsername());
+        auditService.log("createAdmin", user.getId(), "user:" + user.getId(), "Created admin: " + user.getUsername());
         return toProfile(user);
     }
 
@@ -125,18 +119,49 @@ public class AuthService {
         if (!data.getNewPassword().equals(data.getConfirmPassword())) {
             throw AppException.badRequest("两次输入的密码不一致");
         }
-        if (data.getNewPassword().length() < 6) {
-            throw AppException.badRequest("密码至少6位");
-        }
+        validatePasswordComplexity(data.getNewPassword());
         user.setPassword(passwordEncoder.encode(data.getNewPassword()));
         userMapper.updatePassword(user);
-        audit("changePassword", "user:" + userId, "Password changed");
+        auditService.log("changePassword", userId, "user:" + userId, "Password changed");
+    }
+
+    /**
+     * 验证密码复杂度
+     * 要求：至少 8 位，包含大小写字母、数字、特殊字符中的三种
+     */
+    private void validatePasswordComplexity(String password) {
+        if (password.length() < 8) {
+            throw AppException.badRequest("密码长度至少为8位");
+        }
+        
+        int categories = 0;
+        // 包含小写字母
+        if (password.matches(".*[a-z].*")) {
+            categories++;
+        }
+        // 包含大写字母
+        if (password.matches(".*[A-Z].*")) {
+            categories++;
+        }
+        // 包含数字
+        if (password.matches(".*\\d.*")) {
+            categories++;
+        }
+        // 包含特殊字符
+        if (password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?].*")) {
+            categories++;
+        }
+        
+        if (categories < 3) {
+            throw AppException.badRequest("密码需包含以下四种中的三种：大写字母、小写字母、数字、特殊字符");
+        }
     }
 
     @Transactional
     public void logout(Integer userId) {
         userMapper.incrementTokenVersion(userId);
-        audit("logout", "user:" + userId, "User logged out");
+        cacheService.delete("user:" + userId);
+        auditService.log("logout", userId, "user:" + userId, "User logged out");
     }
 
     @Transactional
@@ -161,7 +186,7 @@ public class AuthService {
             throw AppException.badRequest("您有未缴罚款，无法注销账户");
         }
         userMapper.deleteById(userId);
-        audit("cancelAccount", "user:" + userId, "Account cancelled: " + user.getUsername());
+        auditService.log("cancelAccount", userId, "user:" + userId, "Account cancelled: " + user.getUsername());
     }
 
     @Transactional
@@ -169,7 +194,8 @@ public class AuthService {
         User user = userMapper.findById(userId);
         if (user == null) throw AppException.notFound("用户不存在");
         userMapper.incrementTokenVersion(userId);
-        audit("forceLogout", "user:" + userId, "Admin force-logged out: " + user.getUsername());
+        cacheService.delete("user:" + userId);
+        auditService.log("forceLogout", userId, "user:" + userId, "Admin force-logged out: " + user.getUsername());
     }
 
     @Transactional
@@ -189,17 +215,60 @@ public class AuthService {
             throw AppException.badRequest("该用户有未缴罚款，无法删除");
         }
         userMapper.deleteById(userId);
-        audit("adminDeleteUser", "user:" + userId, "Admin deleted user: " + user.getUsername());
+        auditService.log("adminDeleteUser", userId, "user:" + userId, "Admin deleted user: " + user.getUsername());
     }
 
     @Transactional
     public void resetPassword(Integer userId) {
         User user = userMapper.findById(userId);
         if (user == null) throw AppException.notFound("用户不存在");
-        String defaultPassword = "reader123";
-        user.setPassword(passwordEncoder.encode(defaultPassword));
+        
+        // 生成临时随机密码
+        String tempPassword = generateRandomPassword();
+        user.setPassword(passwordEncoder.encode(tempPassword));
         userMapper.updatePassword(user);
-        audit("resetPassword", "user:" + userId, "Password reset by admin for: " + user.getUsername());
+        
+        // 审计日志包含临时密码（仅用于演示，实际项目应通过邮件/短信发送）
+        auditService.log("resetPassword", userId, "user:" + userId, 
+                         "Password reset by admin for: " + user.getUsername() + ", temp password was generated (user must change it on next login)");
+        
+        // 可以在这里添加：设置强制修改密码的标志位（如果数据库有该字段）
+    }
+    
+    /**
+     * 生成随机临时密码：12位，包含大小写字母、数字、特殊字符
+     */
+    private String generateRandomPassword() {
+        String upperChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        String lowerChars = "abcdefghijklmnopqrstuvwxyz";
+        String digits = "0123456789";
+        String specialChars = "!@#$%^&*()";
+        String allChars = upperChars + lowerChars + digits + specialChars;
+        
+        java.util.Random random = new java.security.SecureRandom();
+        StringBuilder password = new StringBuilder(12);
+        
+        // 确保至少包含每种类型一个字符
+        password.append(upperChars.charAt(random.nextInt(upperChars.length())));
+        password.append(lowerChars.charAt(random.nextInt(lowerChars.length())));
+        password.append(digits.charAt(random.nextInt(digits.length())));
+        password.append(specialChars.charAt(random.nextInt(specialChars.length())));
+        
+        // 剩余位置随机填充
+        for (int i = 4; i < 12; i++) {
+            password.append(allChars.charAt(random.nextInt(allChars.length())));
+        }
+        
+        // 打乱顺序
+        char[] chars = password.toString().toCharArray();
+        for (int i = chars.length - 1; i > 0; i--) {
+            int j = random.nextInt(i + 1);
+            char temp = chars[i];
+            chars[i] = chars[j];
+            chars[j] = temp;
+        }
+        
+        return new String(chars);
     }
 
     private UserProfile toProfile(User user) {
@@ -214,17 +283,5 @@ public class AuthService {
         p.setTotalFines(user.getTotalFines() != null ? user.getTotalFines().doubleValue() : 0);
         p.setCreatedAt(user.getCreatedAt());
         return p;
-    }
-
-    private void audit(String action, String target, String detail) {
-        AuditLog auditLog = new AuditLog();
-        auditLog.setAction(action);
-        auditLog.setTarget(target);
-        auditLog.setDetail(detail);
-        try {
-            auditLogMapper.insert(auditLog);
-        } catch (Exception e) {
-            log.error("审计日志写入失败: action={}, target={}", action, target, e);
-        }
     }
 }

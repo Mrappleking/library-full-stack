@@ -16,19 +16,13 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 @Service
 public class BorrowService {
-
-    private static final Logger logger = LoggerFactory.getLogger(BorrowService.class);
-
     private final BorrowRecordMapper borrowRecordMapper;
     private final BookMapper bookMapper;
     private final BookItemMapper bookItemMapper;
     private final UserMapper userMapper;
-    private final AuditLogMapper auditLogMapper;
+    private final AuditService auditService;
     private final RuleService ruleService;
     private final FineService fineService;
     private final HoldService holdService;
@@ -37,14 +31,14 @@ public class BorrowService {
 
     public BorrowService(BorrowRecordMapper borrowRecordMapper, BookMapper bookMapper,
                           BookItemMapper bookItemMapper, UserMapper userMapper,
-                          AuditLogMapper auditLogMapper,
+                          AuditService auditService,
                           RuleService ruleService, FineService fineService,
                           HoldService holdService, BookService bookService, HoldMapper holdMapper) {
         this.borrowRecordMapper = borrowRecordMapper;
         this.bookMapper = bookMapper;
         this.bookItemMapper = bookItemMapper;
         this.userMapper = userMapper;
-        this.auditLogMapper = auditLogMapper;
+        this.auditService = auditService;
         this.ruleService = ruleService;
         this.fineService = fineService;
         this.holdService = holdService;
@@ -126,9 +120,9 @@ public class BorrowService {
             throw AppException.badRequest("借阅数量已达上限: " + rule.getMaxBorrows());
         }
 
-        // Re-verify item is still available
+        // Re-verify item is still available with FOR UPDATE lock
         if (targetItemId != null) {
-            BookItem itemCheck = bookItemMapper.findById(targetItemId);
+            BookItem itemCheck = bookItemMapper.findByIdForUpdate(targetItemId);
             if (itemCheck == null || !"available".equals(itemCheck.getStatus())) {
                 throw AppException.badRequest("复本已不可用");
             }
@@ -157,7 +151,7 @@ public class BorrowService {
             bookItemMapper.updateStatus(targetItemId, "borrowed");
         }
 
-        audit(userId, "borrow", "book:" + targetBookId, targetItemId != null ? "item:" + targetItemId : null);
+        auditService.log("borrow", userId, "book:" + targetBookId, targetItemId != null ? "item:" + targetItemId : null);
         return borrowRecordMapper.findById(record.getId());
     }
 
@@ -210,7 +204,7 @@ public class BorrowService {
             }
         }
 
-        audit(userId, "return", "record:" + borrowRecordId, isOverdue ? "overdue" : null);
+        auditService.log("return", userId, "record:" + borrowRecordId, isOverdue ? "overdue" : null);
         return borrowRecordMapper.findById(borrowRecordId);
     }
 
@@ -233,7 +227,7 @@ public class BorrowService {
         LocalDateTime newDue = record.getDueDate().plusDays(rule.getRenewalDays());
         borrowRecordMapper.renew(recordId, newDue);
 
-        audit(userId, "renew", "record:" + recordId, rule.getRenewalDays() + "d");
+        auditService.log("renew", userId, "record:" + recordId, rule.getRenewalDays() + "d");
 
         Map<String, Object> result = new HashMap<>();
         result.put("id", recordId);
@@ -252,19 +246,6 @@ public class BorrowService {
         result.put("borrows", records);
         result.put("total", total);
         return result;
-    }
-
-    private void audit(Integer userId, String action, String target, String detail) {
-        AuditLog log = new AuditLog();
-        log.setUserId(userId);
-        log.setAction(action);
-        log.setTarget(target);
-        log.setDetail(detail);
-        try {
-            auditLogMapper.insert(log);
-        } catch (Exception e) {
-            logger.error("审计日志写入失败: action={}, target={}", action, target, e);
-        }
     }
 
     /**
