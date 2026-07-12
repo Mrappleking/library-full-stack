@@ -16,6 +16,14 @@ public interface UserMapper {
     void updatePassword(User user);
     void incrementTokenVersion(@Param("userId") Integer userId);
     List<User> findPage(@Param("offset") int offset, @Param("limit") int limit);
+    List<User> searchReaders(@Param("keyword") String keyword,
+                             @Param("patronCategoryId") Integer patronCategoryId,
+                             @Param("offset") int offset,
+                             @Param("limit") int limit,
+                             @Param("sortBy") String sortBy,
+                             @Param("sortDir") String sortDir);
+    long countSearchReaders(@Param("keyword") String keyword,
+                            @Param("patronCategoryId") Integer patronCategoryId);
     long countReaders();
     long count();
     void deleteById(Integer id);

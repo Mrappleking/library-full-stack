@@ -39,6 +39,42 @@
     SELECT * FROM users ORDER BY created_at DESC LIMIT #{limit} OFFSET #{offset}
   </select>
 
+  <select id="searchReaders" resultType="com.library.entity.User">
+    SELECT * FROM users WHERE role = 'reader'
+    <if test="keyword != null and keyword != ''">
+      AND (username LIKE CONCAT('%', #{keyword}, '%')
+           OR name LIKE CONCAT('%', #{keyword}, '%')
+           OR phone LIKE CONCAT('%', #{keyword}, '%'))
+    </if>
+    <if test="patronCategoryId != null">
+      AND patronCategoryId = #{patronCategoryId}
+    </if>
+    ORDER BY
+    <choose>
+      <when test="sortBy == 'name'">name</when>
+      <when test="sortBy == 'username'">username</when>
+      <when test="sortBy == 'patronCategoryId'">patronCategoryId</when>
+      <otherwise>created_at</otherwise>
+    </choose>
+    <choose>
+      <when test="sortDir == 'asc'">ASC</when>
+      <otherwise>DESC</otherwise>
+    </choose>
+    LIMIT #{limit} OFFSET #{offset}
+  </select>
+
+  <select id="countSearchReaders" resultType="long">
+    SELECT COUNT(*) FROM users WHERE role = 'reader'
+    <if test="keyword != null and keyword != ''">
+      AND (username LIKE CONCAT('%', #{keyword}, '%')
+           OR name LIKE CONCAT('%', #{keyword}, '%')
+           OR phone LIKE CONCAT('%', #{keyword}, '%'))
+    </if>
+    <if test="patronCategoryId != null">
+      AND patronCategoryId = #{patronCategoryId}
+    </if>
+  </select>
+
   <delete id="deleteById">
     DELETE FROM users WHERE id = #{id}
   </delete>
