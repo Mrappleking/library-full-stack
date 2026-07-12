@@ -16,6 +16,7 @@
 
 <script setup lang="ts">
 import { CheckmarkCircleOutline, AlertCircleOutline, InformationCircleOutline } from '@vicons/ionicons5'
+import { useToast } from '../composables/useToast'
 
 const { toasts, removeToast } = useToast()
 

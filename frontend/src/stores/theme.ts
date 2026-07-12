@@ -18,10 +18,10 @@ export const useThemeStore = defineStore('theme', () => {
       borderRadius: '12px',
       borderRadiusSmall: '8px',
       fontSize: '14px',
-      textColor1: '#1f2937',
-      textColor2: '#4b5563',
-      textColor3: '#9ca3af',
-      placeholderColor: '#9ca3af',
+      textColor1: '#000000',
+      textColor2: '#000000',
+      textColor3: '#1f2937',
+      placeholderColor: '#6b7280',
       borderColor: '#e5e7eb',
       dividerColor: '#f3f4f6',
       baseColor: '#ffffff',
@@ -30,7 +30,11 @@ export const useThemeStore = defineStore('theme', () => {
     Card: { borderRadius: '16px', paddingMedium: '24px 28px', color: '#ffffff', boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)' },
     DataTable: {
       borderRadius: '12px', thColor: '#f8fafc', thFontWeight: '600',
-      tdColorHover: 'rgba(79,70,229,0.05)', thPaddingMedium: '14px 16px', tdPaddingMedium: '14px 16px'
+      thTextColor: '#000000', tdTextColor: '#000000',
+      thIconColor: '#9ca3af', thIconColorActive: '#4f46e5',
+      tdColorHover: 'rgba(79,70,229,0.08)', tdColorStriped: 'rgba(0,0,0,0.02)',
+      thColorSorting: '#eef2ff', tdColorSorting: 'rgba(79,70,229,0.04)',
+      thPaddingMedium: '14px 16px', tdPaddingMedium: '14px 16px'
     },
     Menu: { itemHeight: '48px', borderRadius: '10px' },
     Button: { borderRadiusMedium: '10px', borderRadiusSmall: '8px', borderRadiusLarge: '12px' },
@@ -62,11 +66,17 @@ export const useThemeStore = defineStore('theme', () => {
       dividerColor: '#1f2937',
       baseColor: '#111827',
       bodyColor: '#0f172a',
+      inputColor: '#1f2937',
     },
     Card: { borderRadius: '16px', paddingMedium: '24px 28px', color: '#1f2937', boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.3), 0 1px 2px -1px rgb(0 0 0 / 0.3)' },
     DataTable: {
       borderRadius: '12px', thColor: '#1f2937', thFontWeight: '600',
-      tdColorHover: 'rgba(129,140,248,0.12)', thPaddingMedium: '14px 16px', tdPaddingMedium: '14px 16px'
+      thTextColor: '#f3f4f6', tdTextColor: '#d1d5db',
+      thIconColor: '#6b7280', thIconColorActive: '#818cf8',
+      tdColor: '#1f2937', tdColorHover: 'rgba(129,140,248,0.15)',
+      tdColorStriped: 'rgba(255,255,255,0.02)',
+      thColorSorting: '#374151', tdColorSorting: 'rgba(129,140,248,0.08)',
+      thPaddingMedium: '14px 16px', tdPaddingMedium: '14px 16px'
     },
     Menu: { itemHeight: '48px', borderRadius: '10px' },
     Button: { borderRadiusMedium: '10px', borderRadiusSmall: '8px', borderRadiusLarge: '12px' },

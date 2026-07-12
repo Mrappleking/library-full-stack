@@ -14,6 +14,7 @@ api.interceptors.response.use(
   res => {
     const apiResponse = res.data
     if (apiResponse && typeof apiResponse === 'object' && 'data' in apiResponse) {
+      // Unwrap ApiResponse: {code, message, data: T, timestamp} -> T
       return apiResponse.data
     }
     return res.data

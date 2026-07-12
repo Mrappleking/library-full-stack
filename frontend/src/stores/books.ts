@@ -19,11 +19,11 @@ export const useBookStore = defineStore('books', () => {
     searchQuery.value = params.search || ''
     activeFilters.value = params
     try {
-      const { data } = await bookApi.list({ ...params, page: page.value, limit: limit.value })
-      results.value = data.books || []
-      total.value = data.total || 0
-      page.value = data.page || 1
-      limit.value = data.limit || 20
+      const res = await bookApi.list({ ...params, page: page.value, limit: limit.value })
+      results.value = res.books || []
+      total.value = res.total || 0
+      page.value = res.page || 1
+      limit.value = res.limit || 20
     } finally { loading.value = false }
   }
 
@@ -34,8 +34,8 @@ export const useBookStore = defineStore('books', () => {
 
   async function updateFacets(params: BookListParams = {}) {
     try {
-      const { data } = await bookApi.getFacets(params)
-      facets.value = data.facets || null
+      const facetsRes = await bookApi.getFacets(params)
+      facets.value = facetsRes.facets || null
     } catch {
       facets.value = null
     }
@@ -43,8 +43,8 @@ export const useBookStore = defineStore('books', () => {
 
   async function getBook(id: number) {
     try {
-      const { data } = await bookApi.getById(id)
-      currentBook.value = data
+      const bookDetail = await bookApi.getById(id)
+      currentBook.value = bookDetail
     } catch {
       currentBook.value = null
     }

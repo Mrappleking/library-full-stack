@@ -56,6 +56,7 @@
 import { ref, reactive, computed, onMounted, h } from 'vue'
 import { useMessage, NButton, NTag, useDialog, type DataTableColumn } from 'naive-ui'
 import { readerApi } from '@/api'
+import api from '@/api'
 import type { ReaderResponse } from '@/types/api'
 
 const message = useMessage()
@@ -126,8 +127,44 @@ async function fetchReaders() {
       page: pagination.page,
       limit: pagination.pageSize
     })
-    readers.value = res.readers || []
-    pagination.itemCount = res.total || 0
+    // Backend returns array directly (no pagination wrapper)
+    let list: ReaderResponse[]
+    if (Array.isArray(res)) {
+      list = res as ReaderResponse[]
+    } else {
+      list = (res as any).readers || []
+    }
+
+    // Client-side filter by keyword
+    const kw = searchKeyword.value.toLowerCase().trim()
+    if (kw) {
+      list = list.filter(r =>
+        (r.username && r.username.toLowerCase().includes(kw)) ||
+        (r.name && r.name.toLowerCase().includes(kw)) ||
+        (r.phone && r.phone.includes(kw))
+      )
+    }
+
+    // Client-side filter by category
+    if (searchCategory.value) {
+      list = list.filter(r => r.patronCategoryId === searchCategory.value)
+    }
+
+    // Client-side sort
+    list.sort((a: any, b: any) => {
+      const va = a[sortBy.value]
+      const vb = b[sortBy.value]
+      if (va == null) return 1
+      if (vb == null) return -1
+      const cmp = typeof va === 'string' ? va.localeCompare(vb) : va - vb
+      return sortDir.value === 'asc' ? cmp : -cmp
+    })
+
+    pagination.itemCount = list.length
+
+    // Client-side pagination
+    const start = (pagination.page - 1) * pagination.pageSize
+    readers.value = list.slice(start, start + pagination.pageSize)
   } catch { /* ignore */ }
   loading.value = false
 }
@@ -167,7 +204,6 @@ function handleSorterChange(sorter: { columnKey: string; order: string } | null)
   fetchReaders()
 }
 
-import api from '@/api'
 async function loadCategories() {
   try {
     const data = await api.get('/rules/patron-categories')
@@ -243,12 +279,12 @@ const ExpandPanel = {
     }
     onMounted(() => { load() })
     return () => records.value.length === 0
-      ? h('div', { style: 'padding:12px;color:#8a8f98;' }, '暂无借阅记录')
+      ? h('div', { style: 'padding:12px;color:var(--n-text-color-3);' }, '暂无借阅记录')
       : h('div', { style: 'padding:8px 0;' },
           records.value.map((r: any) =>
-            h('div', { style: 'display:flex;gap:16px;padding:6px 12px;font-size:13px;color:#d0d6e0;' }, [
+            h('div', { style: 'display:flex;gap:16px;padding:6px 12px;font-size:13px;color:var(--n-text-color-2);' }, [
               h('span', r.book?.title || '未知'),
-              h('span', { style: 'color:#8a8f98;' }, new Date(r.borrowDate).toLocaleDateString('zh-CN')),
+              h('span', { style: 'color:var(--n-text-color-3);' }, new Date(r.borrowDate).toLocaleDateString('zh-CN')),
               h(NTag, { size: 'tiny', type: r.status === 'active' ? 'success' : 'default' }, () => r.status === 'active' ? '在借' : '已还')
             ])
           )

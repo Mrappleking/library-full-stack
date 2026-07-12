@@ -80,7 +80,12 @@ async function fetchFines() {
     if (filterType.value) params.type = filterType.value
     if (filterPaid.value) params.paid = filterPaid.value === 'true'
     const res = await fineApi.getAll(params)
-    fines.value = res.fines || []
+    // Backend returns array directly
+    if (Array.isArray(res)) {
+      fines.value = res as any[]
+    } else {
+      fines.value = (res as any).fines || []
+    }
   } catch { /* ignore */ }
   loading.value = false
 }

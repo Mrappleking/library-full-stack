@@ -42,14 +42,16 @@ html {
   -moz-osx-font-smoothing: grayscale;
 }
 
-html.dark {
-  background-color: #0f172a;
-  color-scheme: dark;
-}
-
 html:not(.dark) {
   background-color: #f9fafb;
   color-scheme: light;
+  color: #000000;
+}
+
+html.dark {
+  background-color: #0f172a;
+  color-scheme: dark;
+  color: #f3f4f6;
 }
 
 body {
