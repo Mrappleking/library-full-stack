@@ -9,7 +9,7 @@
 图书馆全栈管理系统（Spring Boot 3 版）。四层架构：Vue3+NaiveUI（`frontend/`）→ Controller → Service → Mapper(MyBatis+XML) → MySQL。
 
 Origin: https://github.com/Mrappleking/library-full-stack
-Status: 45 API endpoints | 71 Java files | 31 Vue files | 9 XML mappers | 96 tests
+Status: 45 API endpoints | 71 Java files | 31 Vue files | 9 XML mappers | 102 tests
 
 ## 2. Error Zone
 
@@ -22,7 +22,9 @@ Status: 45 API endpoints | 71 Java files | 31 Vue files | 9 XML mappers | 96 tes
 | 5 | 注解 SQL 和 XML 同时定义同一 statement | `Mapped Statements collection already contains key` | 移除 Java 注解中的 `@Select`/`@Insert`/`@Update`/`@Delete` |
 | 6 | 数组 `transaction([])` 外部检查可用性 | 竞态条件下双借同一本 | `borrow()` 需在 `$transaction` 内重查可用性 |
 | 7 | Mapper XML 中列名写成 camelCase 但数据库是 snake_case | `Unknown column` SQL 错误导致 `Internal Server Error` | 对照 `SHOW CREATE TABLE` 确认实际列名（如 `users` 表是 `total_fines` 不是 `totalFines`） |
-| 8 | 后端错误消息用英文 | 中文用户看不懂报错信息 | 使用中文错误消息（如 `"用户名或密码错误"`） |
+| 8 | 后端错误消息用英文 | 中文用户看不懂报错信息 | 使用中文错误消息（如 "用户名或密码错误"） |
+| 9 | WSL 默认 JDK 25 下 `mvn compile` | `release version 17 not supported` 编译失败 | 先 `export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64` 再编译 |
+| 10 | `@EnableScheduling` 同时放在 `LibraryApplication.java` 和 `WebConfig.java` | 重复注解，启动时加载两次调度器 | 只保留 `LibraryApplication.java` 上的 `@EnableScheduling`，移除 `WebConfig.java` 上的 |
 
 ## 3. Architecture Decisions
 
@@ -50,7 +52,7 @@ Status: 45 API endpoints | 71 Java files | 31 Vue files | 9 XML mappers | 96 tes
 ```bash
 # Backend
 ./mvnw compile                                          # compile
-./mvnw test                                             # 96 tests, 0 failures required
+./mvnw test                                             # 102 tests, 0 failures required
 ./mvnw clean package -DskipTests                        # build JAR (skip tests)
 ./start.sh                                              # build + run -> :8080 (dev)
 ./start.sh prod                                         # build + run -> :8080 (prod)
@@ -66,7 +68,7 @@ npm run build                    # production build to dist/
 
 # Rebuild
 ./mvnw clean package -DskipTests        # 构建 JAR（跳过测试）
-./mvnw test                              # 运行全部 55 测试
+./mvnw test                              # 运行全部 102 测试
 
 # Kill
 kill -9 $(lsof -ti:8080)
@@ -101,7 +103,7 @@ frontend/                        # Vue 3 + Vite + Naive UI
     App.vue
 ```
 *Static resources:*
-`src/main/resources/static/covers/` — 20 book cover images (local, no external CDN).
+`src/main/resources/static/covers/` — 23 book cover images (local, no external CDN).
 Seed data stores `cover` as `/covers/{id}-{title}.{ext}` (e.g. `/covers/1-算法导论.jpg`).
 Spring Boot auto-serves via `:8080/covers/...`. Frontend renders via `<img :src="book.cover">` — no extra config needed.
 
@@ -312,7 +314,7 @@ fulfillHold(ready) → on_hold → borrowed (reader picks up the held item)
 - Controller layer: `@SpringBootTest` + `@AutoConfigureMockMvc` + `@ActiveProfiles("test")`
   - Controllers use `@MockBean` for services — no real DB needed
   - No `application-test.yml` exists yet; if integration tests (real DB) are added later, create `src/test/resources/application-test.yml` with H2 config
-- 55 total tests: 51 service + 4 controller
+- 102 total tests across 22 test files (10 service + 12 controller)
 
 ## 11. Database Tables (11 tables)
 
@@ -322,7 +324,7 @@ Seed data via `seed.sql`: 3 patron types, 3 item types, 9 rules, 9 users, 20 boo
 
 ## 12. Build & Startup
 
-`./mvnw` in project root. No global Maven install needed. Java 21.
+`./mvnw` in project root. No global Maven install needed. Java 17 (`export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64` 前先执行，WSL 默认 JDK 25 不兼容)。
 
 Startup: `./start.sh` builds JAR then runs `java -jar target/*.jar`. Avoid `mvn spring-boot:run` (OOM risk).
 
@@ -344,4 +346,4 @@ find frontend/src -name '*.vue' | wc -l
 # XML mappers
 find src -name '*.xml' -path '*/mappers/*' | wc -l
 ```
-注意：- **提交前跑测试。** `./mvnw test`（55 个测试全部通过再提交），可以拓展测试集，但要保证适用性和通用性。
+注意：- **提交前跑测试。** `./mvnw test`（102 个测试全部通过再提交），可以拓展测试集，但要保证适用性和通用性。
