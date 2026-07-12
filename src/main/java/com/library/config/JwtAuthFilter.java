@@ -1,5 +1,7 @@
 package com.library.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.library.dto.response.ApiResponse;
 import com.library.entity.User;
 import com.library.mapper.UserMapper;
 import com.library.util.JwtUtil;
@@ -24,10 +26,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final UserMapper userMapper;
+    private final ObjectMapper objectMapper;
 
-    public JwtAuthFilter(JwtUtil jwtUtil, UserMapper userMapper) {
+    public JwtAuthFilter(JwtUtil jwtUtil, UserMapper userMapper, ObjectMapper objectMapper) {
         this.jwtUtil = jwtUtil;
         this.userMapper = userMapper;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -92,7 +96,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private void writeError(HttpServletResponse response, int status, String message) throws IOException {
         response.setStatus(status);
         response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write("{\"code\":" + status + ",\"message\":\"" + message + "\",\"data\":null,\"timestamp\":\"" + java.time.LocalDateTime.now().toString() + "\"}");
+        response.getWriter().write(objectMapper.writeValueAsString(ApiResponse.error(status, message)));
     }
 
     /**
