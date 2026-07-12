@@ -26,7 +26,8 @@ class AuthServiceTest extends AbstractServiceTest {
     void setUp() {
         passwordEncoder = new BCryptPasswordEncoder();
         AuditService auditService = new AuditService(auditLogMapper);
-        authService = new AuthService(userMapper, passwordEncoder, jwtUtil, auditService, borrowRecordMapper, fineMapper);
+        CacheService cacheService = mock(CacheService.class);
+        authService = new AuthService(userMapper, passwordEncoder, jwtUtil, auditService, borrowRecordMapper, fineMapper, cacheService);
     }
 
     @Test

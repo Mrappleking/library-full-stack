@@ -64,8 +64,16 @@ class StatsServiceTest extends AbstractServiceTest {
 
     @Test
     void getPopular_shouldReturnEnrichedBooks() {
-        when(borrowRecordMapper.popularBooks()).thenReturn(List.of(popularRow(1, "Java", "A", "123", 1, 5)));
-        when(categoryMapper.findById(1)).thenReturn(createCategory(1, "计算机"));
+        Map<String, Object> row = new HashMap<>();
+        row.put("id", 1);
+        row.put("title", "Java");
+        row.put("author", "A");
+        row.put("isbn", "123");
+        row.put("categoryId", 1);
+        row.put("borrowCount", 5);
+        row.put("categoryName", "计算机");
+        row.put("categoryDesc", "计算机科学");
+        when(borrowRecordMapper.popularBooks()).thenReturn(List.of(row));
 
         var result = statsService.getPopular();
 

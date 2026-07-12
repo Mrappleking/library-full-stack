@@ -32,14 +32,16 @@ public class AuthService {
     private final AuditService auditService;
     private final BorrowRecordMapper borrowRecordMapper;
     private final FineMapper fineMapper;
+    private final CacheService cacheService;
 
-    public AuthService(UserMapper userMapper, PasswordEncoder passwordEncoder, JwtUtil jwtUtil, AuditService auditService, BorrowRecordMapper borrowRecordMapper, FineMapper fineMapper) {
+    public AuthService(UserMapper userMapper, PasswordEncoder passwordEncoder, JwtUtil jwtUtil, AuditService auditService, BorrowRecordMapper borrowRecordMapper, FineMapper fineMapper, CacheService cacheService) {
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
         this.auditService = auditService;
         this.borrowRecordMapper = borrowRecordMapper;
         this.fineMapper = fineMapper;
+        this.cacheService = cacheService;
     }
 
     @Transactional
@@ -136,6 +138,7 @@ public class AuthService {
     @Transactional
     public void logout(Integer userId) {
         userMapper.incrementTokenVersion(userId);
+        cacheService.delete("user:" + userId);
         auditService.log("logout", userId, "user:" + userId, "User logged out");
     }
 
@@ -169,6 +172,7 @@ public class AuthService {
         User user = userMapper.findById(userId);
         if (user == null) throw AppException.notFound("用户不存在");
         userMapper.incrementTokenVersion(userId);
+        cacheService.delete("user:" + userId);
         auditService.log("forceLogout", userId, "user:" + userId, "Admin force-logged out: " + user.getUsername());
     }
 

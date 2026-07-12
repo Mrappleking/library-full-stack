@@ -20,6 +20,25 @@
       </n-grid-item>
     </n-grid>
 
+    <n-grid :cols="3" :x-gap="20" style="margin-top: 24px">
+      <n-grid-item :span="2">
+        <n-card class="panel-card" size="small">
+          <template #header>
+            <div class="panel-header"><n-icon size="18"><TrendingUpOutline /></n-icon> 月度借阅趋势</div>
+          </template>
+          <MonthlyBorrowChart :data="monthlyData" />
+        </n-card>
+      </n-grid-item>
+      <n-grid-item>
+        <n-card class="panel-card" size="small">
+          <template #header>
+            <div class="panel-header"><n-icon size="18"><PieChartOutline /></n-icon> 图书分类占比</div>
+          </template>
+          <CategoryPieChart :data="categoryData" />
+        </n-card>
+      </n-grid-item>
+    </n-grid>
+
     <n-grid :cols="2" :x-gap="20" style="margin-top: 24px">
       <n-grid-item>
         <n-card class="panel-card" size="small">
@@ -86,9 +105,11 @@ import { NIcon, NTag, NSpace } from 'naive-ui'
 import {
   BookOutline, PeopleOutline, LibraryOutline, GridOutline, AlertCircleOutline,
   SwapHorizontalOutline, ScanOutline, BarChartOutline, FlashOutline,
-  InformationCircleOutline
+  InformationCircleOutline, TrendingUpOutline, PieChartOutline
 } from '@vicons/ionicons5'
 import api from '@/api'
+import MonthlyBorrowChart from '@/components/MonthlyBorrowChart.vue'
+import CategoryPieChart from '@/components/CategoryPieChart.vue'
 
 const colors = ['#5e6ad2', '#f0a020', '#18a058', '#2080f0', '#d03050']
 const icons = [LibraryOutline, SwapHorizontalOutline, PeopleOutline, GridOutline, AlertCircleOutline]
@@ -100,6 +121,9 @@ const stats = ref([
   { label: '分类数', value: '-' },
   { label: '逾期未还', value: '-' }
 ])
+
+const monthlyData = ref<Array<{ month: string; borrows: number }>>([])
+const categoryData = ref<Array<{ name: string; value: number }>>([])
 
 onMounted(async () => {
   try {
@@ -113,10 +137,27 @@ onMounted(async () => {
       { label: '逾期未还', value: data.overdueCount || 0 }
     ]
   } catch (e) { console.error('fetchStats failed:', e) }
-  try{
-    const {data:sysData}=await api.get('/system/info');
-    apiCount.value=sysData.endpoints||0;
-  }catch(e){console.error('fetchSysInfo failed:',e)}
+
+  try {
+    const { data: sysData } = await api.get('/system/info')
+    apiCount.value = sysData.endpoints || 0
+  } catch (e) { console.error('fetchSysInfo failed:', e) }
+
+  try {
+    const { data: monthlyStats } = await api.get('/stats/monthly')
+    monthlyData.value = monthlyStats.map((item: any) => ({
+      month: item.month || '',
+      borrows: item.count || 0
+    }))
+  } catch (e) { console.error('fetchMonthlyStats failed:', e) }
+
+  try {
+    const { data: categories } = await api.get('/categories')
+    categoryData.value = categories.map((cat: any) => ({
+      name: cat.name || '未知',
+      value: cat.bookCount || 0
+    })).filter((c: { value: number }) => c.value > 0)
+  } catch (e) { console.error('fetchCategories failed:', e) }
 })
 </script>
 

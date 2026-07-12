@@ -1,5 +1,6 @@
 package com.library.controller;
 
+import com.library.dto.request.CancelAccountRequest;
 import com.library.dto.request.ChangePasswordRequest;
 import com.library.dto.request.LoginRequest;
 import com.library.dto.request.RegisterRequest;
@@ -67,13 +68,9 @@ public class AuthController {
     }
 
     @PostMapping("/cancel-account")
-    public ResponseEntity<ApiResponse<Void>> cancelAccount(@RequestBody java.util.Map<String, String> body, HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<Void>> cancelAccount(@Valid @RequestBody CancelAccountRequest data, HttpServletRequest request) {
         Integer userId = (Integer) request.getAttribute("userId");
-        String password = body != null ? body.get("password") : null;
-        if (password == null || password.isEmpty()) {
-            throw AppException.badRequest("请输入密码以确认注销");
-        }
-        authService.cancelAccount(userId, password);
+        authService.cancelAccount(userId, data.getPassword());
         return ResponseEntity.ok(ApiResponse.success("账号已注销", null));
     }
 

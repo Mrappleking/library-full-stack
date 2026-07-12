@@ -99,8 +99,10 @@
   </select>
 
   <select id="popularBooks" resultType="map">
-    SELECT b.id, b.title, b.author, b.isbn, b.categoryId, COUNT(*) as borrowCount
-    FROM borrow_records br JOIN books b ON br.bookId = b.id
+    SELECT b.id, b.title, b.author, b.isbn, b.categoryId, COUNT(*) as borrowCount, c.name as categoryName, c.desc as categoryDesc
+    FROM borrow_records br 
+    JOIN books b ON br.bookId = b.id
+    LEFT JOIN categories c ON b.categoryId = c.id
     GROUP BY b.id ORDER BY borrowCount DESC LIMIT 20
   </select>
 
