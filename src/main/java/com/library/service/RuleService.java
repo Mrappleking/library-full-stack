@@ -4,13 +4,20 @@ import com.library.entity.CirculationRule;
 import com.library.mapper.CirculationRuleMapper;
 import org.springframework.stereotype.Service;
 
+import java.util.concurrent.TimeUnit;
+
 @Service
 public class RuleService {
 
     private final CirculationRuleMapper ruleMapper;
+    private final CacheService cacheService;
 
-    public RuleService(CirculationRuleMapper ruleMapper) {
+    private static final String RULE_CACHE_PREFIX = "rule:";
+    private static final int RULE_CACHE_TTL_SECONDS = 3600;
+
+    public RuleService(CirculationRuleMapper ruleMapper, CacheService cacheService) {
         this.ruleMapper = ruleMapper;
+        this.cacheService = cacheService;
     }
 
     /**
@@ -18,21 +25,35 @@ public class RuleService {
      * Falls back: specific rule → default rule → hardcoded defaults.
      */
     public CirculationRule getRule(Integer patronCategoryId, Integer itemTypeId) {
-        if (patronCategoryId != null && itemTypeId != null) {
-            CirculationRule rule = ruleMapper.findByPatronAndItemType(patronCategoryId, itemTypeId);
-            if (rule != null) return rule;
+        String cacheKey = RULE_CACHE_PREFIX + (patronCategoryId != null ? patronCategoryId : "null") + ":" + (itemTypeId != null ? itemTypeId : "null");
+        CirculationRule cached = cacheService.get(cacheKey);
+        if (cached != null) {
+            return cached;
         }
 
-        CirculationRule defaultRule = ruleMapper.findDefault();
-        if (defaultRule != null) return defaultRule;
+        CirculationRule rule = null;
+        if (patronCategoryId != null && itemTypeId != null) {
+            rule = ruleMapper.findByPatronAndItemType(patronCategoryId, itemTypeId);
+        }
 
-        // Hardcoded fallback
-        CirculationRule fallback = new CirculationRule();
-        fallback.setMaxBorrows(5);
-        fallback.setLoanDays(30);
-        fallback.setRenewals(1);
-        fallback.setRenewalDays(15);
-        fallback.setFinePerDay(java.math.BigDecimal.valueOf(0.10));
-        return fallback;
+        if (rule == null) {
+            rule = ruleMapper.findDefault();
+        }
+
+        if (rule == null) {
+            rule = new CirculationRule();
+            rule.setMaxBorrows(5);
+            rule.setLoanDays(30);
+            rule.setRenewals(1);
+            rule.setRenewalDays(15);
+            rule.setFinePerDay(java.math.BigDecimal.valueOf(0.10));
+        }
+
+        cacheService.set(cacheKey, rule, RULE_CACHE_TTL_SECONDS, TimeUnit.SECONDS);
+        return rule;
+    }
+
+    public void invalidateCache() {
+        cacheService.deletePattern(RULE_CACHE_PREFIX + "*");
     }
 }

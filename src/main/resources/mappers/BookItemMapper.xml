@@ -17,6 +17,10 @@
     SELECT * FROM book_items WHERE id = #{id}
   </select>
 
+  <select id="findByIdForUpdate" resultMap="bookItemResult">
+    SELECT * FROM book_items WHERE id = #{id} FOR UPDATE
+  </select>
+
   <select id="findByBarcode" resultMap="bookItemWithBook">
     SELECT * FROM book_items WHERE barcode = #{barcode}
   </select>

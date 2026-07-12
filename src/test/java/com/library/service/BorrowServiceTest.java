@@ -23,13 +23,15 @@ class BorrowServiceTest extends AbstractServiceTest {
 
     @BeforeEach
     void setUp() {
-        ruleService = new RuleService(circulationRuleMapper);
-        fineService = new FineService(fineMapper, userMapper, auditLogMapper);
-        bookService = new BookService(bookMapper, bookItemMapper, categoryMapper, borrowRecordMapper, auditLogMapper);
-        holdService = new HoldService(holdMapper, bookMapper, bookItemMapper, bookService, auditLogMapper);
+        CacheService cacheService = mock(CacheService.class);
+        AuditService auditService = new AuditService(auditLogMapper);
+        ruleService = new RuleService(circulationRuleMapper, cacheService);
+        fineService = new FineService(fineMapper, userMapper, auditService);
+        bookService = new BookService(bookMapper, bookItemMapper, categoryMapper, borrowRecordMapper, auditService, cacheService);
+        holdService = new HoldService(holdMapper, bookMapper, bookItemMapper, bookService, auditService);
         borrowService = new BorrowService(
                 borrowRecordMapper, bookMapper, bookItemMapper, userMapper,
-                auditLogMapper, ruleService, fineService,
+                auditService, ruleService, fineService,
                 holdService, bookService, holdMapper);
     }
 
@@ -69,6 +71,7 @@ class BorrowServiceTest extends AbstractServiceTest {
         when(userMapper.findById(1)).thenReturn(user);
         when(bookItemMapper.findFirstAvailableByBookId(1)).thenReturn(item);
         when(bookItemMapper.findById(10)).thenReturn(item);
+        when(bookItemMapper.findByIdForUpdate(10)).thenReturn(item);
         when(bookMapper.findById(1)).thenReturn(book);
         when(circulationRuleMapper.findDefault()).thenReturn(rule);
         when(borrowRecordMapper.findActiveByUserAndBook(1, 1)).thenReturn(null);

@@ -38,8 +38,8 @@ public class OverdueFineScheduler {
     /**
      * Runs daily at 2:00 AM to auto-create fines for overdue borrows.
      * Idempotent: skips borrow records that already have a fine.
+     * Note: Transaction handled per-record in fineService.createFine()
      */
-    @Transactional
     @Scheduled(cron = "0 0 2 * * ?")
     public void autoFineOverdueBorrows() {
         log.info("Starting overdue fine auto-creation task");

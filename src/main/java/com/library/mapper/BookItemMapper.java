@@ -9,6 +9,7 @@ import java.util.Map;
 @Mapper
 public interface BookItemMapper {
     BookItem findById(Integer id);
+    BookItem findByIdForUpdate(Integer id);
     BookItem findByBarcode(String barcode);
     List<BookItem> findByBookId(Integer bookId);
     BookItem findFirstAvailableByBookId(Integer bookId);

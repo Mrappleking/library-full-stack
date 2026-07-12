@@ -19,7 +19,8 @@ class FineServiceTest extends AbstractServiceTest {
 
     @BeforeEach
     void setUp() {
-        fineService = new FineService(fineMapper, userMapper, auditLogMapper);
+        AuditService auditService = new AuditService(auditLogMapper);
+        fineService = new FineService(fineMapper, userMapper, auditService);
     }
 
     @Test

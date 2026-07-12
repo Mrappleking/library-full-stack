@@ -25,7 +25,8 @@ class AuthServiceTest extends AbstractServiceTest {
     @BeforeEach
     void setUp() {
         passwordEncoder = new BCryptPasswordEncoder();
-        authService = new AuthService(userMapper, passwordEncoder, jwtUtil, auditLogMapper, borrowRecordMapper, fineMapper);
+        AuditService auditService = new AuditService(auditLogMapper);
+        authService = new AuthService(userMapper, passwordEncoder, jwtUtil, auditService, borrowRecordMapper, fineMapper);
     }
 
     @Test

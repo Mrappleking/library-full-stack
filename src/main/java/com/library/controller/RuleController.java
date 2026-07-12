@@ -8,6 +8,7 @@ import com.library.entity.ItemType;
 import com.library.mapper.PatronCategoryMapper;
 import com.library.mapper.ItemTypeMapper;
 import com.library.mapper.CirculationRuleMapper;
+import com.library.service.RuleService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,11 +22,13 @@ public class RuleController {
     private final PatronCategoryMapper patronCategoryMapper;
     private final ItemTypeMapper itemTypeMapper;
     private final CirculationRuleMapper ruleMapper;
+    private final RuleService ruleService;
 
-    public RuleController(PatronCategoryMapper patronCategoryMapper, ItemTypeMapper itemTypeMapper, CirculationRuleMapper ruleMapper) {
+    public RuleController(PatronCategoryMapper patronCategoryMapper, ItemTypeMapper itemTypeMapper, CirculationRuleMapper ruleMapper, RuleService ruleService) {
         this.patronCategoryMapper = patronCategoryMapper;
         this.itemTypeMapper = itemTypeMapper;
         this.ruleMapper = ruleMapper;
+        this.ruleService = ruleService;
     }
 
     @GetMapping
@@ -54,6 +57,7 @@ public class RuleController {
         rule.setRenewalDays(data.getRenewalDays());
         rule.setFinePerDay(data.getFinePerDay());
         ruleMapper.upsert(rule);
+        ruleService.invalidateCache();
         return ResponseEntity.ok(ApiResponse.success("规则已更新", rule));
     }
 }

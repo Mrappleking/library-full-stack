@@ -2,6 +2,7 @@ package com.library.controller;
 
 import com.library.dto.request.BookCreateRequest;
 import com.library.dto.request.BookUpdateRequest;
+import com.library.dto.request.BookListRequest;
 import com.library.dto.response.ApiResponse;
 import com.library.dto.response.BookDetailResponse;
 import com.library.entity.Book;
@@ -26,19 +27,29 @@ public class BookController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<Map<String, Object>>> list(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int limit,
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String category,
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "20") Integer limit,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Integer categoryId,
             @RequestParam(required = false) String campus,
-            @RequestParam(required = false) String language) {
-        Map<String, Object> params = new HashMap<>();
-        params.put("page", page);
-        params.put("limit", limit);
-        params.put("keyword", keyword);
-        params.put("category", category);
-        params.put("campus", campus);
-        params.put("language", language);
+            @RequestParam(required = false) String language,
+            @RequestParam(required = false) Integer yearMin,
+            @RequestParam(required = false) Integer yearMax,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) String sortOrder) {
+        BookListRequest params = new BookListRequest();
+        params.setPage(page);
+        params.setLimit(limit);
+        params.setSearch(search);
+        params.setCategoryId(categoryId);
+        params.setCampus(campus);
+        params.setLanguage(language);
+        params.setYearMin(yearMin);
+        params.setYearMax(yearMax);
+        params.setLocation(location);
+        params.setSortBy(sortBy);
+        params.setSortOrder(sortOrder);
         return ResponseEntity.ok(ApiResponse.success(bookService.list(params)));
     }
 
@@ -65,22 +76,7 @@ public class BookController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<Book>> update(@PathVariable Integer id, @RequestBody BookUpdateRequest data) {
-        Map<String, Object> params = new HashMap<>();
-        if (data.getTitle() != null) params.put("title", data.getTitle());
-        if (data.getAuthor() != null) params.put("author", data.getAuthor());
-        if (data.getIsbn() != null) params.put("isbn", data.getIsbn());
-        if (data.getPublisher() != null) params.put("publisher", data.getPublisher());
-        if (data.getYear() != null) params.put("year", data.getYear());
-        if (data.getTotal() != null) params.put("total", data.getTotal());
-        if (data.getLocation() != null) params.put("location", data.getLocation());
-        if (data.getCover() != null) params.put("cover", data.getCover());
-        if (data.getDesc() != null) params.put("desc", data.getDesc());
-        if (data.getClcNumber() != null) params.put("clcNumber", data.getClcNumber());
-        if (data.getPhysicalDesc() != null) params.put("physicalDesc", data.getPhysicalDesc());
-        if (data.getLanguage() != null) params.put("language", data.getLanguage());
-        if (data.getCountry() != null) params.put("country", data.getCountry());
-        if (data.getCategoryId() != null) params.put("categoryId", data.getCategoryId());
-        return ResponseEntity.ok(ApiResponse.success("图书更新成功", bookService.update(id, params)));
+        return ResponseEntity.ok(ApiResponse.success("图书更新成功", bookService.update(id, data)));
     }
 
     @DeleteMapping("/{id}")

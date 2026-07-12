@@ -6,6 +6,7 @@ import com.library.entity.PatronCategory;
 import com.library.mapper.CirculationRuleMapper;
 import com.library.mapper.ItemTypeMapper;
 import com.library.mapper.PatronCategoryMapper;
+import com.library.service.CacheService;
 import com.library.util.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,6 +39,8 @@ class RuleControllerTest {
     private PatronCategoryMapper patronCategoryMapper;
     @MockBean
     private ItemTypeMapper itemTypeMapper;
+    @MockBean
+    private CacheService cacheService;
 
     @MockBean
     private JwtUtil jwtUtil;
