@@ -34,6 +34,7 @@ class AuthServiceTest extends AbstractServiceTest {
         RegisterRequest req = new RegisterRequest();
         req.setUsername("testuser");
         req.setPassword("pass123");
+        req.setConfirmPassword("pass123");
         req.setName("Test User");
 
         when(jwtUtil.generateToken(anyInt(), eq("reader"), anyInt())).thenReturn("test-token");
@@ -71,6 +72,7 @@ class AuthServiceTest extends AbstractServiceTest {
         RegisterRequest req = new RegisterRequest();
         req.setUsername("existing");
         req.setPassword("pass123");
+        req.setConfirmPassword("pass123");
         req.setName("Existing User");
 
         doThrow(new DataIntegrityViolationException("Duplicate entry"))

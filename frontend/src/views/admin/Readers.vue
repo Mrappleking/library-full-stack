@@ -2,6 +2,26 @@
   <div>
     <n-h1 prefix="bar" style="margin-bottom: 20px;"><n-text type="primary">读者管理</n-text></n-h1>
 
+    <!-- Search Bar -->
+    <n-space style="margin-bottom: 16px;" align="center">
+      <n-input
+        v-model:value="searchKeyword"
+        placeholder="搜索用户名、姓名、手机号"
+        clearable
+        style="width: 280px;"
+        @keyup.enter="doSearch"
+      />
+      <n-select
+        v-model:value="searchCategory"
+        :options="categoryOptions"
+        placeholder="读者类型"
+        clearable
+        style="width: 160px;"
+      />
+      <n-button type="primary" @click="doSearch">搜索</n-button>
+      <n-button @click="resetSearch">重置</n-button>
+    </n-space>
+
     <n-data-table
       :columns="columns"
       :data="readers"
@@ -9,6 +29,11 @@
       :row-key="(r: any) => r.id"
       :expanded-row-keys="expandedKeys"
       @update:expanded-row-keys="onExpand"
+      :pagination="pagination"
+      @update:page="onPageChange"
+      @update:page-size="onPageSizeChange"
+      @update:sorter="handleSorterChange"
+      :bordered="true"
     />
 
     <n-modal v-model:show="showModal" title="编辑读者" preset="card" style="width: 420px;">
@@ -28,10 +53,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, h } from 'vue'
-import { useMessage, NButton, NTag, useDialog } from 'naive-ui'
+import { ref, reactive, computed, onMounted, h } from 'vue'
+import { useMessage, NButton, NTag, useDialog, type DataTableColumn } from 'naive-ui'
 import api from '@/api'
-import type { DataTableColumn } from 'naive-ui'
 
 const message = useMessage()
 const dialog = useDialog()
@@ -39,51 +63,173 @@ const readers = ref<any[]>([])
 const loading = ref(false)
 const expandedKeys = ref<number[]>([])
 
-const columns: DataTableColumn[] = [
+// ===== 搜索 & 分页 & 排序状态 =====
+const searchKeyword = ref('')
+const searchCategory = ref<number | null>(null)
+const categoryOptions = ref<Array<{ label: string; value: number }>>([])
+const categoryMap = ref<Record<number, string>>({})
+
+const sortBy = ref('createdAt')
+const sortDir = ref('desc')
+
+const pagination = reactive({
+  page: 1,
+  pageSize: 10,
+  showSizePicker: true,
+  pageSizes: [5, 10, 20, 50],
+  itemCount: 0,
+  prefix: (info: any) => `共 ${info.itemCount} 条`
+})
+
+// ===== 表格列定义 =====
+const columns = computed<DataTableColumn[]>(() => [
   { type: 'expand' as any, renderExpand: (row: any) => h(ExpandPanel, { readerId: row.id }) },
-  { title: '用户名', key: 'username', width: 120 },
-  { title: '姓名', key: 'name', width: 100 },
+  {
+    title: '用户名', key: 'username', width: 120,
+    sorter: true,
+    sortOrder: sortBy.value === 'username' ? (sortDir.value === 'asc' ? 'ascend' : 'descend') : false
+  },
+  {
+    title: '姓名', key: 'name', width: 100,
+    sorter: true,
+    sortOrder: sortBy.value === 'name' ? (sortDir.value === 'asc' ? 'ascend' : 'descend') : false
+  },
   { title: '手机', key: 'phone', width: 130 },
   { title: '邮箱', key: 'email', ellipsis: { tooltip: true } },
-  { title: '注册时间', key: 'createdAt', width: 160, render: (r: any) => new Date(r.createdAt).toLocaleDateString('zh-CN') },
   {
-    title: '操作', key: 'actions', width: 160,
+    title: '读者类型', key: 'patronCategoryId', width: 90,
+    render: (r: any) => r.patronCategoryId ? (categoryMap.value[r.patronCategoryId] || `类型#${r.patronCategoryId}`) : '-',
+    sorter: true,
+    sortOrder: sortBy.value === 'patronCategoryId' ? (sortDir.value === 'asc' ? 'ascend' : 'descend') : false
+  },
+  {
+    title: '注册时间', key: 'createdAt', width: 100,
+    render: (r: any) => new Date(r.createdAt).toLocaleDateString('zh-CN'),
+    sorter: true,
+    sortOrder: sortBy.value === 'createdAt' ? (sortDir.value === 'asc' ? 'ascend' : 'descend') : false
+  },
+  {
+    title: '操作', key: 'actions', width: 240,
     render(row: any) {
       return h('span', { style: 'display:flex;gap:6px;' }, [
         h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑'),
+        h(NButton, { size: 'small', onClick: () => handleResetPassword(row) }, () => '重置密码'),
         h(NButton, { size: 'small', type: 'error', onClick: () => handleAdminDelete(row) }, () => '强制删除')
       ])
     }
   }
-]
+])
 
+// ===== 获取数据 =====
 async function fetchReaders() {
   loading.value = true
   try {
-    const { data } = await api.get('/readers')
-    readers.value = data || []
+    const { data } = await api.get('/readers', {
+      params: {
+        page: pagination.page,
+        limit: pagination.pageSize,
+        keyword: searchKeyword.value || undefined,
+        patronCategoryId: searchCategory.value || undefined,
+        sortBy: sortBy.value,
+        sortDir: sortDir.value
+      }
+    })
+    readers.value = data.data || []
+    pagination.itemCount = data.total || 0
   } catch { /* ignore */ }
   loading.value = false
 }
 
+// ===== 搜索 =====
+function doSearch() {
+  pagination.page = 1
+  fetchReaders()
+}
+
+function resetSearch() {
+  searchKeyword.value = ''
+  searchCategory.value = null
+  pagination.page = 1
+  fetchReaders()
+}
+
+// ===== 分页 =====
+function onPageChange(page: number) {
+  pagination.page = page
+  fetchReaders()
+}
+
+function onPageSizeChange(size: number) {
+  pagination.pageSize = size
+  pagination.page = 1
+  fetchReaders()
+}
+
+// ===== 排序 =====
+function handleSorterChange(sorter: { columnKey: string; order: string } | null) {
+  if (sorter && sorter.order) {
+    sortBy.value = sorter.columnKey
+    sortDir.value = sorter.order === 'ascend' ? 'asc' : 'desc'
+  } else {
+    sortBy.value = 'createdAt'
+    sortDir.value = 'desc'
+  }
+  pagination.page = 1
+  fetchReaders()
+}
+
+// ===== 加载读者类型选项 =====
+async function loadCategories() {
+  try {
+    const { data } = await api.get('/rules/patron-categories')
+    categoryOptions.value = data.map((c: any) => ({ label: c.name, value: c.id }))
+    const map: Record<number, string> = {}
+    data.forEach((c: any) => { map[c.id] = c.name })
+    categoryMap.value = map
+  } catch { /* ignore */ }
+}
+
+// ===== 展开行（借阅记录） =====
 function onExpand(keys: number[]) { expandedKeys.value = keys }
 
+// ===== 编辑弹窗 =====
 const showModal = ref(false)
 const saving = ref(false)
 const form = reactive<{ id: number | null; name: string; phone: string; email: string }>({ id: null, name: '', phone: '', email: '' })
 
-function openEdit(row: any) { Object.assign(form, { id: row.id, name: row.name, phone: row.phone, email: row.email }); showModal.value = true }
+function openEdit(row: any) {
+  Object.assign(form, { id: row.id, name: row.name, phone: row.phone, email: row.email })
+  showModal.value = true
+}
 
 async function handleSave() {
   saving.value = true
   try {
     await api.put(`/readers/${form.id}`, { name: form.name, phone: form.phone, email: form.email })
     message.success('已更新')
-    showModal.value = false; fetchReaders()
+    showModal.value = false
+    fetchReaders()
   } catch (e: unknown) { message.error((e as Error).message) }
   saving.value = false
 }
 
+// ===== 重置密码 =====
+function handleResetPassword(row: any) {
+  dialog.warning({
+    title: '确认重置密码',
+    content: `确定要将用户「${row.name}」(${row.username}) 的密码重置为默认密码 "reader123" 吗？`,
+    positiveText: '确定重置',
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      try {
+        await api.put(`/readers/${row.id}/reset-password`)
+        message.success(`已重置用户「${row.name}」的密码`)
+      } catch (e: unknown) { message.error((e as Error).message) }
+    }
+  })
+}
+
+// ===== 强制删除 =====
 async function handleAdminDelete(row: any) {
   dialog.warning({
     title: '确认强制删除',
@@ -100,6 +246,7 @@ async function handleAdminDelete(row: any) {
   })
 }
 
+// ===== 展开面板 =====
 const ExpandPanel = {
   props: { readerId: Number },
   setup(props: any) {
@@ -125,5 +272,8 @@ const ExpandPanel = {
   }
 }
 
-onMounted(() => fetchReaders())
+onMounted(() => {
+  loadCategories()
+  fetchReaders()
+})
 </script>

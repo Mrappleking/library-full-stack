@@ -35,9 +35,12 @@
       <n-modal v-model:show="showRegister" preset="card" title="读者注册" style="width:420px">
         <n-form ref="regFormRef" :model="reg" :rules="regRules" label-placement="top">
           <n-form-item path="username" label="用户名"><n-input v-model:value="reg.username" placeholder="用户名" /></n-form-item>
-          <n-form-item path="password" label="密码"><n-input v-model:value="reg.password" type="password" placeholder="密码（至少6位）" /></n-form-item>
+          <n-form-item path="password" label="密码">
+            <n-input v-model:value="reg.password" type="password" placeholder="密码（至少6位）" />
+          </n-form-item>
+          <n-form-item path="confirmPassword" label="确认密码"><n-input v-model:value="reg.confirmPassword" type="password" placeholder="再次输入密码" /></n-form-item>
           <n-form-item path="name" label="真实姓名"><n-input v-model:value="reg.name" placeholder="真实姓名" /></n-form-item>
-          <n-form-item path="phone" label="手机号"><n-input v-model:value="reg.phone" placeholder="手机号（可选）" /></n-form-item>
+          <n-form-item path="phone" label="手机号"><n-input v-model:value="reg.phone" placeholder="手机号（可选）" maxlength="11" /></n-form-item>
         </n-form>
         <template #footer><n-space justify="end"><n-button @click="showRegister=false">取消</n-button><n-button type="primary" :loading="regLoading" @click="handleRegister">注册</n-button></n-space></template>
       </n-modal>
@@ -48,7 +51,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useMessage, NIcon, darkTheme } from 'naive-ui'
+import { useMessage, NIcon, darkTheme, type FormInst } from 'naive-ui'
 import { PersonOutline, LockClosedOutline } from '@vicons/ionicons5'
 import api from '../../api'
 import LoginBg from '../../components/LoginBg.vue'
@@ -64,10 +67,14 @@ async function handleLogin() {
   catch (e: unknown) { message.error((e as Error).message || '登录失败') } finally { loading.value = false }
 }
 const showRegister = ref(false); const regLoading = ref(false)
-const reg = ref({ username: '', password: '', name: '', phone: '' })
-const regRules = { username: [{ required: true, message: '请输入用户名' }], password: [{ required: true, min: 6, message: '密码至少6位' }], name: [{ required: true, message: '请输入姓名' }] }
+const regFormRef = ref<FormInst | null>(null)
+const reg = ref({ username: '', password: '', name: '', phone: '', confirmPassword: '' })
+const regRules = { username: [{ required: true, message: '请输入用户名' }], password: [{ required: true, min: 6, message: '密码至少6位' }], name: [{ required: true, message: '请输入姓名' }], phone: [{ pattern: /^(1[3-9]\d{9})?$/, message: '请输入有效的11位手机号', trigger: 'blur' }], confirmPassword: [{ required: true, message: '请确认密码' }, { validator: (_rule: any, value: string) => value === reg.value.password, message: '两次输入的密码不一致', trigger: 'blur' }] }
+
+
+
 async function handleRegister() {
-  if (!reg.value.username || !reg.value.password || !reg.value.name) { message.warning('请填写必填项'); return }
+  try { await regFormRef.value?.validate() } catch { return }
   regLoading.value = true
   try { const { data } = await api.post<LoginResponse>('/auth/register', reg.value); useAuthStore().login(data); showRegister.value = false; message.success('注册成功'); router.push('/reader/books') }
   catch (e: unknown) { message.error((e as Error).message || '注册失败') } finally { regLoading.value = false }

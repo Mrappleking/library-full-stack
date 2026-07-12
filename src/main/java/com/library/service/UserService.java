@@ -7,7 +7,9 @@ import com.library.mapper.UserMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -49,6 +51,27 @@ public class UserService {
         user.setEmail(email != null ? email : user.getEmail());
         userMapper.update(user);
         return toProfile(user);
+    }
+
+    /**
+     * 分页搜索读者，支持关键词搜索、读者类型筛选和排序
+     */
+    public Map<String, Object> searchReaders(String keyword, Integer patronCategoryId,
+                                              int page, int limit,
+                                              String sortBy, String sortDir) {
+        int offset = (page - 1) * limit;
+        List<User> users = userMapper.searchReaders(keyword, patronCategoryId, offset, limit, sortBy, sortDir);
+        long total = userMapper.countSearchReaders(keyword, patronCategoryId);
+        List<UserProfile> profiles = users.stream().map(this::toProfile).collect(Collectors.toList());
+        int pages = (int) Math.ceil((double) total / limit);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("data", profiles);
+        result.put("total", total);
+        result.put("page", page);
+        result.put("limit", limit);
+        result.put("pages", pages);
+        return result;
     }
 
     /**

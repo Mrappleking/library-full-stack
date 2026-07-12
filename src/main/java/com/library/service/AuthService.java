@@ -1,5 +1,6 @@
 package com.library.service;
 
+import com.library.dto.request.ChangePasswordRequest;
 import com.library.dto.request.RegisterRequest;
 import com.library.dto.response.LoginResponse;
 import com.library.dto.response.UserProfile;
@@ -43,6 +44,14 @@ public class AuthService {
 
     @Transactional
     public LoginResponse register(RegisterRequest data) {
+        // 确认密码校验
+        if (!data.getPassword().equals(data.getConfirmPassword())) {
+            throw AppException.badRequest("两次输入的密码不一致");
+        }
+        if (data.getPassword().length() < 6) {
+            throw AppException.badRequest("密码至少6位");
+        }
+
         User user = new User();
         user.setUsername(data.getUsername());
         user.setPassword(passwordEncoder.encode(data.getPassword()));
@@ -107,13 +116,19 @@ public class AuthService {
     }
 
     @Transactional
-    public void changePassword(Integer userId, String oldPassword, String newPassword) {
+    public void changePassword(Integer userId, ChangePasswordRequest data) {
         User user = userMapper.findById(userId);
         if (user == null) throw AppException.notFound("用户不存在");
-        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+        if (!passwordEncoder.matches(data.getOldPassword(), user.getPassword())) {
             throw AppException.badRequest("原密码错误");
         }
-        user.setPassword(passwordEncoder.encode(newPassword));
+        if (!data.getNewPassword().equals(data.getConfirmPassword())) {
+            throw AppException.badRequest("两次输入的密码不一致");
+        }
+        if (data.getNewPassword().length() < 6) {
+            throw AppException.badRequest("密码至少6位");
+        }
+        user.setPassword(passwordEncoder.encode(data.getNewPassword()));
         userMapper.updatePassword(user);
         audit("changePassword", "user:" + userId, "Password changed");
     }
@@ -175,6 +190,16 @@ public class AuthService {
         }
         userMapper.deleteById(userId);
         audit("adminDeleteUser", "user:" + userId, "Admin deleted user: " + user.getUsername());
+    }
+
+    @Transactional
+    public void resetPassword(Integer userId) {
+        User user = userMapper.findById(userId);
+        if (user == null) throw AppException.notFound("用户不存在");
+        String defaultPassword = "reader123";
+        user.setPassword(passwordEncoder.encode(defaultPassword));
+        userMapper.updatePassword(user);
+        audit("resetPassword", "user:" + userId, "Password reset by admin for: " + user.getUsername());
     }
 
     private UserProfile toProfile(User user) {

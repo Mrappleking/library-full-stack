@@ -13,4 +13,7 @@ public class ChangePasswordRequest {
     @NotBlank(message = "新密码不能为空")
     @Size(min = 6, message = "新密码至少6位")
     private String newPassword;
+
+    @NotBlank(message = "请确认密码")
+    private String confirmPassword;
 }
