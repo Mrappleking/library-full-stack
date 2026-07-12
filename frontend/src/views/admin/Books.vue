@@ -86,7 +86,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, h } from 'vue'
 import { useMessage, NTag, NButton, NPopconfirm, NUpload, NSpin } from 'naive-ui'
-import api from '@/api'
+import { bookApi, categoryApi } from '@/api'
 import type { BookSummary, BookItemSummary } from '@/types/api'
 import type { DataTableColumn } from 'naive-ui'
 
