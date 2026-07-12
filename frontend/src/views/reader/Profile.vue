@@ -146,7 +146,7 @@ async function handleChangePassword() {
   } catch { return }
   pwdSaving.value = true
   try {
-    await api.put('/auth/password', { oldPassword: pwdForm.oldPassword, newPassword: pwdForm.newPassword })
+    await api.put('/auth/password', { oldPassword: pwdForm.oldPassword, newPassword: pwdForm.newPassword, confirmPassword: pwdForm.confirmPassword })
     message.success('密码修改成功')
     pwdForm.oldPassword = ''
     pwdForm.newPassword = ''

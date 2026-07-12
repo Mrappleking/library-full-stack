@@ -62,7 +62,7 @@ public class AuthController {
     @PutMapping("/password")
     public ResponseEntity<Void> changePassword(@Valid @RequestBody ChangePasswordRequest data, HttpServletRequest request) {
         Integer userId = (Integer) request.getAttribute("userId");
-        authService.changePassword(userId, data.getOldPassword(), data.getNewPassword());
+        authService.changePassword(userId, data);
         return ResponseEntity.ok().build();
     }
 

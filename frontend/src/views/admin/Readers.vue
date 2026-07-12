@@ -47,10 +47,11 @@ const columns: DataTableColumn[] = [
   { title: '邮箱', key: 'email', ellipsis: { tooltip: true } },
   { title: '注册时间', key: 'createdAt', width: 160, render: (r: any) => new Date(r.createdAt).toLocaleDateString('zh-CN') },
   {
-    title: '操作', key: 'actions', width: 160,
+    title: '操作', key: 'actions', width: 240,
     render(row: any) {
       return h('span', { style: 'display:flex;gap:6px;' }, [
         h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑'),
+        h(NButton, { size: 'small', onClick: () => handleResetPassword(row) }, () => '重置密码'),
         h(NButton, { size: 'small', type: 'error', onClick: () => handleAdminDelete(row) }, () => '强制删除')
       ])
     }
@@ -82,6 +83,21 @@ async function handleSave() {
     showModal.value = false; fetchReaders()
   } catch (e: unknown) { message.error((e as Error).message) }
   saving.value = false
+}
+
+function handleResetPassword(row: any) {
+  dialog.warning({
+    title: '确认重置密码',
+    content: `确定要将用户「${row.name}」(${row.username}) 的密码重置为默认密码 "reader123" 吗？`,
+    positiveText: '确定重置',
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      try {
+        await api.put(`/readers/${row.id}/reset-password`)
+        message.success(`已重置用户「${row.name}」的密码`)
+      } catch (e: unknown) { message.error((e as Error).message) }
+    }
+  })
 }
 
 async function handleAdminDelete(row: any) {

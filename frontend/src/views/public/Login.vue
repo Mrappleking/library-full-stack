@@ -50,6 +50,7 @@
           </n-form-item>
           <n-form-item path="name" label="真实姓名"><n-input v-model:value="reg.name" placeholder="真实姓名" /></n-form-item>
           <n-form-item path="phone" label="手机号"><n-input v-model:value="reg.phone" placeholder="手机号（可选）" maxlength="11" /></n-form-item>
+          <n-form-item path="confirmPassword" label="确认密码"><n-input v-model:value="reg.confirmPassword" type="password" placeholder="再次输入密码" /></n-form-item>
         </n-form>
         <template #footer><n-space justify="end"><n-button @click="showRegister=false">取消</n-button><n-button type="primary" :loading="regLoading" @click="handleRegister">注册</n-button></n-space></template>
       </n-modal>
@@ -77,8 +78,8 @@ async function handleLogin() {
 }
 const showRegister = ref(false); const regLoading = ref(false)
 const regFormRef = ref<FormInst | null>(null)
-const reg = ref({ username: '', password: '', name: '', phone: '' })
-const regRules = { username: [{ required: true, message: '请输入用户名' }], password: [{ required: true, min: 6, message: '密码至少6位' }], name: [{ required: true, message: '请输入姓名' }], phone: [{ pattern: /^(1[3-9]\d{9})?$/, message: '请输入有效的11位手机号', trigger: 'blur' }] }
+const reg = ref({ username: '', password: '', name: '', phone: '', confirmPassword: '' })
+const regRules = { username: [{ required: true, message: '请输入用户名' }], password: [{ required: true, min: 6, message: '密码至少6位' }], name: [{ required: true, message: '请输入姓名' }], phone: [{ pattern: /^(1[3-9]\d{9})?$/, message: '请输入有效的11位手机号', trigger: 'blur' }], confirmPassword: [{ required: true, message: '请确认密码' }, { validator: (_rule: any, value: string) => value === reg.value.password, message: '两次输入的密码不一致', trigger: 'blur' }] }
 
 const pwdScore = computed(() => {
   const pwd = reg.value.password

@@ -2,6 +2,8 @@ package com.library.controller;
 
 import com.library.dto.request.ReaderUpdateRequest;
 import com.library.dto.response.UserProfile;
+import com.library.exception.AppException;
+import com.library.service.AuthService;
 import com.library.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
@@ -15,9 +17,11 @@ import java.util.stream.Collectors;
 public class ReaderController {
 
     private final UserService userService;
+    private final AuthService authService;
 
-    public ReaderController(UserService userService) {
+    public ReaderController(UserService userService, AuthService authService) {
         this.userService = userService;
+        this.authService = authService;
     }
 
     @GetMapping
@@ -45,5 +49,15 @@ public class ReaderController {
         Integer userId = (Integer) request.getAttribute("userId");
         userService.update(userId, data.getName(), data.getPhone(), data.getEmail());
         return ResponseEntity.ok(userService.findById(userId));
+    }
+
+    @PutMapping("/{id}/reset-password")
+    public ResponseEntity<Void> resetPassword(@PathVariable Integer id, HttpServletRequest request) {
+        String role = (String) request.getAttribute("userRole");
+        if (!"admin".equals(role)) {
+            throw AppException.forbidden("仅管理员可执行此操作");
+        }
+        authService.resetPassword(id);
+        return ResponseEntity.ok().build();
     }
 }
