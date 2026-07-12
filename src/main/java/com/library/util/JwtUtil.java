@@ -1,9 +1,12 @@
 package com.library.util;
 
 import io.jsonwebtoken.*;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 @Component
@@ -15,14 +18,30 @@ public class JwtUtil {
     @Value("${app.jwt.expiration-ms}")
     private long expirationMs;
 
+    private SecretKey getSigningKey() {
+        // 确保密钥长度至少为 256 位（HS512 算法要求）
+        byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+        if (keyBytes.length < 64) {
+            // 如果密钥太短，扩展到足够长度
+            byte[] extendedKey = new byte[64];
+            System.arraycopy(keyBytes, 0, extendedKey, 0, keyBytes.length);
+            // 用密钥本身填充剩余部分
+            for (int i = keyBytes.length; i < 64; i++) {
+                extendedKey[i] = keyBytes[i % keyBytes.length];
+            }
+            keyBytes = extendedKey;
+        }
+        return Keys.hmacShaKeyFor(keyBytes);
+    }
+
     public String generateToken(int userId, String role, int tokenVersion) {
         return Jwts.builder()
-                .setSubject(String.valueOf(userId))
+                .subject(String.valueOf(userId))
                 .claim("role", role)
                 .claim("tv", tokenVersion)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + expirationMs))
-                .signWith(SignatureAlgorithm.HS512, secret)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + expirationMs))
+                .signWith(getSigningKey())
                 .compact();
     }
 
@@ -56,8 +75,9 @@ public class JwtUtil {
 
     private Claims parseToken(String token) {
         return Jwts.parser()
-                .setSigningKey(secret)
-                .parseClaimsJws(token)
-                .getBody();
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 }

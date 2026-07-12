@@ -2,14 +2,16 @@
   <n-config-provider :theme-overrides="themeStore.themeOverrides" :locale="zhCN" :date-locale="dateZhCN">
     <n-message-provider>
       <n-dialog-provider>
-        <router-view v-slot="{ Component }">
-          <transition name="fade-slide" mode="out-in">
-            <keep-alive>
-              <component :is="Component" />
-            </keep-alive>
-          </transition>
-        </router-view>
-        <ToastContainer />
+        <n-notification-provider>
+          <router-view v-slot="{ Component }">
+            <transition name="fade-slide" mode="out-in">
+              <keep-alive>
+                <component :is="Component" />
+              </keep-alive>
+            </transition>
+          </router-view>
+          <ToastContainer />
+        </n-notification-provider>
       </n-dialog-provider>
     </n-message-provider>
   </n-config-provider>
@@ -29,36 +31,59 @@ onMounted(() => {
 </script>
 
 <style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 html.dark {
-  background-color: #1a1a1a;
+  background-color: #0f172a;
+  color-scheme: dark;
 }
 
 html:not(.dark) {
-  background-color: #f5f5f5;
+  background-color: #f9fafb;
+  color-scheme: light;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
 }
 
 * {
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+              color 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+              border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.3s ease;
 }
 
 .fade-slide-enter-active,
 .fade-slide-leave-active {
-  transition: all 0.35s ease;
+  transition: all 0.4s cubic-bezier(0.2, 0.8, 0.3, 1);
 }
 
 .fade-slide-enter-from {
   opacity: 0;
-  transform: translateY(20px) scale(0.98);
+  transform: translateY(25px) scale(0.96);
+  filter: blur(4px);
 }
 
 .fade-slide-leave-to {
   opacity: 0;
-  transform: translateY(-20px) scale(0.98);
+  transform: translateY(-25px) scale(0.96);
+  filter: blur(4px);
 }
 
 .fade-slide-enter-to,
 .fade-slide-leave-from {
   opacity: 1;
   transform: translateY(0) scale(1);
+  filter: blur(0);
 }
 </style>

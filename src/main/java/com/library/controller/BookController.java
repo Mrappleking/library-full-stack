@@ -75,7 +75,7 @@ public class BookController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<Book>> update(@PathVariable Integer id, @RequestBody BookUpdateRequest data) {
+    public ResponseEntity<ApiResponse<Book>> update(@PathVariable Integer id, @Valid @RequestBody BookUpdateRequest data) {
         return ResponseEntity.ok(ApiResponse.success("图书更新成功", bookService.update(id, data)));
     }
 

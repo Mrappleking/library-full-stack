@@ -1,9 +1,18 @@
 <template>
   <n-card :bordered="false" hoverable class="book-card" @click="$emit('click')">
     <div class="cover-wrap">
+      <div class="cover-glow"></div>
       <img v-if="book.cover" :src="book.cover" class="cover-img" loading="lazy" />
       <div v-else class="cover-placeholder">
         <span class="cover-letter">{{ book.title?.[0] || '?' }}</span>
+      </div>
+      <div class="cover-overlay">
+        <div class="overlay-content">
+          <n-icon size="28">
+            <eye-outline />
+          </n-icon>
+          <span class="view-text">查看详情</span>
+        </div>
       </div>
     </div>
     <div class="info">
@@ -20,7 +29,8 @@
 </template>
 
 <script setup lang="ts">
-import { NCard, NEllipsis } from 'naive-ui'
+import { NCard, NEllipsis, NIcon } from 'naive-ui'
+import { EyeOutline } from '@vicons/ionicons5'
 import StatusBadge from './StatusBadge.vue'
 import type { BookSummary } from '../types/api'
 
@@ -31,30 +41,65 @@ defineEmits<{ click: [] }>()
 <style scoped>
 .book-card {
   cursor: pointer; width: 190px;
-  transition: transform 0.2s ease, box-shadow 0.25s ease;
-  border-radius: 12px !important;
-  overflow: hidden;
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+  border-radius: 16px !important;
+  overflow: visible !important;
+  position: relative;
 }
 .book-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 35px rgba(94,106,210,0.12), 0 4px 12px rgba(0,0,0,0.06);
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(79,70,229,0.15), 0 8px 24px rgba(0,0,0,0.08);
 }
 .cover-wrap {
-  width: 156px; height: 200px; margin: 0 auto 10px;
-  border-radius: 8px; overflow: hidden;
+  width: 156px; height: 200px; margin: 0 auto 12px;
+  border-radius: 12px; overflow: hidden;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
 }
-.cover-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; }
-.book-card:hover .cover-img { transform: scale(1.08); }
+.cover-glow {
+  position: absolute; inset: -20px;
+  background: radial-gradient(circle at 30% 30%, rgba(79,70,229,0.3), transparent 60%);
+  opacity: 0; transition: opacity 0.3s ease;
+  z-index: 1; pointer-events: none;
+}
+.book-card:hover .cover-glow { opacity: 1; }
+.cover-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.3, 1), filter 0.3s ease; }
+.book-card:hover .cover-img { transform: scale(1.12); filter: brightness(1.05); }
 .cover-placeholder {
   width: 100%; height: 100%;
   display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(145deg, #5e6ad2, #7c6fdb, #a78bfa);
-  border-radius: 8px;
+  background: linear-gradient(145deg, #4f46e5, #7c3aed, #ec4899);
+  border-radius: 12px;
+  box-shadow: inset 0 2px 10px rgba(0,0,0,0.1);
 }
-.cover-letter { font-size: 52px; font-weight: 700; color: rgba(255,255,255,0.85); text-shadow: 0 2px 8px rgba(0,0,0,0.2); }
-.info { text-align: center; padding: 0 2px; }
-.title { font-size: 14px; font-weight: 600; color: var(--n-text-color); line-height: 1.3; }
-.author { font-size: 12px; color: var(--n-text-color-3); display: block; margin: 3px 0; line-height: 1.2; }
-.meta { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 6px; }
-.avail { font-size: 11px; color: var(--n-text-color-3); }
+.cover-letter { font-size: 56px; font-weight: 800; color: rgba(255,255,255,0.95); text-shadow: 0 4px 15px rgba(0,0,0,0.25); }
+.cover-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(15,23,42,0.85), transparent 50%);
+  display: flex; align-items: flex-end; justify-content: center;
+  padding-bottom: 20px; opacity: 0; transition: opacity 0.3s ease;
+  z-index: 2;
+}
+.book-card:hover .cover-overlay { opacity: 1; }
+.overlay-content {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  transform: translateY(10px);
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+.book-card:hover .overlay-content { transform: translateY(0); }
+.view-text {
+  color: white; font-size: 12px; font-weight: 500;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.info { text-align: center; padding: 0 4px; }
+.title { 
+  font-size: 14px; font-weight: 700; color: var(--n-text-color); 
+  line-height: 1.35; display: block;
+}
+.author { 
+  font-size: 12.5px; color: var(--n-text-color-2); 
+  display: block; margin: 4px 0 8px; line-height: 1.25; font-weight: 500;
+}
+.meta { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 4px; }
+.avail { font-size: 11.5px; color: var(--n-text-color-3); font-weight: 500; }
 </style>

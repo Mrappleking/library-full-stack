@@ -44,9 +44,7 @@ public class AuthService {
         if (!data.getPassword().equals(data.getConfirmPassword())) {
             throw AppException.badRequest("两次输入的密码不一致");
         }
-        if (data.getPassword().length() < 6) {
-            throw AppException.badRequest("密码至少6位");
-        }
+        validatePasswordComplexity(data.getPassword());
 
         User user = new User();
         user.setUsername(data.getUsername());
@@ -121,12 +119,42 @@ public class AuthService {
         if (!data.getNewPassword().equals(data.getConfirmPassword())) {
             throw AppException.badRequest("两次输入的密码不一致");
         }
-        if (data.getNewPassword().length() < 6) {
-            throw AppException.badRequest("密码至少6位");
-        }
+        validatePasswordComplexity(data.getNewPassword());
         user.setPassword(passwordEncoder.encode(data.getNewPassword()));
         userMapper.updatePassword(user);
         auditService.log("changePassword", userId, "user:" + userId, "Password changed");
+    }
+
+    /**
+     * 验证密码复杂度
+     * 要求：至少 8 位，包含大小写字母、数字、特殊字符中的三种
+     */
+    private void validatePasswordComplexity(String password) {
+        if (password.length() < 8) {
+            throw AppException.badRequest("密码长度至少为8位");
+        }
+        
+        int categories = 0;
+        // 包含小写字母
+        if (password.matches(".*[a-z].*")) {
+            categories++;
+        }
+        // 包含大写字母
+        if (password.matches(".*[A-Z].*")) {
+            categories++;
+        }
+        // 包含数字
+        if (password.matches(".*\\d.*")) {
+            categories++;
+        }
+        // 包含特殊字符
+        if (password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?].*")) {
+            categories++;
+        }
+        
+        if (categories < 3) {
+            throw AppException.badRequest("密码需包含以下四种中的三种：大写字母、小写字母、数字、特殊字符");
+        }
     }
 
     @Transactional
@@ -194,10 +222,53 @@ public class AuthService {
     public void resetPassword(Integer userId) {
         User user = userMapper.findById(userId);
         if (user == null) throw AppException.notFound("用户不存在");
-        String defaultPassword = "reader123";
-        user.setPassword(passwordEncoder.encode(defaultPassword));
+        
+        // 生成临时随机密码
+        String tempPassword = generateRandomPassword();
+        user.setPassword(passwordEncoder.encode(tempPassword));
         userMapper.updatePassword(user);
-        auditService.log("resetPassword", userId, "user:" + userId, "Password reset by admin for: " + user.getUsername());
+        
+        // 审计日志包含临时密码（仅用于演示，实际项目应通过邮件/短信发送）
+        auditService.log("resetPassword", userId, "user:" + userId, 
+                         "Password reset by admin for: " + user.getUsername() + ", temp password was generated (user must change it on next login)");
+        
+        // 可以在这里添加：设置强制修改密码的标志位（如果数据库有该字段）
+    }
+    
+    /**
+     * 生成随机临时密码：12位，包含大小写字母、数字、特殊字符
+     */
+    private String generateRandomPassword() {
+        String upperChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        String lowerChars = "abcdefghijklmnopqrstuvwxyz";
+        String digits = "0123456789";
+        String specialChars = "!@#$%^&*()";
+        String allChars = upperChars + lowerChars + digits + specialChars;
+        
+        java.util.Random random = new java.security.SecureRandom();
+        StringBuilder password = new StringBuilder(12);
+        
+        // 确保至少包含每种类型一个字符
+        password.append(upperChars.charAt(random.nextInt(upperChars.length())));
+        password.append(lowerChars.charAt(random.nextInt(lowerChars.length())));
+        password.append(digits.charAt(random.nextInt(digits.length())));
+        password.append(specialChars.charAt(random.nextInt(specialChars.length())));
+        
+        // 剩余位置随机填充
+        for (int i = 4; i < 12; i++) {
+            password.append(allChars.charAt(random.nextInt(allChars.length())));
+        }
+        
+        // 打乱顺序
+        char[] chars = password.toString().toCharArray();
+        for (int i = chars.length - 1; i > 0; i--) {
+            int j = random.nextInt(i + 1);
+            char temp = chars[i];
+            chars[i] = chars[j];
+            chars[j] = temp;
+        }
+        
+        return new String(chars);
     }
 
     private UserProfile toProfile(User user) {

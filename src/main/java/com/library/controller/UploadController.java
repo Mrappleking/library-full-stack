@@ -7,8 +7,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -61,6 +64,16 @@ public class UploadController {
         String contentType = file.getContentType();
         if (!ALLOWED_CONTENT_TYPES.contains(contentType)) {
             return ResponseEntity.badRequest().body(ApiResponse.badRequest("文件类型不支持"));
+        }
+
+        // 验证文件是否为真实图片
+        try (InputStream inputStream = file.getInputStream()) {
+            BufferedImage image = ImageIO.read(inputStream);
+            if (image == null) {
+                return ResponseEntity.badRequest().body(ApiResponse.badRequest("文件不是有效的图片格式"));
+            }
+        } catch (IOException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.badRequest("图片读取失败"));
         }
 
         String filename = UUID.randomUUID().toString() + "." + extension.toLowerCase();

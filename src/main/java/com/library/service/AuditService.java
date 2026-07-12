@@ -5,6 +5,8 @@ import com.library.mapper.AuditLogMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AuditService {
@@ -21,6 +23,11 @@ public class AuditService {
         log(action, null, target, detail);
     }
 
+    /**
+     * 记录审计日志，使用独立的事务
+     * 即使主事务失败，审计日志也能被保存
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void log(String action, Integer userId, String target, String detail) {
         AuditLog auditLog = new AuditLog();
         auditLog.setAction(action);

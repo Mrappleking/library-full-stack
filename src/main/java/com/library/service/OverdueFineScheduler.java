@@ -2,8 +2,12 @@ package com.library.service;
 
 import com.library.entity.BorrowRecord;
 import com.library.entity.CirculationRule;
+import com.library.entity.User;
+import com.library.entity.BookItem;
 import com.library.mapper.BorrowRecordMapper;
 import com.library.mapper.FineMapper;
+import com.library.mapper.UserMapper;
+import com.library.mapper.BookItemMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -24,15 +28,21 @@ public class OverdueFineScheduler {
     private final FineMapper fineMapper;
     private final FineService fineService;
     private final RuleService ruleService;
+    private final UserMapper userMapper;
+    private final BookItemMapper bookItemMapper;
 
     public OverdueFineScheduler(BorrowRecordMapper borrowRecordMapper,
                                 FineMapper fineMapper,
                                 FineService fineService,
-                                RuleService ruleService) {
+                                RuleService ruleService,
+                                UserMapper userMapper,
+                                BookItemMapper bookItemMapper) {
         this.borrowRecordMapper = borrowRecordMapper;
         this.fineMapper = fineMapper;
         this.fineService = fineService;
         this.ruleService = ruleService;
+        this.userMapper = userMapper;
+        this.bookItemMapper = bookItemMapper;
     }
 
     /**
@@ -63,7 +73,26 @@ public class OverdueFineScheduler {
                     continue;
                 }
 
-                CirculationRule rule = ruleService.getRule(null, null);
+                // Get user and book item to determine correct circulation rule
+                User user = userMapper.findById(record.getUserId());
+                BookItem bookItem = record.getBookItemId() != null ? bookItemMapper.findById(record.getBookItemId()) : null;
+                
+                if (user == null) {
+                    log.warn("User not found for record {}, skipping fine creation", record.getId());
+                    skipped++;
+                    continue;
+                }
+                
+                Integer patronCategoryId = user.getPatronCategoryId();
+                Integer itemTypeId = bookItem != null ? bookItem.getItemTypeId() : null;
+
+                CirculationRule rule = ruleService.getRule(patronCategoryId, itemTypeId);
+                if (rule == null) {
+                    log.warn("No circulation rule found for record {}, skipping fine creation", record.getId());
+                    skipped++;
+                    continue;
+                }
+                
                 BigDecimal fineAmount = rule.getFinePerDay().multiply(BigDecimal.valueOf(daysOverdue));
 
                 fineService.createFine(record.getId(), record.getUserId(), fineAmount, "overdue");
