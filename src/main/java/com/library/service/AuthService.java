@@ -48,7 +48,9 @@ public class AuthService {
         if (!data.getPassword().equals(data.getConfirmPassword())) {
             throw AppException.badRequest("两次输入的密码不一致");
         }
-        validatePasswordComplexity(data.getPassword());
+        if (data.getPassword().length() < 6) {
+            throw AppException.badRequest("密码至少6位");
+        }
 
         User user = new User();
         user.setUsername(data.getUsername());
@@ -123,7 +125,9 @@ public class AuthService {
         if (!data.getNewPassword().equals(data.getConfirmPassword())) {
             throw AppException.badRequest("两次输入的密码不一致");
         }
-        validatePasswordComplexity(data.getNewPassword());
+        if (data.getNewPassword().length() < 6) {
+            throw AppException.badRequest("密码至少6位");
+        }
         user.setPassword(passwordEncoder.encode(data.getNewPassword()));
         userMapper.updatePassword(user);
         audit("changePassword", "user:" + userId, "Password changed");
@@ -196,21 +200,6 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(defaultPassword));
         userMapper.updatePassword(user);
         audit("resetPassword", "user:" + userId, "Password reset by admin for: " + user.getUsername());
-    }
-
-    private void validatePasswordComplexity(String password) {
-        if (!password.matches(".*[a-z].*")) {
-            throw AppException.badRequest("密码必须包含小写字母");
-        }
-        if (!password.matches(".*[A-Z].*")) {
-            throw AppException.badRequest("密码必须包含大写字母");
-        }
-        if (!password.matches(".*\\d.*")) {
-            throw AppException.badRequest("密码必须包含数字");
-        }
-        if (!password.matches(".*[^a-zA-Z0-9].*")) {
-            throw AppException.badRequest("密码必须包含特殊字符");
-        }
     }
 
     private UserProfile toProfile(User user) {

@@ -5,6 +5,7 @@ import com.library.exception.AppException;
 import com.library.service.AuthService;
 import com.library.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,13 +41,13 @@ public class ReaderController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateByAdmin(@PathVariable Integer id, @RequestBody ReaderUpdateRequest data) {
+    public ResponseEntity<?> updateByAdmin(@PathVariable Integer id, @Valid @RequestBody ReaderUpdateRequest data) {
         userService.update(id, data.getName(), data.getPhone(), data.getEmail());
         return ResponseEntity.ok(userService.findById(id));
     }
 
     @PutMapping("/profile")
-    public ResponseEntity<?> selfUpdate(HttpServletRequest request, @RequestBody ReaderUpdateRequest data) {
+    public ResponseEntity<?> selfUpdate(HttpServletRequest request, @Valid @RequestBody ReaderUpdateRequest data) {
         Integer userId = (Integer) request.getAttribute("userId");
         userService.update(userId, data.getName(), data.getPhone(), data.getEmail());
         return ResponseEntity.ok(userService.findById(userId));

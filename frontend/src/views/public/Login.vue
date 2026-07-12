@@ -37,20 +37,10 @@
           <n-form-item path="username" label="用户名"><n-input v-model:value="reg.username" placeholder="用户名" /></n-form-item>
           <n-form-item path="password" label="密码">
             <n-input v-model:value="reg.password" type="password" placeholder="密码（至少6位）" />
-            <div v-if="reg.password.length > 0" style="margin-top:6px;width:100%">
-              <div style="display:flex;gap:4px;height:4px;border-radius:2px;overflow:hidden">
-                <div :style="{ flex:1, background: pwdScore >= 1 ? pwdStrengthColor[0] : 'rgba(255,255,255,0.1)', transition:'background 0.3s' }"></div>
-                <div :style="{ flex:1, background: pwdScore >= 2 ? pwdStrengthColor[1] : 'rgba(255,255,255,0.1)', transition:'background 0.3s' }"></div>
-                <div :style="{ flex:1, background: pwdScore >= 3 ? pwdStrengthColor[2] : 'rgba(255,255,255,0.1)', transition:'background 0.3s' }"></div>
-              </div>
-              <span :style="{ fontSize:'11px', color: pwdScore >= 3 ? pwdStrengthColor[2] : pwdScore >= 2 ? pwdStrengthColor[1] : pwdStrengthColor[0] }">
-                密码强度：{{ pwdStrengthLabel }}
-              </span>
-            </div>
           </n-form-item>
+          <n-form-item path="confirmPassword" label="确认密码"><n-input v-model:value="reg.confirmPassword" type="password" placeholder="再次输入密码" /></n-form-item>
           <n-form-item path="name" label="真实姓名"><n-input v-model:value="reg.name" placeholder="真实姓名" /></n-form-item>
           <n-form-item path="phone" label="手机号"><n-input v-model:value="reg.phone" placeholder="手机号（可选）" maxlength="11" /></n-form-item>
-          <n-form-item path="confirmPassword" label="确认密码"><n-input v-model:value="reg.confirmPassword" type="password" placeholder="再次输入密码" /></n-form-item>
         </n-form>
         <template #footer><n-space justify="end"><n-button @click="showRegister=false">取消</n-button><n-button type="primary" :loading="regLoading" @click="handleRegister">注册</n-button></n-space></template>
       </n-modal>
@@ -59,7 +49,7 @@
 </div></template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage, NIcon, darkTheme, type FormInst } from 'naive-ui'
 import { PersonOutline, LockClosedOutline } from '@vicons/ionicons5'
@@ -81,17 +71,7 @@ const regFormRef = ref<FormInst | null>(null)
 const reg = ref({ username: '', password: '', name: '', phone: '', confirmPassword: '' })
 const regRules = { username: [{ required: true, message: '请输入用户名' }], password: [{ required: true, min: 6, message: '密码至少6位' }], name: [{ required: true, message: '请输入姓名' }], phone: [{ pattern: /^(1[3-9]\d{9})?$/, message: '请输入有效的11位手机号', trigger: 'blur' }], confirmPassword: [{ required: true, message: '请确认密码' }, { validator: (_rule: any, value: string) => value === reg.value.password, message: '两次输入的密码不一致', trigger: 'blur' }] }
 
-const pwdScore = computed(() => {
-  const pwd = reg.value.password
-  if (!pwd || pwd.length < 6) return 0
-  let score = 1
-  if (/[a-z]/.test(pwd) && /[A-Z]/.test(pwd)) score++
-  if (/\d/.test(pwd)) score++
-  if (/[^a-zA-Z0-9]/.test(pwd)) score++
-  return Math.min(score, 3)
-})
-const pwdStrengthColor = ['#e74c3c', '#f39c12', '#27ae60']
-const pwdStrengthLabel = computed(() => pwdScore.value >= 3 ? '强' : pwdScore.value >= 2 ? '中' : '弱')
+
 
 async function handleRegister() {
   try { await regFormRef.value?.validate() } catch { return }

@@ -19,6 +19,13 @@ api.interceptors.response.use(
       router.push('/login')
       return Promise.reject(new Error('登录已过期，请重新登录'))
     }
+    // 后端未启动或无法连接（502/Vite代理错误/网络超时）
+    if (!err.response && err.code === 'ERR_NETWORK') {
+      return Promise.reject(new Error('无法连接到服务器，请检查后端是否已启动'))
+    }
+    if (err.response?.status === 502) {
+      return Promise.reject(new Error('后端服务未启动或无法连接，请先启动后端'))
+    }
     const msg = err.response?.data?.error
       || (typeof err.response?.data === 'string' ? '服务器错误' : null)
       || '请求失败'
