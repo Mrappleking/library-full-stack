@@ -47,7 +47,8 @@ public class CacheService {
         }
     }
 
-    private List<String> scanKeys(String pattern) {
+    @SuppressWarnings("deprecation")
+    private List<String> scanKeys(@NonNull String pattern) {
         return redisTemplate.execute((RedisCallback<List<String>>) connection -> {
             List<String> keys = new ArrayList<>();
             var options = org.springframework.data.redis.core.ScanOptions.scanOptions()

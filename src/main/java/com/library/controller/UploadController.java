@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -75,7 +76,11 @@ public class UploadController {
                 return ResponseEntity.badRequest().body(ApiResponse.badRequest("文件路径不合法"));
             }
 
-            file.transferTo(targetPath.toFile());
+            File targetFile = targetPath.toFile();
+            if (targetFile == null) {
+                return ResponseEntity.status(500).body(ApiResponse.serverError("文件路径无效"));
+            }
+            file.transferTo(targetFile);
             String url = "/covers/" + filename;
 
             return ResponseEntity.ok(ApiResponse.success(java.util.Map.of("path", url, "filename", filename)));

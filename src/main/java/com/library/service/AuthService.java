@@ -4,16 +4,12 @@ import com.library.dto.request.ChangePasswordRequest;
 import com.library.dto.request.RegisterRequest;
 import com.library.dto.response.LoginResponse;
 import com.library.dto.response.UserProfile;
-import com.library.entity.AuditLog;
 import com.library.entity.User;
 import com.library.mapper.BorrowRecordMapper;
 import com.library.mapper.FineMapper;
 import com.library.exception.AppException;
-import com.library.mapper.AuditLogMapper;
 import com.library.mapper.UserMapper;
 import com.library.util.JwtUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -23,8 +19,6 @@ import java.util.List;
 
 @Service
 public class AuthService {
-
-    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;

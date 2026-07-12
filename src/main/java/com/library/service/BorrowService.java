@@ -16,14 +16,8 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 @Service
 public class BorrowService {
-
-    private static final Logger logger = LoggerFactory.getLogger(BorrowService.class);
-
     private final BorrowRecordMapper borrowRecordMapper;
     private final BookMapper bookMapper;
     private final BookItemMapper bookItemMapper;

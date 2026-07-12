@@ -3,8 +3,6 @@ package com.library.service;
 import com.library.entity.*;
 import com.library.exception.AppException;
 import com.library.mapper.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,9 +13,6 @@ import java.util.*;
 
 @Service
 public class FineService {
-
-    private static final Logger log = LoggerFactory.getLogger(FineService.class);
-
     private final FineMapper fineMapper;
     private final UserMapper userMapper;
     private final AuditService auditService;

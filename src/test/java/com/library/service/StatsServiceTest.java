@@ -152,17 +152,6 @@ class StatsServiceTest extends AbstractServiceTest {
         return c;
     }
 
-    private Map<String, Object> popularRow(Object id, String title, String author, String isbn, Object catId, Object count) {
-        Map<String, Object> row = new HashMap<>();
-        row.put("id", id);
-        row.put("title", title);
-        row.put("author", author);
-        row.put("isbn", isbn);
-        row.put("categoryId", catId);
-        row.put("borrowCount", count);
-        return row;
-    }
-
     private Map<String, Object> monthRow(String month, Object count) {
         Map<String, Object> row = new HashMap<>();
         row.put("month", month);

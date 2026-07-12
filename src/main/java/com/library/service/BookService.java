@@ -3,7 +3,6 @@ package com.library.service;
 import com.library.dto.response.BookDetailResponse;
 import com.library.dto.response.BookItemResponse;
 import com.library.dto.response.CategoryResponse;
-import com.library.entity.AuditLog;
 import com.library.entity.Book;
 import com.library.entity.BookItem;
 import com.library.entity.BorrowRecord;
