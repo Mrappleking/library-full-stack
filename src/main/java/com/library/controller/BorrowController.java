@@ -1,14 +1,16 @@
 package com.library.controller;
 
 import com.library.dto.request.BorrowRequest;
+import com.library.dto.response.ApiResponse;
 import com.library.entity.BorrowRecord;
 import com.library.service.BorrowService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/borrows")
@@ -21,15 +23,15 @@ public class BorrowController {
     }
 
     @GetMapping("/my")
-    public ResponseEntity<?> getMyBorrows(HttpServletRequest request,
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getMyBorrows(HttpServletRequest request,
                                            @RequestParam(defaultValue = "1") int page,
                                            @RequestParam(defaultValue = "20") int limit) {
         Integer userId = (Integer) request.getAttribute("userId");
-        return ResponseEntity.ok(borrowService.getMyBorrows(userId, page, limit));
+        return ResponseEntity.ok(ApiResponse.success(borrowService.getMyBorrows(userId, page, limit)));
     }
 
     @GetMapping
-    public ResponseEntity<?> listBorrows(@RequestParam(defaultValue = "1") int page,
+    public ResponseEntity<ApiResponse<Map<String, Object>>> listBorrows(@RequestParam(defaultValue = "1") int page,
                                           @RequestParam(defaultValue = "20") int limit,
                                           @RequestParam(required = false) String search,
                                           @RequestParam(required = false) String status,
@@ -39,11 +41,11 @@ public class BorrowController {
             borrowService.exportCsv(null, response);
             return ResponseEntity.ok().build();
         }
-        return ResponseEntity.ok(borrowService.listBorrows(page, limit, search, status));
+        return ResponseEntity.ok(ApiResponse.success(borrowService.listBorrows(page, limit, search, status)));
     }
 
     @GetMapping("/history")
-    public ResponseEntity<?> getHistory(HttpServletRequest request,
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getHistory(HttpServletRequest request,
                                          @RequestParam(defaultValue = "1") int page,
                                          @RequestParam(defaultValue = "20") int limit,
                                          @RequestParam(required = false) String export,
@@ -53,27 +55,27 @@ public class BorrowController {
             borrowService.exportCsv(userId, response);
             return ResponseEntity.ok().build();
         }
-        return ResponseEntity.ok(borrowService.getHistory(userId, page, limit));
+        return ResponseEntity.ok(ApiResponse.success(borrowService.getHistory(userId, page, limit)));
     }
 
     @PostMapping("/borrow")
-    public ResponseEntity<?> borrow(HttpServletRequest request, @Valid @RequestBody BorrowRequest params) {
+    public ResponseEntity<ApiResponse<BorrowRecord>> borrow(HttpServletRequest request, @Valid @RequestBody BorrowRequest params) {
         Integer userId = (Integer) request.getAttribute("userId");
         BorrowRecord record = borrowService.borrow(userId, params);
-        return ResponseEntity.status(HttpStatus.CREATED).body(record);
+        return ResponseEntity.status(201).body(ApiResponse.created(record));
     }
 
     @PostMapping("/return/{id}")
-    public ResponseEntity<?> returnBook(@PathVariable Integer id, HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<BorrowRecord>> returnBook(@PathVariable Integer id, HttpServletRequest request) {
         Integer userId = (Integer) request.getAttribute("userId");
         String role = (String) request.getAttribute("userRole");
         boolean isAdmin = "admin".equals(role);
-        return ResponseEntity.ok(borrowService.returnBook(id, userId, isAdmin));
+        return ResponseEntity.ok(ApiResponse.success(borrowService.returnBook(id, userId, isAdmin)));
     }
 
     @PostMapping("/renew/{id}")
-    public ResponseEntity<?> renew(@PathVariable Integer id, HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> renew(@PathVariable Integer id, HttpServletRequest request) {
         Integer userId = (Integer) request.getAttribute("userId");
-        return ResponseEntity.ok(borrowService.renew(id, userId));
+        return ResponseEntity.ok(ApiResponse.success(borrowService.renew(id, userId)));
     }
 }

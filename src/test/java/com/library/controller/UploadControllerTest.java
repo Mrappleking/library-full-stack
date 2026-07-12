@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -39,6 +38,7 @@ class UploadControllerTest {
     }
 
     @Test
+    @SuppressWarnings("null")
     void uploadCover_byAdmin_shouldReturn200() throws Exception {
         when(jwtUtil.getRoleFromToken(anyString())).thenReturn("admin");
 
@@ -49,8 +49,9 @@ class UploadControllerTest {
                         .file(file)
                         .header("Authorization", adminToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.path").exists())
-                .andExpect(jsonPath("$.path").value(startsWith("/covers/")));
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.path").exists())
+                .andExpect(jsonPath("$.data.path").value(startsWith("/covers/")));
     }
 
     @Test
@@ -108,7 +109,6 @@ class UploadControllerTest {
     void uploadCover_tooLarge_shouldReturn400() throws Exception {
         when(jwtUtil.getRoleFromToken(anyString())).thenReturn("admin");
 
-        // 6MB file — exceeds 5MB limit
         byte[] largeContent = new byte[6 * 1024 * 1024];
         MockMultipartFile largeFile = new MockMultipartFile(
                 "file", "large.jpg", "image/jpeg", largeContent);

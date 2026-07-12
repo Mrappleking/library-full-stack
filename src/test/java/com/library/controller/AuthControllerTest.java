@@ -28,6 +28,7 @@ class AuthControllerTest {
     private AuthService authService;
 
     @Test
+    @SuppressWarnings("null")
     void login_shouldReturnTokenAndUser() throws Exception {
         UserProfile userProfile = new UserProfile();
         userProfile.setId(1);

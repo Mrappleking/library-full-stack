@@ -42,6 +42,7 @@ class HoldControllerTest {
     }
 
     @Test
+    @SuppressWarnings("null")
     void createHold_shouldReturnHold() throws Exception {
         Hold hold = new Hold();
         hold.setId(1);

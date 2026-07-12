@@ -81,6 +81,7 @@ class ReaderControllerTest {
     }
 
     @Test
+    @SuppressWarnings("null")
     void updateByAdmin_shouldUpdateReader() throws Exception {
         UserProfile u = new UserProfile();
         u.setId(1);

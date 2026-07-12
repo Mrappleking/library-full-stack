@@ -28,6 +28,9 @@ public class SystemController {
 
     @PostMapping("/clear-cache/{key}")
     public ResponseEntity<ApiResponse<Void>> clearCacheByKey(@PathVariable String key, HttpServletRequest request) {
+        if (key == null) {
+            return ResponseEntity.badRequest().body(ApiResponse.badRequest("缓存键不能为空"));
+        }
         String role = (String) request.getAttribute("userRole");
         if (!"admin".equals(role)) {
             return ResponseEntity.status(403).body(ApiResponse.forbidden("仅管理员可清除缓存"));

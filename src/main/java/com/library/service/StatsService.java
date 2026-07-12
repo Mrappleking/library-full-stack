@@ -74,6 +74,7 @@ public class StatsService {
         return result;
     }
 
+    @SuppressWarnings("unchecked")
     public FacetsDTO getFacets(Map<String, Object> params) {
         Map<String, Object> raw = bookService.getFacets(params);
         FacetsDTO dto = new FacetsDTO();
