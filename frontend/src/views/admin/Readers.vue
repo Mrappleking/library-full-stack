@@ -55,15 +55,15 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, h } from 'vue'
 import { useMessage, NButton, NTag, useDialog, type DataTableColumn } from 'naive-ui'
-import api from '@/api'
+import { readerApi } from '@/api'
+import type { ReaderResponse } from '@/types/api'
 
 const message = useMessage()
 const dialog = useDialog()
-const readers = ref<any[]>([])
+const readers = ref<ReaderResponse[]>([])
 const loading = ref(false)
 const expandedKeys = ref<number[]>([])
 
-// ===== 搜索 & 分页 & 排序状态 =====
 const searchKeyword = ref('')
 const searchCategory = ref<number | null>(null)
 const categoryOptions = ref<Array<{ label: string; value: number }>>([])
@@ -81,7 +81,6 @@ const pagination = reactive({
   prefix: (info: any) => `共 ${info.itemCount} 条`
 })
 
-// ===== 表格列定义 =====
 const columns = computed<DataTableColumn[]>(() => [
   { type: 'expand' as any, renderExpand: (row: any) => h(ExpandPanel, { readerId: row.id }) },
   {
@@ -120,27 +119,19 @@ const columns = computed<DataTableColumn[]>(() => [
   }
 ])
 
-// ===== 获取数据 =====
 async function fetchReaders() {
   loading.value = true
   try {
-    const { data } = await api.get('/readers', {
-      params: {
-        page: pagination.page,
-        limit: pagination.pageSize,
-        keyword: searchKeyword.value || undefined,
-        patronCategoryId: searchCategory.value || undefined,
-        sortBy: sortBy.value,
-        sortDir: sortDir.value
-      }
+    const res = await readerApi.getAllReaders({
+      page: pagination.page,
+      limit: pagination.pageSize
     })
-    readers.value = data.data || []
-    pagination.itemCount = data.total || 0
+    readers.value = res.readers || []
+    pagination.itemCount = res.total || 0
   } catch { /* ignore */ }
   loading.value = false
 }
 
-// ===== 搜索 =====
 function doSearch() {
   pagination.page = 1
   fetchReaders()
@@ -153,7 +144,6 @@ function resetSearch() {
   fetchReaders()
 }
 
-// ===== 分页 =====
 function onPageChange(page: number) {
   pagination.page = page
   fetchReaders()
@@ -165,7 +155,6 @@ function onPageSizeChange(size: number) {
   fetchReaders()
 }
 
-// ===== 排序 =====
 function handleSorterChange(sorter: { columnKey: string; order: string } | null) {
   if (sorter && sorter.order) {
     sortBy.value = sorter.columnKey
@@ -178,10 +167,10 @@ function handleSorterChange(sorter: { columnKey: string; order: string } | null)
   fetchReaders()
 }
 
-// ===== 加载读者类型选项 =====
+import api from '@/api'
 async function loadCategories() {
   try {
-    const { data } = await api.get('/rules/patron-categories')
+    const data = await api.get('/rules/patron-categories')
     categoryOptions.value = data.map((c: any) => ({ label: c.name, value: c.id }))
     const map: Record<number, string> = {}
     data.forEach((c: any) => { map[c.id] = c.name })
@@ -189,10 +178,8 @@ async function loadCategories() {
   } catch { /* ignore */ }
 }
 
-// ===== 展开行（借阅记录） =====
 function onExpand(keys: number[]) { expandedKeys.value = keys }
 
-// ===== 编辑弹窗 =====
 const showModal = ref(false)
 const saving = ref(false)
 const form = reactive<{ id: number | null; name: string; phone: string; email: string }>({ id: null, name: '', phone: '', email: '' })
@@ -205,7 +192,7 @@ function openEdit(row: any) {
 async function handleSave() {
   saving.value = true
   try {
-    await api.put(`/readers/${form.id}`, { name: form.name, phone: form.phone, email: form.email })
+    await readerApi.update(form.id!, { name: form.name, phone: form.phone, email: form.email })
     message.success('已更新')
     showModal.value = false
     fetchReaders()
@@ -213,7 +200,6 @@ async function handleSave() {
   saving.value = false
 }
 
-// ===== 重置密码 =====
 function handleResetPassword(row: any) {
   dialog.warning({
     title: '确认重置密码',
@@ -229,7 +215,6 @@ function handleResetPassword(row: any) {
   })
 }
 
-// ===== 强制删除 =====
 async function handleAdminDelete(row: any) {
   dialog.warning({
     title: '确认强制删除',
@@ -246,14 +231,13 @@ async function handleAdminDelete(row: any) {
   })
 }
 
-// ===== 展开面板 =====
 const ExpandPanel = {
   props: { readerId: Number },
   setup(props: any) {
     const records = ref<any[]>([])
     const load = async () => {
       try {
-        const { data } = await api.get(`/readers/${props.readerId}`)
+        const data = await readerApi.getById(props.readerId)
         records.value = data.borrowRecords || []
       } catch { /* ignore */ }
     }

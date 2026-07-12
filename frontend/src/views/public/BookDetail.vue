@@ -61,7 +61,7 @@ import { NIcon } from 'naive-ui'
 import { useMessage } from 'naive-ui'
 import { ArrowBackOutline, PersonOutline, BookOutline, TimeOutline } from '@vicons/ionicons5'
 import HoldingsTable from '../../components/HoldingsTable.vue'
-import api, { bookApi } from '../../api'
+import { bookApi, borrowApi, holdApi } from '../../api'
 import type { BookDetail } from '../../types/api'
 
 const route = useRoute()
@@ -83,11 +83,11 @@ onMounted(async () => {
   }
   loading.value = true
   try {
-    book.value = (await bookApi.getById(id)).data
+    book.value = await bookApi.getById(id)
     if (book.value && book.value.available === 0) {
       try {
-        const res = await api.get('/holds/count', { params: { bookId: id } })
-        holdCount.value = res.data?.count ?? 0
+        const res = await holdApi.getCount()
+        holdCount.value = res.count ?? 0
       } catch (e) { console.error('fetchHoldCount failed:', e); holdCount.value = 0 }
     }
   } finally { loading.value = false }
@@ -97,7 +97,7 @@ async function handleBorrow() {
   if (!hasToken()) { router.push('/login'); return }
   if (!book.value) return
   try {
-    await api.post('/borrows/borrow', { bookId: book.value.id })
+    await borrowApi.borrow(book.value.id)
     message.success('借阅成功')
     router.push('/reader/books')
   } catch (e: unknown) { message.error((e as Error).message) }
@@ -107,7 +107,7 @@ async function handleHold() {
   if (!book.value) return
   holdLoading.value = true
   try {
-    await api.post('/holds', { bookId: book.value.id })
+    await holdApi.create(book.value.id)
     holdCount.value++
     message.success('预约成功！有书归还时将通知您。')
   } catch (e: unknown) { message.error((e as Error).message) }

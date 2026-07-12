@@ -2,7 +2,13 @@
   <n-config-provider :theme-overrides="themeStore.themeOverrides" :locale="zhCN" :date-locale="dateZhCN">
     <n-message-provider>
       <n-dialog-provider>
-        <router-view />
+        <router-view v-slot="{ Component }">
+          <transition name="fade-slide" mode="out-in">
+            <keep-alive>
+              <component :is="Component" />
+            </keep-alive>
+          </transition>
+        </router-view>
         <ToastContainer />
       </n-dialog-provider>
     </n-message-provider>
@@ -33,5 +39,26 @@ html:not(.dark) {
 
 * {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.35s ease;
+}
+
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateY(20px) scale(0.98);
+}
+
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-20px) scale(0.98);
+}
+
+.fade-slide-enter-to,
+.fade-slide-leave-from {
+  opacity: 1;
+  transform: translateY(0) scale(1);
 }
 </style>

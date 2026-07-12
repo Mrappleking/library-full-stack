@@ -47,6 +47,7 @@ import { ref } from 'vue'
 import { NH2, NGrid, NGridItem, NCard, NDescriptions, NDescriptionsItem, NButton, NSpace, NTag, NList, NListItem, NDivider, useMessage } from 'naive-ui'
 import BarcodeInput from '../../components/BarcodeInput.vue'
 import StatusBadge from '../../components/StatusBadge.vue'
+import { borrowApi } from '../../api'
 import api from '../../api'
 
 const message = useMessage()
@@ -56,7 +57,7 @@ const queue = ref<any[]>([])
 
 async function onScan(barcode: string) {
   try {
-    const { data } = await api.get(`/book-items/${encodeURIComponent(barcode)}`)
+    const data = await api.get(`/book-items/${encodeURIComponent(barcode)}`)
     currentItem.value = data.item
     currentBorrow.value = data.currentBorrow ?? null
     playBeep(data.currentBorrow ? 'return' : 'borrow')
@@ -82,9 +83,9 @@ async function commitAll() {
   for (const op of queue.value) {
     try {
       if (op.action === 'borrow') {
-        await api.post('/borrows/borrow', { bookItemId: op.itemId })
+        await borrowApi.borrow(op.itemId)
       } else {
-        const { data } = await api.post(`/borrows/return/${op.currentBorrowId}`)
+        const data = await borrowApi.returnBook(op.currentBorrowId)
         if (data.fine) message.warning(`逾期罚款: ¥${data.fine.amount}`)
       }
       message.success(op.action === 'borrow' ? '借书成功' : '还书成功')

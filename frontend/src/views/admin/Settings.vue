@@ -68,15 +68,14 @@
 import { ref, onMounted, h } from 'vue'
 import { useMessage, NButton } from 'naive-ui'
 import type { DataTableColumn, FormInst } from 'naive-ui'
-import api from '@/api'
+import type { CirculationRuleResponse, PatronCategoryResponse, ItemTypeResponse } from '@/types/api'
 
 const message = useMessage()
-const rules = ref<any[]>([])
-const patronCategories = ref<any[]>([])
-const itemTypes = ref<any[]>([])
+const rules = ref<CirculationRuleResponse[]>([])
+const patronCategories = ref<PatronCategoryResponse[]>([])
+const itemTypes = ref<ItemTypeResponse[]>([])
 const loading = ref(false)
 
-// 规则编辑弹窗
 const showRuleModal = ref(false)
 const savingRule = ref(false)
 const ruleFormRef = ref<FormInst | null>(null)
@@ -96,6 +95,7 @@ function openRuleEdit(row: any) {
   showRuleModal.value = true
 }
 
+import api from '@/api'
 async function handleRuleSave() {
   savingRule.value = true
   try {
@@ -110,9 +110,7 @@ async function handleRuleSave() {
     })
     message.success('规则已更新')
     showRuleModal.value = false
-    // 刷新数据
-    const { data } = await api.get('/rules')
-    rules.value = data || []
+    rules.value = (await api.get('/rules')) || []
   } catch (e: unknown) { message.error((e as Error).message) }
   savingRule.value = false
 }
@@ -151,9 +149,9 @@ onMounted(async () => {
       api.get('/rules/patron-categories'),
       api.get('/rules/item-types')
     ])
-    rules.value = r.status === 'fulfilled' ? r.value.data : []
-    patronCategories.value = p.status === 'fulfilled' ? p.value.data : []
-    itemTypes.value = i.status === 'fulfilled' ? i.value.data : []
+    rules.value = r.status === 'fulfilled' ? r.value : []
+    patronCategories.value = p.status === 'fulfilled' ? p.value : []
+    itemTypes.value = i.status === 'fulfilled' ? i.value : []
   } catch (e) { console.error('fetchSettings failed:', e) }
   loading.value = false
 })

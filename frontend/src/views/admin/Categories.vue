@@ -26,11 +26,12 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, h } from 'vue'
 import { useMessage, NButton, NPopconfirm } from 'naive-ui'
-import api from '@/api'
+import { categoryApi } from '@/api'
+import type { CategoryResponse } from '@/types/api'
 import type { DataTableColumn } from 'naive-ui'
 
 const message = useMessage()
-const categories = ref<any[]>([])
+const categories = ref<CategoryResponse[]>([])
 const loading = ref(false)
 
 const columns: DataTableColumn[] = [
@@ -54,7 +55,7 @@ const columns: DataTableColumn[] = [
 async function fetchCategories() {
   loading.value = true
   try {
-    const { data } = await api.get('/categories')
+    const data = await categoryApi.getAll()
     categories.value = data || []
   } catch { /* ignore */ }
   loading.value = false
@@ -73,10 +74,10 @@ async function handleSave() {
   saving.value = true
   try {
     if (editingId.value) {
-      await api.put(`/categories/${editingId.value}`, { name: form.name, desc: form.desc })
+      await categoryApi.update(editingId.value, { name: form.name, desc: form.desc })
       message.success('已更新')
     } else {
-      await api.post('/categories', { name: form.name, desc: form.desc })
+      await categoryApi.create({ name: form.name, desc: form.desc })
       message.success('已添加')
     }
     showModal.value = false
@@ -86,7 +87,7 @@ async function handleSave() {
 }
 
 async function handleDelete(id: number) {
-  try { await api.delete(`/categories/${id}`); message.success('已删除'); fetchCategories() }
+  try { await categoryApi.delete(id); message.success('已删除'); fetchCategories() }
   catch (e: unknown) { message.error((e as Error).message) }
 }
 
