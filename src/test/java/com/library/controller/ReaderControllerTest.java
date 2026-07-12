@@ -49,11 +49,14 @@ class ReaderControllerTest {
         u.setId(1);
         u.setUsername("reader1");
         u.setRole("reader");
-        when(userService.findAll()).thenReturn(List.of(u));
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        result.put("data", java.util.List.of(u));
+        result.put("total", 1L);
+        when(userService.searchReaders(any(), any(), anyInt(), anyInt(), any(), any())).thenReturn(result);
 
         mockMvc.perform(get("/api/readers").header("Authorization", adminToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].username").value("reader1"));
+                .andExpect(jsonPath("$.data[0].username").value("reader1"));
     }
 
     @Test
@@ -86,10 +89,10 @@ class ReaderControllerTest {
         mockMvc.perform(put("/api/readers/1")
                         .header("Authorization", adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"Updated\",\"phone\":\"138\",\"email\":\"a@a.com\"}"))
+                        .content("{\"name\":\"Updated\",\"phone\":\"13800138000\",\"email\":\"a@a.com\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Updated"));
 
-        verify(userService).update(eq(1), eq("Updated"), eq("138"), eq("a@a.com"));
+        verify(userService).update(eq(1), eq("Updated"), eq("13800138000"), eq("a@a.com"));
     }
 }
