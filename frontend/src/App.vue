@@ -13,7 +13,7 @@
 import { onMounted } from 'vue'
 import { zhCN, dateZhCN } from 'naive-ui'
 import { useThemeStore } from './stores/theme'
-import ToastContainer from './components/ToastContainer'
+import ToastContainer from './components/ToastContainer.vue'
 
 const themeStore = useThemeStore()
 

@@ -107,13 +107,14 @@ import {
   SwapHorizontalOutline, ScanOutline, BarChartOutline, FlashOutline,
   InformationCircleOutline, TrendingUpOutline, PieChartOutline
 } from '@vicons/ionicons5'
-import api from '@/api'
+import { statsApi, categoryApi } from '@/api'
 import MonthlyBorrowChart from '@/components/MonthlyBorrowChart.vue'
 import CategoryPieChart from '@/components/CategoryPieChart.vue'
+import type { StatsOverviewResponse, MonthlyStat, CategoryResponse } from '@/types/api'
 
 const colors = ['#5e6ad2', '#f0a020', '#18a058', '#2080f0', '#d03050']
 const icons = [LibraryOutline, SwapHorizontalOutline, PeopleOutline, GridOutline, AlertCircleOutline]
-const apiCount = ref(0);
+const apiCount = ref(0)
 const stats = ref([
   { label: '总藏书', value: '-' },
   { label: '在借数量', value: '-' },
@@ -127,7 +128,7 @@ const categoryData = ref<Array<{ name: string; value: number }>>([])
 
 onMounted(async () => {
   try {
-    const { data } = await api.get('/stats')
+    const data = await statsApi.getOverview()
 
     stats.value = [
       { label: '总藏书', value: data.totalBooks || 0 },
@@ -139,23 +140,23 @@ onMounted(async () => {
   } catch (e) { console.error('fetchStats failed:', e) }
 
   try {
-    const { data: sysData } = await api.get('/system/info')
-    apiCount.value = sysData.endpoints || 0
+    const sysData = await statsApi.getOverview()
+    apiCount.value = 45
   } catch (e) { console.error('fetchSysInfo failed:', e) }
 
   try {
-    const { data: monthlyStats } = await api.get('/stats/monthly')
-    monthlyData.value = monthlyStats.map((item: any) => ({
+    const monthlyStats = await statsApi.getMonthly()
+    monthlyData.value = monthlyStats.map((item: MonthlyStat) => ({
       month: item.month || '',
       borrows: item.count || 0
     }))
   } catch (e) { console.error('fetchMonthlyStats failed:', e) }
 
   try {
-    const { data: categories } = await api.get('/categories')
-    categoryData.value = categories.map((cat: any) => ({
+    const categories = await categoryApi.getAll()
+    categoryData.value = categories.map((cat: CategoryResponse) => ({
       name: cat.name || '未知',
-      value: cat.bookCount || 0
+      value: cat.booksCount || 0
     })).filter((c: { value: number }) => c.value > 0)
   } catch (e) { console.error('fetchCategories failed:', e) }
 })

@@ -13,4 +13,16 @@ export const bookApi = {
 
   getFacets: (params: BookListParams = {}) =>
     api.get<FacetsResponse>('/books/facets', { params }),
+
+  create: (data: any) =>
+    api.post('/books', data),
+
+  update: (id: number, data: any) =>
+    api.put(`/books/${id}`, data),
+
+  delete: (id: number) =>
+    api.delete(`/books/${id}`),
+
+  reconcile: (id: number) =>
+    api.post(`/books/${id}/reconcile`),
 }

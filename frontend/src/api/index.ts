@@ -11,23 +11,28 @@ api.interceptors.request.use(config => {
 })
 
 api.interceptors.response.use(
-  res => res,
+  res => {
+    const apiResponse = res.data
+    if (apiResponse && typeof apiResponse === 'object' && 'data' in apiResponse) {
+      return apiResponse.data
+    }
+    return res.data
+  },
   err => {
-    // 登录接口 401 = 密码错误，不跳转，直接显示后端错误消息
     if (err.response?.status === 401 && err.config?.url !== '/auth/login') {
       clearAuth()
       router.push('/login')
       return Promise.reject(new Error('登录已过期，请重新登录'))
     }
-    // 后端未启动或无法连接（502/Vite代理错误/网络超时）
     if (!err.response && err.code === 'ERR_NETWORK') {
       return Promise.reject(new Error('无法连接到服务器，请检查后端是否已启动'))
     }
     if (err.response?.status === 502) {
       return Promise.reject(new Error('后端服务未启动或无法连接，请先启动后端'))
     }
-    const msg = err.response?.data?.error
-      || (typeof err.response?.data === 'string' ? '服务器错误' : null)
+    const apiResponse = err.response?.data
+    const msg = apiResponse?.error || apiResponse?.message
+      || (typeof apiResponse === 'string' ? '服务器错误' : null)
       || '请求失败'
     return Promise.reject(new Error(msg))
   }
@@ -50,7 +55,6 @@ export function getUser(): UserProfile | null {
   } catch { return null }
 }
 
-// Auth
 export function doLogin(username: string, password: string) {
   return api.post<LoginResponse>('/auth/login', { username, password })
 }
@@ -60,3 +64,9 @@ export function doRegister(data: { username: string; password: string; name: str
 export function getMe() { return api.get<UserProfile>('/auth/me') }
 
 export { bookApi } from './books'
+export { borrowApi } from './borrows'
+export { readerApi } from './readers'
+export { categoryApi } from './categories'
+export { statsApi } from './stats'
+export { fineApi } from './fines'
+export { holdApi } from './holds'

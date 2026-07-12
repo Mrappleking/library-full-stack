@@ -25,19 +25,19 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, h } from 'vue'
 import { useMessage, NTag, NButton } from 'naive-ui'
-import api from '@/api'
-import { bookApi } from '@/api/books'
+import { bookApi, categoryApi, borrowApi } from '@/api'
 import type { DataTableColumn } from 'naive-ui'
+import type { BookSummary, CategoryResponse } from '@/types/api'
 
 const message = useMessage()
-const books = ref<any[]>([])
+const books = ref<BookSummary[]>([])
 const loading = ref(false)
 const search = ref('')
 const filterCategory = ref<number | null>(null)
 const catOptions = ref<{ label: string; value: number }[]>([])
 const pagination = reactive({ page: 1, pageSize: 20, itemCount: 0 })
 
-const columns: DataTableColumn[] = [
+const columns: DataTableColumn<BookSummary>[] = [
   { title: '书名', key: 'title', ellipsis: { tooltip: true } },
   { title: '作者', key: 'author', width: 120 },
   { title: '分类', key: 'category.name', width: 100 },
@@ -45,11 +45,11 @@ const columns: DataTableColumn[] = [
   { title: '年份', key: 'year', width: 60 },
   {
     title: '库存', key: 'available', width: 70,
-    render: (r: any) => h(NTag, { type: r.available > 0 ? 'success' : 'error', size: 'small' }, () => `${r.available}/${r.total}`)
+    render: (r) => h(NTag, { type: r.available > 0 ? 'success' : 'error', size: 'small' }, () => `${r.available}/${r.total}`)
   },
   {
     title: '操作', key: 'actions', width: 90,
-    render(row: any) {
+    render(row) {
       return row.available > 0
         ? h(NButton, { size: 'small', type: 'primary', onClick: () => handleBorrow(row) }, () => '借阅')
         : h(NTag, { type: 'default', size: 'small' }, () => '已借完')
@@ -60,7 +60,7 @@ const columns: DataTableColumn[] = [
 async function fetchBooks() {
   loading.value = true
   try {
-    const { data } = await bookApi.list({
+    const data = await bookApi.list({
       page: pagination.page,
       limit: pagination.pageSize,
       search: search.value || undefined,
@@ -74,16 +74,16 @@ async function fetchBooks() {
 
 async function fetchCategories() {
   try {
-    const { data } = await api.get('/categories')
-    catOptions.value = (data || []).map((c: any) => ({ label: c.name, value: c.id }))
+    const data = await categoryApi.getAll()
+    catOptions.value = (data || []).map((c: CategoryResponse) => ({ label: c.name, value: c.id }))
   } catch { /* ignore */ }
 }
 
 function onPage(page: number) { pagination.page = page; fetchBooks() }
 
-async function handleBorrow(row: any) {
+async function handleBorrow(row: BookSummary) {
   try {
-    await api.post('/borrows/borrow', { bookId: row.id })
+    await borrowApi.borrow(row.id)
     message.success(`已借阅《${row.title}》`)
     fetchBooks()
   } catch (e: unknown) { message.error((e as Error).message) }

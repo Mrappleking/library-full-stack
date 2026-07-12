@@ -15,16 +15,15 @@
 </template>
 
 <script setup lang="ts">
-import { CheckCircle, AlertCircle, InfoCircle, WarningCircle } from '@vicons/ionicons5'
-import { useToast } from '../composables/useToast'
+import { CheckmarkCircleOutline, AlertCircleOutline, InformationCircleOutline } from '@vicons/ionicons5'
 
 const { toasts, removeToast } = useToast()
 
 const iconMap = {
-  success: CheckCircle,
-  error: AlertCircle,
-  warning: WarningCircle,
-  info: InfoCircle,
+  success: CheckmarkCircleOutline,
+  error: AlertCircleOutline,
+  warning: AlertCircleOutline,
+  info: InformationCircleOutline,
 }
 </script>
 
