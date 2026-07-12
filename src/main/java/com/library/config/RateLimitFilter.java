@@ -22,7 +22,11 @@ import java.util.concurrent.ConcurrentHashMap;
 @Order(0) // 确保在 JwtAuthFilter 之前执行
 public class RateLimitFilter extends OncePerRequestFilter {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
+    
+    public RateLimitFilter(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
     
     // 为每个 IP 地址创建一个令牌桶
     private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();

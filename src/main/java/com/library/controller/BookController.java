@@ -54,8 +54,13 @@ public class BookController {
     }
 
     @GetMapping("/facets")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getFacets() {
-        return ResponseEntity.ok(ApiResponse.success(bookService.getFacets(new HashMap<>())));
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getFacets(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Integer categoryId) {
+        Map<String, Object> params = new HashMap<>();
+        if (search != null) params.put("search", search);
+        if (categoryId != null) params.put("categoryId", categoryId);
+        return ResponseEntity.ok(ApiResponse.success(bookService.getFacets(params)));
     }
 
     @GetMapping("/{id}")

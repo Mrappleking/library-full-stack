@@ -134,7 +134,7 @@ public class BookService {
 
     public List<BookItemResponse> getItemsByBookId(Integer id) {
         Book book = bookMapper.findById(id);
-        if (book == null) throw AppException.notFound("Book not found");
+        if (book == null) throw AppException.notFound("图书不存在");
 
         List<BookItem> items = bookItemMapper.findByBookId(id);
         return items.stream().map(this::toBookItemResponse).collect(Collectors.toList());

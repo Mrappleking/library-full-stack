@@ -25,15 +25,12 @@ public class OpenApiConfig {
                         .version("0.4.0")
                         .description("图书馆管理系统的 RESTful API 文档，包含图书管理、借阅管理、用户管理等功能")
                         .contact(new Contact()
-                                .name("Library Full-Stack")
-                                .email("support@library-fullstack.com"))
+                                .name("Library Full-Stack"))
                         .license(new License()
                                 .name("MIT License")
                                 .url("https://opensource.org/licenses/MIT")))
                 .servers(List.of(
-                        new Server().url("http://localhost:8080").description("开发环境"),
-                        new Server().url("http://api.library-fullstack.com").description("生产环境")
-                ))
+                        new Server().url("http://localhost:8080").description("开发环境")))
                 .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
                 .components(new Components()
                         .addSecuritySchemes(securitySchemeName,
