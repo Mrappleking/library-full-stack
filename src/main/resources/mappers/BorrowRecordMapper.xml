@@ -11,6 +11,14 @@
 
   <resultMap id="borrowWithBook" type="com.library.entity.BorrowRecord">
     <id property="id" column="id"/>
+    <result property="userId" column="userId"/>
+    <result property="bookId" column="bookId"/>
+    <result property="bookItemId" column="bookItemId"/>
+    <result property="borrowDate" column="borrow_date"/>
+    <result property="dueDate" column="due_date"/>
+    <result property="returnDate" column="return_date"/>
+    <result property="status" column="status"/>
+    <result property="renewed" column="renewed"/>
     <association property="book" column="bookId" select="com.library.mapper.BookMapper.findById"/>
     <association property="bookItem" column="bookItemId" select="com.library.mapper.BookItemMapper.findById"/>
   </resultMap>

@@ -182,3 +182,26 @@ CREATE TABLE `audit_logs` (
   `created_at` DATETIME NOT NULL DEFAULT NOW(),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 12. Error Logs
+DROP TABLE IF EXISTS `error_logs`;
+CREATE TABLE `error_logs` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `log_id` VARCHAR(50) DEFAULT NULL,
+  `type` VARCHAR(20) DEFAULT NULL,
+  `message` TEXT DEFAULT NULL,
+  `stack` TEXT DEFAULT NULL,
+  `url` VARCHAR(500) DEFAULT NULL,
+  `method` VARCHAR(10) DEFAULT NULL,
+  `status_code` INT DEFAULT NULL,
+  `component` VARCHAR(100) DEFAULT NULL,
+  `props` TEXT DEFAULT NULL,
+  `user_id` INT DEFAULT NULL,
+  `user_role` VARCHAR(20) DEFAULT NULL,
+  `timestamp` DATETIME DEFAULT NULL,
+  `created_at` DATETIME NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (`id`),
+  INDEX `idx_type` (`type`),
+  INDEX `idx_user_id` (`user_id`),
+  INDEX `idx_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

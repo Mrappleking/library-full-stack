@@ -126,7 +126,11 @@ async function fetchData() {
       holds.value = hRes.value || []
     }
     totalFines.value = auth.user?.totalFines || 0
-  } catch { /* ignore */ }
+  } catch (e: unknown) {
+    message.error((e as Error).message || '获取借阅记录失败')
+    records.value = []
+    holds.value = []
+  }
   loading.value = false
 }
 

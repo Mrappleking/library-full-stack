@@ -58,6 +58,7 @@ defineEmits<{ click: [] }>()
 }
 .cover-glow {
   position: absolute; inset: -20px;
+  /* 硬编码: 封面悬停发光效果使用品牌主色，与主题无关 */
   background: radial-gradient(circle at 30% 30%, rgba(79,70,229,0.3), transparent 60%);
   opacity: 0; transition: opacity 0.3s ease;
   z-index: 1; pointer-events: none;

@@ -4,7 +4,24 @@
 
   <resultMap id="bookResult" type="com.library.entity.Book">
     <id property="id" column="id"/>
+    <result property="isbn" column="isbn"/>
+    <result property="title" column="title"/>
+    <result property="author" column="author"/>
+    <result property="publisher" column="publisher"/>
+    <result property="year" column="year"/>
+    <result property="total" column="total"/>
+    <result property="available" column="available"/>
+    <result property="status" column="status"/>
+    <result property="location" column="location"/>
+    <result property="cover" column="cover"/>
+    <result property="desc" column="desc"/>
+    <result property="clcNumber" column="clcNumber"/>
+    <result property="physicalDesc" column="physicalDesc"/>
+    <result property="language" column="language"/>
+    <result property="country" column="country"/>
     <result property="categoryId" column="categoryId"/>
+    <result property="createdAt" column="created_at"/>
+    <result property="updatedAt" column="updated_at"/>
     <association property="category" column="categoryId" select="com.library.mapper.CategoryMapper.findById"/>
   </resultMap>
 

@@ -93,7 +93,19 @@ export const useThemeStore = defineStore('theme', () => {
     Tabs: { tabGapSmall: '8px', tabColor: '#1f2937', tabColorActive: '#374151' },
     Switch: { railColor: '#4b5563', railColorActive: '#4338ca', boxColor: '#6b7280', boxColorActive: '#818cf8' },
     Badge: { color: '#374151', textColor: '#f9fafb' },
-    Tag: { borderRadius: '8px', color: '#374151', textColor: '#e5e7eb' },
+    Tag: {
+      borderRadius: '8px',
+      color: '#374151',
+      textColor: '#e5e7eb',
+      colorInfo: '#374151',
+      colorSuccess: '#166534',
+      colorWarning: '#92400e',
+      colorError: '#991b1b',
+      textColorInfo: '#60a5fa',
+      textColorSuccess: '#34d399',
+      textColorWarning: '#fbbf24',
+      textColorError: '#f87171',
+    },
   }
 
   const themeOverrides = computed(() => isDark.value ? darkTheme : lightTheme)

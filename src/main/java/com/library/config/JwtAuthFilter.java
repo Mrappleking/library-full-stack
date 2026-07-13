@@ -119,7 +119,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private boolean isPublicPath(String path) {
         if (path.equals("/") || path.startsWith("/covers") 
                 || path.startsWith("/swagger-ui") || path.startsWith("/api-docs") 
-                || path.startsWith("/v3/api-docs")) {
+                || path.startsWith("/v3/api-docs") || path.startsWith("/api/system/logs")) {
             return true;
         }
         return publicPaths.stream().anyMatch(p -> path.equals(p));

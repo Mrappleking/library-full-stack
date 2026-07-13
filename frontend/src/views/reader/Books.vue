@@ -136,7 +136,10 @@ async function fetchBooks() {
     })
     books.value = data.books || []
     pagination.itemCount = data.total || 0
-  } catch { /* ignore */ }
+  } catch (e: unknown) {
+    message.error((e as Error).message || '获取图书列表失败')
+    books.value = []
+  }
   loading.value = false
 }
 
@@ -144,7 +147,9 @@ async function fetchCategories() {
   try {
     const data = await categoryApi.getAll()
     catOptions.value = (data || []).map((c: CategoryResponse) => ({ label: c.name, value: c.id }))
-  } catch { /* ignore */ }
+  } catch (e: unknown) {
+    message.error((e as Error).message || '获取分类列表失败')
+  }
 }
 
 function onPageSizeChange(size: number) {
@@ -240,6 +245,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  /* 硬编码: 封面占位符使用品牌渐变色，与主题无关 */
   background: linear-gradient(135deg, #5e6ad2 0%, #7c6fdb 100%);
 }
 

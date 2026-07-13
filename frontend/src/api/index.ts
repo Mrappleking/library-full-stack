@@ -1,17 +1,24 @@
 import axios from 'axios'
 import type { LoginResponse, UserProfile } from '@/types/api'
 import router from '@/router'
+import { errorMonitor } from '@/utils/errorMonitor'
 
 const axiosInstance = axios.create({ baseURL: '/api' })
 
 axiosInstance.interceptors.request.use(config => {
   const token = localStorage.getItem('token')
   if (token) config.headers.Authorization = `Bearer ${token}`
+  ;(config as any).__startTime = Date.now()
   return config
 })
 
 axiosInstance.interceptors.response.use(
   res => {
+    const duration = Date.now() - ((res.config as any).__startTime || 0)
+    if (duration > 5000) {
+      console.warn(`[SlowAPI] ${res.config.method?.toUpperCase()} ${res.config.url} took ${duration}ms`)
+    }
+
     const apiResponse = res.data
     if (apiResponse && typeof apiResponse === 'object' && 'data' in apiResponse) {
       return apiResponse.data
@@ -19,6 +26,13 @@ axiosInstance.interceptors.response.use(
     return res.data
   },
   err => {
+    errorMonitor.logApiError(
+      err.config?.url || '',
+      err.config?.method?.toUpperCase() || 'UNKNOWN',
+      err.response?.status || 0,
+      err.message || 'API request failed'
+    )
+
     if (err.response?.status === 401 && err.config?.url !== '/auth/login') {
       clearAuth()
       router.push('/login')

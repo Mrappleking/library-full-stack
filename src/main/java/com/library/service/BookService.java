@@ -80,6 +80,13 @@ public class BookService {
         long total = bookMapper.countBooks(queryParams);
         int pages = (int) Math.ceil((double) total / limit);
 
+        for (Book book : books) {
+            if (book.getCategoryId() != null) {
+                book.setCategory(categoryMapper.findById(book.getCategoryId()));
+            }
+            book.setItemsCount((int) bookItemMapper.countByBookId(book.getId()));
+        }
+
         Map<String, Object> result = new HashMap<>();
         result.put("books", books);
         result.put("total", total);

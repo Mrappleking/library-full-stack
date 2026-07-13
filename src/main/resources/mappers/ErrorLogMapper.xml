@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.library.mapper.ErrorLogMapper">
+
+  <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+    INSERT INTO error_logs(log_id, type, message, stack, url, method, status_code, component, props, user_id, user_role, `timestamp`, created_at)
+    VALUES(#{logId}, #{type}, #{message}, #{stack}, #{url}, #{method}, #{statusCode}, #{component}, #{props}, #{userId}, #{userRole}, #{timestamp}, NOW())
+  </insert>
+
+  <insert id="batchInsert">
+    INSERT INTO error_logs(log_id, type, message, stack, url, method, status_code, component, props, user_id, user_role, `timestamp`, created_at)
+    VALUES
+    <foreach collection="logs" item="log" separator=",">
+      (#{log.logId}, #{log.type}, #{log.message}, #{log.stack}, #{log.url}, #{log.method}, #{log.statusCode}, #{log.component}, #{log.props}, #{log.userId}, #{log.userRole}, #{log.timestamp}, NOW())
+    </foreach>
+  </insert>
+
+  <select id="findAll" resultType="com.library.entity.ErrorLog">
+    SELECT * FROM error_logs ORDER BY created_at DESC
+  </select>
+
+  <select id="findByType" resultType="com.library.entity.ErrorLog">
+    SELECT * FROM error_logs WHERE type = #{type} ORDER BY created_at DESC
+  </select>
+
+  <select id="findByTimeRange" resultType="com.library.entity.ErrorLog">
+    SELECT * FROM error_logs WHERE `timestamp` >= #{start} AND `timestamp` &lt;= #{end} ORDER BY created_at DESC
+  </select>
+
+  <select id="findByUserId" resultType="com.library.entity.ErrorLog">
+    SELECT * FROM error_logs WHERE user_id = #{userId} ORDER BY created_at DESC
+  </select>
+
+  <select id="countByType" resultType="long">
+    SELECT COUNT(*) FROM error_logs WHERE type = #{type}
+  </select>
+
+  <delete id="deleteByTimeBefore">
+    DELETE FROM error_logs WHERE created_at &lt; #{time}
+  </delete>
+
+</mapper>

@@ -53,7 +53,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, h } from 'vue'
+import { ref, reactive, computed, onMounted, h, watch, defineComponent } from 'vue'
 import { useMessage, NButton, NTag, useDialog, type DataTableColumn } from 'naive-ui'
 import { readerApi } from '@/api'
 import api from '@/api'
@@ -267,30 +267,56 @@ async function handleAdminDelete(row: any) {
   })
 }
 
-const ExpandPanel = {
-  props: { readerId: Number },
-  setup(props: any) {
+const ExpandPanel = defineComponent({
+  name: 'ExpandPanel',
+  props: { readerId: { type: Number, required: true } },
+  setup(props) {
     const records = ref<any[]>([])
+    const loading = ref(false)
+
     const load = async () => {
+      loading.value = true
       try {
         const data = await readerApi.getById(props.readerId)
         records.value = data.borrowRecords || []
-      } catch { /* ignore */ }
+      } catch (e: unknown) {
+        console.error('加载借阅记录失败:', e)
+        records.value = []
+      } finally {
+        loading.value = false
+      }
     }
-    onMounted(() => { load() })
-    return () => records.value.length === 0
-      ? h('div', { style: 'padding:12px;color:var(--lib-text-tertiary);' }, '暂无借阅记录')
-      : h('div', { style: 'padding:8px 0;' },
-          records.value.map((r: any) =>
-            h('div', { style: 'display:flex;gap:16px;padding:6px 12px;font-size:13px;color:var(--lib-text-secondary);' }, [
-              h('span', r.book?.title || '未知'),
-              h('span', { style: 'color:var(--lib-text-tertiary);' }, new Date(r.borrowDate).toLocaleDateString('zh-CN')),
-              h(NTag, { size: 'tiny', type: r.status === 'active' ? 'success' : 'default' }, () => r.status === 'active' ? '在借' : '已还')
-            ])
-          )
+
+    onMounted(load)
+
+    watch(() => props.readerId, () => {
+      records.value = []
+      load()
+    })
+
+    return () => {
+      if (loading.value) {
+        return h('div', { style: 'padding:12px;color:var(--lib-text-tertiary);text-align:center;' }, '加载中...')
+      }
+      if (records.value.length === 0) {
+        return h('div', { style: 'padding:12px;color:var(--lib-text-tertiary);' }, '暂无借阅记录')
+      }
+      return h('div', { style: 'padding:8px 0;' },
+        records.value.map((r: any) =>
+          h('div', { style: 'display:flex;gap:16px;padding:6px 12px;font-size:13px;' }, [
+            h('span', { style: 'color:var(--lib-text-secondary);' }, r.book?.title || '未知'),
+            h('span', { style: 'color:var(--lib-text-tertiary);' }, new Date(r.borrowDate).toLocaleDateString('zh-CN')),
+            h(NTag, { 
+              size: 'tiny', 
+              type: r.status === 'active' ? 'success' : 'default',
+              style: r.status === 'active' ? 'background-color:rgba(16,185,129,0.15);color:#10b981;' : 'background-color:var(--lib-bg-hover);color:var(--lib-text-secondary);'
+            }, () => r.status === 'active' ? '在借' : '已还')
+          ])
         )
+      )
+    }
   }
-}
+})
 
 onMounted(() => {
   loadCategories()

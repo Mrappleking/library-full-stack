@@ -109,7 +109,10 @@ async function fetchRecords() {
     const res = await borrowApi.getAllBorrows({ page: page.value, limit: 20 })
     records.value = res.borrows || []
     total.value = res.total || 0
-  } catch { /* ignore */ }
+  } catch (e: unknown) {
+    message.error((e as Error).message || '获取借阅记录失败')
+    records.value = []
+  }
   loading.value = false
 }
 
