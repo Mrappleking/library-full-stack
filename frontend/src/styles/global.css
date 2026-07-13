@@ -1,0 +1,166 @@
+:root {
+  --lib-primary: #4f46e5;
+  --lib-primary-light: #6366f1;
+  --lib-primary-dark: #4338ca;
+  --lib-gradient-start: #5e6ad2;
+  --lib-gradient-end: #7c6fdb;
+}
+
+html:not(.dark) {
+  --lib-text-primary: #111827;
+  --lib-text-secondary: #374151;
+  --lib-text-tertiary: #6b7280;
+  --lib-text-muted: #9ca3af;
+  --lib-bg-page: #f3f4f6;
+  --lib-bg-content: #ffffff;
+  --lib-bg-card: #ffffff;
+  --lib-bg-hover: #f3f4f6;
+  --lib-border: #e5e7eb;
+  --lib-divider: #f3f4f6;
+}
+
+html.dark {
+  --lib-text-primary: #f9fafb;
+  --lib-text-secondary: #e5e7eb;
+  --lib-text-tertiary: #d1d5db;
+  --lib-text-muted: #6b7280;
+  --lib-bg-page: #111827;
+  --lib-bg-content: #1f2937;
+  --lib-bg-card: #1f2937;
+  --lib-bg-hover: #374151;
+  --lib-border: #374151;
+  --lib-divider: #374151;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+  min-height: 100vh;
+  background-color: var(--lib-bg-page);
+  color: var(--lib-text-primary);
+}
+
+#app {
+  min-height: 100vh;
+}
+
+* {
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+              color 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+              border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.3s ease;
+}
+
+.n-layout {
+  background: var(--lib-bg-page) !important;
+}
+
+.n-layout-content {
+  background: var(--lib-bg-content) !important;
+  color: var(--lib-text-primary) !important;
+}
+
+.n-layout-header {
+  background: linear-gradient(135deg, var(--lib-gradient-start) 0%, var(--lib-gradient-end) 100%) !important;
+}
+
+.n-layout-header :deep(.n-button) {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.n-layout-header :deep(.n-button:hover) {
+  color: #ffffff !important;
+}
+
+.n-layout-sider {
+  background: var(--lib-bg-card) !important;
+  border-right-color: var(--lib-border) !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--lib-text-primary) !important;
+}
+
+.n-text {
+  color: var(--lib-text-primary) !important;
+}
+
+.n-text.depth-1 {
+  color: var(--lib-text-primary) !important;
+}
+
+.n-text.depth-2 {
+  color: var(--lib-text-secondary) !important;
+}
+
+.n-text.depth-3 {
+  color: var(--lib-text-tertiary) !important;
+}
+
+.n-descriptions {
+  --n-color-card: var(--lib-bg-card);
+  --n-color-text: var(--lib-text-primary);
+  --n-color-border: var(--lib-border);
+}
+
+.n-descriptions :deep(.n-descriptions-item-label) {
+  color: var(--lib-text-tertiary) !important;
+}
+
+.n-descriptions :deep(.n-descriptions-item-content) {
+  color: var(--lib-text-primary) !important;
+}
+
+.n-descriptions :deep(.n-descriptions-table-header) {
+  color: var(--lib-text-tertiary) !important;
+  background-color: var(--lib-bg-card) !important;
+}
+
+.n-descriptions :deep(.n-descriptions-table-body) {
+  color: var(--lib-text-primary) !important;
+  background-color: var(--lib-bg-content) !important;
+}
+
+.n-descriptions :deep(.n-descriptions-table) {
+  background-color: var(--lib-bg-content) !important;
+}
+
+.n-descriptions :deep(.n-descriptions-table-cell) {
+  color: var(--lib-text-primary) !important;
+  background-color: var(--lib-bg-content) !important;
+  border-color: var(--lib-border) !important;
+}
+
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.4s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateY(25px) scale(0.96);
+  filter: blur(4px);
+}
+
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-25px) scale(0.96);
+  filter: blur(4px);
+}
+
+.fade-slide-enter-to,
+.fade-slide-leave-from {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
+}

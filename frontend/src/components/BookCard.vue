@@ -68,6 +68,7 @@ defineEmits<{ click: [] }>()
 .cover-placeholder {
   width: 100%; height: 100%;
   display: flex; align-items: center; justify-content: center;
+  /* 硬编码: 封面占位符使用品牌渐变色，与主题无关 */
   background: linear-gradient(145deg, #4f46e5, #7c3aed, #ec4899);
   border-radius: 12px;
   box-shadow: inset 0 2px 10px rgba(0,0,0,0.1);
@@ -75,6 +76,7 @@ defineEmits<{ click: [] }>()
 .cover-letter { font-size: 56px; font-weight: 800; color: rgba(255,255,255,0.95); text-shadow: 0 4px 15px rgba(0,0,0,0.25); }
 .cover-overlay {
   position: absolute; inset: 0;
+  /* 硬编码: 覆盖层使用深色渐变以确保文字可读性，与主题无关 */
   background: linear-gradient(to top, rgba(15,23,42,0.85), transparent 50%);
   display: flex; align-items: flex-end; justify-content: center;
   padding-bottom: 20px; opacity: 0; transition: opacity 0.3s ease;
@@ -88,18 +90,19 @@ defineEmits<{ click: [] }>()
 }
 .book-card:hover .overlay-content { transform: translateY(0); }
 .view-text {
+  /* 硬编码: 在深色覆盖层上必须使用白色文字 */
   color: white; font-size: 12px; font-weight: 500;
   text-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
 .info { text-align: center; padding: 0 4px; }
 .title { 
-  font-size: 14px; font-weight: 700; color: var(--n-text-color); 
+  font-size: 14px; font-weight: 700; color: var(--lib-text-primary); 
   line-height: 1.35; display: block;
 }
 .author { 
-  font-size: 12.5px; color: var(--n-text-color-2); 
+  font-size: 12.5px; color: var(--lib-text-secondary); 
   display: block; margin: 4px 0 8px; line-height: 1.25; font-weight: 500;
 }
 .meta { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 4px; }
-.avail { font-size: 11.5px; color: var(--n-text-color-3); font-weight: 500; }
+.avail { font-size: 11.5px; color: var(--lib-text-tertiary); font-weight: 500; }
 </style>

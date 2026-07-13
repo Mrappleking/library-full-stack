@@ -87,27 +87,28 @@ async function handleLogout() {
 
 <style scoped>
 .base-sider {
-  border-right: 1px solid var(--n-color-border);
+  border-right: 1px solid var(--lib-border);
 }
 .base-sider:not(.dark) {
-  background: var(--n-color-base) !important;
+  background: var(--lib-bg-card) !important;
 }
 .base-sider.dark {
+  /* 硬编码: 深色模式侧边栏使用更深的背景色以区分内容区 */
   background: #16161e !important;
   border-right-color: rgba(255,255,255,0.06) !important;
 }
 .logo { display: flex; align-items: center; gap: 12px; padding: 20px 20px 16px; }
-.logo-icon { width: 26px; height: 26px; color: var(--n-color-text-3); flex-shrink: 0; }
+.logo-icon { width: 26px; height: 26px; color: var(--lib-text-tertiary); flex-shrink: 0; }
 .sider-divider {
-  height: 1px; background: var(--n-color-divider); margin: 0 16px 8px;
+  height: 1px; background: var(--lib-divider); margin: 0 16px 8px;
 }
 .content {
   padding: 28px 32px;
   min-height: 100vh;
-  background: var(--n-color-body);
+  background: var(--lib-bg-content);
 }
 .footer {
   position: absolute; bottom: 0; width: 100%;
-  padding: 16px 20px; border-top: 1px solid var(--n-color-divider);
+  padding: 16px 20px; border-top: 1px solid var(--lib-divider);
 }
 </style>

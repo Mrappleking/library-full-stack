@@ -42,19 +42,20 @@ function isActive(key: string, value: string) { return props.active[key] === val
 
 <style scoped>
 .facet-panel { width: 100%; }
-.facet-header { font-size: 13px; font-weight: 600; }
+.facet-header { font-size: 13px; font-weight: 600; color: var(--lib-text-primary); }
 .facet-item {
   display: flex; justify-content: space-between; align-items: center;
   padding: 6px 10px; cursor: pointer; border-radius: 6px;
   font-size: 13px; transition: all 0.12s ease;
+  color: var(--lib-text-primary);
 }
 .facet-item:hover { background: rgba(94,106,210,0.06); }
-.facet-item.active { background: rgba(94,106,210,0.1); color: var(--n-primary-color); font-weight: 600; }
-.facet-item.active .facet-count { background: rgba(94,106,210,0.15); color: var(--n-primary-color); }
+.facet-item.active { background: rgba(94,106,210,0.1); color: var(--lib-primary); font-weight: 600; }
+.facet-item.active .facet-count { background: rgba(94,106,210,0.15); color: var(--lib-primary); }
 .facet-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
 .facet-count {
   font-size: 11px; padding: 1px 8px; border-radius: 10px;
-  background: var(--n-divider-color); color: var(--n-text-color-3);
+  background: var(--lib-divider); color: var(--lib-text-tertiary);
   min-width: 28px; text-align: center;
 }
 </style>

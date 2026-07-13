@@ -133,9 +133,10 @@ async function handleHold() {
 </script>
 
 <style scoped>
-.detail-page { min-height: 100vh; background: var(--n-color-body); }
+.detail-page { min-height: 100vh; background: var(--lib-bg-page); }
 .header {
   padding: 0 28px; height: 56px; display: flex; align-items: center;
+  /* 硬编码: 头部渐变背景是品牌识别元素，与主题无关 */
   background: linear-gradient(135deg, #5e6ad2 0%, #7c6fdb 100%);
 }
 .header-inner { display: flex; justify-content: space-between; width: 100%; }
@@ -145,12 +146,13 @@ async function handleHold() {
 .cover-section { flex-shrink: 0; width: 240px; }
 .cover-img { width: 240px; height: 340px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
 .cover-placeholder { width: 240px; height: 340px; display: flex; align-items: center; justify-content: center;
+  /* 硬编码: 封面占位符使用品牌渐变色，与主题无关 */
   background: linear-gradient(135deg, #5e6ad2 0%, #7170ff 50%, #a78bfa 100%);
   border-radius: 8px; box-shadow: 0 4px 20px rgba(94,106,210,0.3); }
 .cover-letter { font-size: 80px; font-weight: 700; color: rgba(255,255,255,0.9); }
 .cover-actions { margin-top: 20px; }
 .info-section { flex: 1; min-width: 0; }
-.book-title { margin: 0 0 4px; font-size: 26px; font-weight: 700; color: var(--n-text-color-1); }
-.book-author { margin: 0 0 8px; font-size: 14px; color: var(--n-text-color-3); }
-.section-title { margin: 0 0 12px; font-size: 16px; font-weight: 600; color: var(--n-text-color-1); }
+.book-title { margin: 0 0 4px; font-size: 26px; font-weight: 700; color: var(--lib-text-primary); }
+.book-author { margin: 0 0 8px; font-size: 14px; color: var(--lib-text-tertiary); }
+.section-title { margin: 0 0 12px; font-size: 16px; font-weight: 600; color: var(--lib-text-primary); }
 </style>
