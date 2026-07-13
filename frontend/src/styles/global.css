@@ -74,11 +74,11 @@ body {
   background: linear-gradient(135deg, var(--lib-gradient-start) 0%, var(--lib-gradient-end) 100%) !important;
 }
 
-.n-layout-header :deep(.n-button) {
+.n-layout-header .n-button {
   color: rgba(255, 255, 255, 0.85) !important;
 }
 
-.n-layout-header :deep(.n-button:hover) {
+.n-layout-header .n-button:hover {
   color: #ffffff !important;
 }
 
@@ -113,32 +113,47 @@ h1, h2, h3, h4, h5, h6 {
   --n-color-border: var(--lib-border);
 }
 
-.n-descriptions :deep(.n-descriptions-item-label) {
+.n-descriptions .n-descriptions-item-label {
   color: var(--lib-text-tertiary) !important;
 }
 
-.n-descriptions :deep(.n-descriptions-item-content) {
+.n-descriptions .n-descriptions-item-content {
   color: var(--lib-text-primary) !important;
 }
 
-.n-descriptions :deep(.n-descriptions-table-header) {
+.n-descriptions .n-descriptions-table-header {
   color: var(--lib-text-tertiary) !important;
   background-color: var(--lib-bg-card) !important;
 }
 
-.n-descriptions :deep(.n-descriptions-table-body) {
+.n-descriptions .n-descriptions-table-body {
   color: var(--lib-text-primary) !important;
   background-color: var(--lib-bg-content) !important;
 }
 
-.n-descriptions :deep(.n-descriptions-table) {
+.n-descriptions .n-descriptions-table {
   background-color: var(--lib-bg-content) !important;
 }
 
-.n-descriptions :deep(.n-descriptions-table-cell) {
+.n-descriptions .n-descriptions-table-cell {
   color: var(--lib-text-primary) !important;
   background-color: var(--lib-bg-content) !important;
   border-color: var(--lib-border) !important;
+}
+
+.n-descriptions .n-descriptions-table-header th {
+  color: var(--lib-text-tertiary) !important;
+  background-color: var(--lib-bg-card) !important;
+}
+
+.n-descriptions-table-header {
+  color: var(--lib-text-tertiary) !important;
+  background-color: var(--lib-bg-card) !important;
+}
+
+.n-descriptions-table-header th {
+  color: var(--lib-text-tertiary) !important;
+  background-color: var(--lib-bg-card) !important;
 }
 
 .fade-slide-enter-active,
