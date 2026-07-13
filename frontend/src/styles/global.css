@@ -43,6 +43,16 @@ html {
   -moz-osx-font-smoothing: grayscale;
 }
 
+::selection {
+  background-color: rgba(79, 70, 229, 0.3);
+  color: var(--lib-text-primary);
+}
+
+html.dark ::selection {
+  background-color: rgba(129, 140, 248, 0.4);
+  color: #f9fafb;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
   min-height: 100vh;
@@ -154,6 +164,14 @@ h1, h2, h3, h4, h5, h6 {
 .n-descriptions-table-header th {
   color: var(--lib-text-tertiary) !important;
   background-color: var(--lib-bg-card) !important;
+}
+
+.n-data-table-th {
+  background-color: var(--lib-bg-card) !important;
+}
+
+.n-data-table-th .n-data-table-th__title {
+  color: var(--lib-text-secondary) !important;
 }
 
 .fade-slide-enter-active,
