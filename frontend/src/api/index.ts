@@ -2,19 +2,18 @@ import axios from 'axios'
 import type { LoginResponse, UserProfile } from '@/types/api'
 import router from '@/router'
 
-const api = axios.create({ baseURL: '/api' })
+const axiosInstance = axios.create({ baseURL: '/api' })
 
-api.interceptors.request.use(config => {
+axiosInstance.interceptors.request.use(config => {
   const token = localStorage.getItem('token')
   if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
 
-api.interceptors.response.use(
+axiosInstance.interceptors.response.use(
   res => {
     const apiResponse = res.data
     if (apiResponse && typeof apiResponse === 'object' && 'data' in apiResponse) {
-      // Unwrap ApiResponse: {code, message, data: T, timestamp} -> T
       return apiResponse.data
     }
     return res.data
@@ -38,6 +37,17 @@ api.interceptors.response.use(
     return Promise.reject(new Error(msg))
   }
 )
+
+const api = {
+  get: <T>(url: string, config?: any) =>
+    axiosInstance.get<T>(url, config) as unknown as Promise<T>,
+  post: <T>(url: string, data?: any, config?: any) =>
+    axiosInstance.post<T>(url, data, config) as unknown as Promise<T>,
+  put: <T>(url: string, data?: any, config?: any) =>
+    axiosInstance.put<T>(url, data, config) as unknown as Promise<T>,
+  delete: <T>(url: string, config?: any) =>
+    axiosInstance.delete<T>(url, config) as unknown as Promise<T>,
+} as const
 
 export default api
 

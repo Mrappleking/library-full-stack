@@ -147,7 +147,7 @@ async function fetchReaders() {
 
     // Client-side filter by category
     if (searchCategory.value) {
-      list = list.filter(r => r.patronCategoryId === searchCategory.value)
+      list = list.filter(r => r.patronCategory?.id === searchCategory.value)
     }
 
     // Client-side sort
@@ -206,7 +206,7 @@ function handleSorterChange(sorter: { columnKey: string; order: string } | null)
 
 async function loadCategories() {
   try {
-    const data = await api.get('/rules/patron-categories')
+    const data: any[] = await api.get('/rules/patron-categories')
     categoryOptions.value = data.map((c: any) => ({ label: c.name, value: c.id }))
     const map: Record<number, string> = {}
     data.forEach((c: any) => { map[c.id] = c.name })

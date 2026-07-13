@@ -5,6 +5,8 @@ import com.library.exception.AppException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Field;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -15,11 +17,15 @@ class HoldServiceTest extends AbstractServiceTest {
     private BookService bookService;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         CacheService cacheService = mock(CacheService.class);
         AuditService auditService = new AuditService(auditLogMapper);
         bookService = new BookService(bookMapper, bookItemMapper, categoryMapper, borrowRecordMapper, auditService, cacheService);
         holdService = new HoldService(holdMapper, bookMapper, bookItemMapper, bookService, auditService);
+        
+        Field maxHoldsField = HoldService.class.getDeclaredField("maxHoldsPerReader");
+        maxHoldsField.setAccessible(true);
+        maxHoldsField.set(holdService, 3);
     }
 
     @Test
@@ -99,7 +105,7 @@ class HoldServiceTest extends AbstractServiceTest {
         item.setId(100);
         item.setStatus("on_hold");
 
-        when(holdMapper.findById(10)).thenReturn(hold);
+        when(holdMapper.findByIdForUpdate(10)).thenReturn(hold);
         when(bookItemMapper.findByIdForUpdate(100)).thenReturn(item);
 
         holdService.cancelHold(10, 1);
@@ -114,7 +120,7 @@ class HoldServiceTest extends AbstractServiceTest {
         hold.setId(10);
         hold.setUserId(2);
 
-        when(holdMapper.findById(10)).thenReturn(hold);
+        when(holdMapper.findByIdForUpdate(10)).thenReturn(hold);
         assertThrows(AppException.class, () -> holdService.cancelHold(10, 1));
     }
 

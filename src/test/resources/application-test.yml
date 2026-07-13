@@ -21,6 +21,8 @@ app:
   jwt:
     secret: test-secret-key-for-integration-tests-only
     expiration-ms: 86400000
+  hold:
+    max-holds-per-reader: 3
 
 logging:
   level:

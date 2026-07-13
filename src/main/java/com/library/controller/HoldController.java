@@ -32,7 +32,7 @@ public class HoldController {
 
     @GetMapping("/count")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getPendingCount() {
-        return ResponseEntity.ok(ApiResponse.success(Map.of("pending", 0)));
+        return ResponseEntity.ok(ApiResponse.success(Map.of("pending", holdService.countPendingHolds())));
     }
 
     @GetMapping("/my")

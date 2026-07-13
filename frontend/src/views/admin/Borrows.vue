@@ -118,11 +118,12 @@ async function handleReturn(id: number) {
   catch (e: unknown) { message.error((e as Error).message) }
 }
 
-import api from '@/api'
+import axios from 'axios'
 async function exportCsv() {
   exporting.value = true
   try {
-    const resp = await api.get('/borrows', { params: { export: 'csv' }, responseType: 'blob' })
+    const token = localStorage.getItem('token')
+    const resp = await axios.get('/api/borrows', { params: { export: 'csv' }, responseType: 'blob', headers: { Authorization: `Bearer ${token}` } })
     const url = window.URL.createObjectURL(new Blob([resp.data], { type: 'text/csv;charset=utf-8' }))
     const a = document.createElement('a')
     a.href = url; a.download = 'borrows-all.csv'; a.click()

@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,7 +34,9 @@ public class BookService {
     private final CacheService cacheService;
     
     private static final String BOOK_CACHE_PREFIX = "book:";
-    private static final int BOOK_CACHE_TTL_SECONDS = 300;
+    
+    @Value("${app.cache.book-ttl-seconds:300}")
+    private int bookCacheTtlSeconds;
     
     // Status transition validation
     private static final Map<String, List<String>> STATUS_TRANSITIONS = new HashMap<>();
@@ -128,7 +131,7 @@ public class BookService {
         resp.setItems(itemResponses);
         resp.setItemsCount((int) bookItemMapper.countByBookId(id));
 
-        cacheService.set(cacheKey, resp, BOOK_CACHE_TTL_SECONDS, java.util.concurrent.TimeUnit.SECONDS);
+        cacheService.set(cacheKey, resp, bookCacheTtlSeconds, java.util.concurrent.TimeUnit.SECONDS);
         return resp;
     }
 
@@ -277,7 +280,35 @@ public class BookService {
         return result;
     }
 
-     private void removeOldCoverIfChanged(String oldCover,String newCover){
+     @Transactional
+    public BookItem addCopy(Integer bookId, String barcode, String callNumber, String location, java.math.BigDecimal price) {
+        Book book = bookMapper.findById(bookId);
+        if (book == null) throw AppException.notFound("图书不存在");
+        
+        BookItem existing = bookItemMapper.findByBarcode(barcode);
+        if (existing != null) throw AppException.conflict("条码号已存在");
+        
+        BookItem item = new BookItem();
+        item.setBarcode(barcode);
+        item.setCallNumber(callNumber);
+        item.setLocation(location);
+        item.setPrice(price);
+        item.setBookId(bookId);
+        item.setStatus("available");
+        item.setCondition("normal");
+        item.setRequests(0);
+        item.setAcquiredAt(java.time.LocalDateTime.now());
+        
+        bookItemMapper.insert(item);
+        bookMapper.incrementTotal(bookId);
+        bookMapper.incrementAvailable(bookId);
+        
+        auditService.log("create", null, "book-item:" + item.getId(), "Added copy for book: " + book.getTitle());
+        cacheService.delete(BOOK_CACHE_PREFIX + bookId);
+        return item;
+    }
+
+    private void removeOldCoverIfChanged(String oldCover,String newCover){
         if(oldCover!=null&&oldCover.startsWith("/covers/")&&!oldCover.equals(newCover)){
             try{
                 Path oldFile =Paths.get("src/main/resources/static"+oldCover);

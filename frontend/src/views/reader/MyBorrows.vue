@@ -145,11 +145,13 @@ async function handleCancelHold(id: number) {
   catch (e: unknown) { message.error((e as Error).message) }
 }
 
+import axios from 'axios'
 async function exportCsv() {
   exporting.value = true
   try {
-    const resp = await borrowApi.getMyHistory({ export: 'csv' })
-    const url = window.URL.createObjectURL(new Blob([resp], { type: 'text/csv;charset=utf-8' }))
+    const token = localStorage.getItem('token')
+    const resp = await axios.get('/api/borrows/history', { params: { export: 'csv' }, responseType: 'blob', headers: { Authorization: `Bearer ${token}` } })
+    const url = window.URL.createObjectURL(new Blob([resp.data], { type: 'text/csv;charset=utf-8' }))
     const a = document.createElement('a')
     a.href = url; a.download = 'borrows-my.csv'; a.click()
     window.URL.revokeObjectURL(url)

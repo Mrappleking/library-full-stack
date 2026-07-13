@@ -2,6 +2,7 @@ package com.library.service;
 
 import com.library.entity.CirculationRule;
 import com.library.mapper.CirculationRuleMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.TimeUnit;
@@ -13,7 +14,9 @@ public class RuleService {
     private final CacheService cacheService;
 
     private static final String RULE_CACHE_PREFIX = "rule:";
-    private static final int RULE_CACHE_TTL_SECONDS = 3600;
+    
+    @Value("${app.cache.rule-ttl-seconds:3600}")
+    private int ruleCacheTtlSeconds;
 
     public RuleService(CirculationRuleMapper ruleMapper, CacheService cacheService) {
         this.ruleMapper = ruleMapper;
@@ -49,7 +52,7 @@ public class RuleService {
             rule.setFinePerDay(java.math.BigDecimal.valueOf(0.10));
         }
 
-        cacheService.set(cacheKey, rule, RULE_CACHE_TTL_SECONDS, TimeUnit.SECONDS);
+        cacheService.set(cacheKey, rule, ruleCacheTtlSeconds, TimeUnit.SECONDS);
         return rule;
     }
 

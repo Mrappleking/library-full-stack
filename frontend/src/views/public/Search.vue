@@ -3,7 +3,6 @@
     <n-layout-header bordered class="header">
       <div class="header-inner">
         <div class="brand" @click="$router.push('/books')">
-          <!-- Library SVG icon -->
           <svg class="brand-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
             <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
@@ -16,6 +15,10 @@
           </div>
         </div>
         <n-space>
+          <n-button text @click="toggleTheme">
+            <template #icon><n-icon><MoonOutline v-if="!isDark" /><SunnyOutline v-else /></n-icon></template>
+            {{ isDark ? '浅色' : '深色' }}
+          </n-button>
           <n-button text @click="$router.push('/login')">
             <template #icon><n-icon><PersonOutline /></n-icon></template>登录
           </n-button>
@@ -67,17 +70,26 @@
 import { onMounted, computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { NIcon } from 'naive-ui'
-import { SearchOutline, PersonOutline } from '@vicons/ionicons5'
+import { SearchOutline, PersonOutline, MoonOutline, SunnyOutline } from '@vicons/ionicons5'
 import FacetPanel from '../../components/FacetPanel.vue'
 import BookGrid from '../../components/BookGrid.vue'
 import { useBookStore } from '../../stores/books'
+import { useThemeStore } from '../../stores/theme'
 import type { BookListParams } from '../../types/api'
 
 const router = useRouter()
 const store = useBookStore()
+const themeStore = useThemeStore()
+const isDark = ref(themeStore.isDark)
+
 const searchInput = ref('')
 const activeFilters = ref<Record<string, string>>({})
 const totalPages = computed(() => Math.max(1, Math.ceil(store.total / 20)))
+
+function toggleTheme() {
+  themeStore.toggleTheme()
+  isDark.value = themeStore.isDark
+}
 
 onMounted(async () => {
   await store.search({})
@@ -86,7 +98,6 @@ onMounted(async () => {
 
 async function onSearch(query: string) {
   searchInput.value = query
-  // Merge current activeFilters to preserve campus/category filters
   const params: BookListParams = { ...activeFilters.value }
   if (query) params.search = query
   else delete params.search

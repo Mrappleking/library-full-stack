@@ -27,3 +27,29 @@ pagehelper:
 app:
   jwt:
     expiration-ms: 86400000  # 24h
+  cache:
+    book-ttl-seconds: 300
+    user-ttl-seconds: 300
+    rule-ttl-seconds: 3600
+  rate-limit:
+    capacity: 100
+    refill-tokens: 100
+    refill-period-seconds: 60
+  hold:
+    max-holds-per-reader: 3
+  security:
+    allowed-origins:
+      - http://localhost:5173
+      - http://localhost:5175
+      - http://127.0.0.1:5173
+      - http://127.0.0.1:5175
+    public-paths:
+      - /api/auth/login
+      - /api/auth/register
+      - /api/health
+    reader-public-paths:
+      - /api/facets
+      - /api/books
+      - /api/categories
+      - /api/rules
+      - /api/holds/count

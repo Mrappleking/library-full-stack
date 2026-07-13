@@ -1,6 +1,6 @@
 <template>
   <n-layout has-sider style="display: flex; min-height: 100vh;">
-    <n-layout-sider bordered collapse-mode="width" :collapsed-width="64" :width="240" :native-scrollbar="false" class="base-sider">
+    <n-layout-sider bordered collapse-mode="width" :collapsed-width="64" :width="240" :native-scrollbar="false" class="base-sider" :class="{ dark: isDark }">
       <div class="logo">
         <svg class="logo-icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
@@ -9,13 +9,13 @@
           <line x1="8" y1="11" x2="14" y2="11"/>
         </svg>
         <div>
-          <n-text tag="div" style="font-size: 16px; font-weight: 600; color: #e8e8f0;">{{ title }}</n-text>
-          <n-text tag="div" style="font-size: 11px; color: #7a7a9a; letter-spacing: 0.5px; text-transform: uppercase;">{{ subtitle }}</n-text>
+          <n-text tag="div" style="font-size: 16px; font-weight: 600;">{{ title }}</n-text>
+          <n-text tag="div" style="font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase;">{{ subtitle }}</n-text>
         </div>
       </div>
       <div class="sider-divider" v-if="showDivider"></div>
       <n-menu
-        inverted
+        :inverted="isDark"
         :value="activeKey"
         :options="menuOptions"
         :root-indent="rootIndent"
@@ -23,7 +23,11 @@
         @update:value="handleMenu"
       />
       <div class="footer">
-        <n-button text @click="handleLogout" style="width: 100%; color: #8888a0;">
+        <n-button text @click="handleThemeToggle" style="width: 100%; margin-bottom: 8px;">
+          <template #icon><n-icon><MoonOutline v-if="!isDark" /><SunnyOutline v-else /></n-icon></template>
+          {{ isDark ? '浅色模式' : '深色模式' }}
+        </n-button>
+        <n-button text @click="handleLogout" style="width: 100%;">
           <template #icon><n-icon><LogOutOutline /></n-icon></template>
           退出登录
         </n-button>
@@ -36,12 +40,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, h } from 'vue'
+import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { NIcon } from 'naive-ui'
-import { LogOutOutline } from '@vicons/ionicons5'
+import { LogOutOutline, MoonOutline, SunnyOutline } from '@vicons/ionicons5'
 import api from '@/api'
 import { useAuthStore } from '@/stores/auth'
+import { useThemeStore } from '@/stores/theme'
 import type { MenuOption } from 'naive-ui'
 
 interface Props {
@@ -60,6 +65,9 @@ const props = withDefaults(defineProps<Props>(), {
 const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
+const themeStore = useThemeStore()
+
+const isDark = computed(() => themeStore.isDark)
 
 const activeKey = computed(() => {
   const p = route.path
@@ -67,6 +75,8 @@ const activeKey = computed(() => {
 })
 
 function handleMenu(key: string) { router.push(key) }
+
+function handleThemeToggle() { themeStore.toggleTheme() }
 
 async function handleLogout() {
   try { await api.post('/auth/logout') } catch { /* best-effort */ }
@@ -77,13 +87,19 @@ async function handleLogout() {
 
 <style scoped>
 .base-sider {
+  border-right: 1px solid var(--n-color-border);
+}
+.base-sider:not(.dark) {
+  background: var(--n-color-base) !important;
+}
+.base-sider.dark {
   background: #16161e !important;
-  border-right: 1px solid rgba(255,255,255,0.06) !important;
+  border-right-color: rgba(255,255,255,0.06) !important;
 }
 .logo { display: flex; align-items: center; gap: 12px; padding: 20px 20px 16px; }
-.logo-icon { width: 26px; height: 26px; color: #7a7a9a; flex-shrink: 0; }
+.logo-icon { width: 26px; height: 26px; color: var(--n-color-text-3); flex-shrink: 0; }
 .sider-divider {
-  height: 1px; background: rgba(255,255,255,0.06); margin: 0 16px 8px;
+  height: 1px; background: var(--n-color-divider); margin: 0 16px 8px;
 }
 .content {
   padding: 28px 32px;
@@ -92,6 +108,6 @@ async function handleLogout() {
 }
 .footer {
   position: absolute; bottom: 0; width: 100%;
-  padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.06);
+  padding: 16px 20px; border-top: 1px solid var(--n-color-divider);
 }
 </style>

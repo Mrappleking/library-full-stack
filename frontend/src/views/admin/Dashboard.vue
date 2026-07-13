@@ -26,7 +26,7 @@
           <template #header>
             <div class="panel-header"><n-icon size="18"><TrendingUpOutline /></n-icon> 月度借阅趋势</div>
           </template>
-          <MonthlyBorrowChart :data="monthlyData" />
+          <MonthlyBorrowChart :data="monthlyData" :is-dark="isDark" />
         </n-card>
       </n-grid-item>
       <n-grid-item>
@@ -34,7 +34,7 @@
           <template #header>
             <div class="panel-header"><n-icon size="18"><PieChartOutline /></n-icon> 图书分类占比</div>
           </template>
-          <CategoryPieChart :data="categoryData" />
+          <CategoryPieChart :data="categoryData" :is-dark="isDark" />
         </n-card>
       </n-grid-item>
     </n-grid>
@@ -100,8 +100,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { NIcon, NTag, NSpace } from 'naive-ui'
+import { useThemeStore } from '@/stores/theme'
 import {
   BookOutline, PeopleOutline, LibraryOutline, GridOutline, AlertCircleOutline,
   SwapHorizontalOutline, ScanOutline, BarChartOutline, FlashOutline,
@@ -115,6 +116,8 @@ import type { StatsOverviewResponse, MonthlyStat, CategoryResponse } from '@/typ
 const colors = ['#5e6ad2', '#f0a020', '#18a058', '#2080f0', '#d03050']
 const icons = [LibraryOutline, SwapHorizontalOutline, PeopleOutline, GridOutline, AlertCircleOutline]
 const apiCount = ref(0)
+const themeStore = useThemeStore()
+const isDark = computed(() => themeStore.isDark)
 const stats = ref([
   { label: '总藏书', value: '-' },
   { label: '在借数量', value: '-' },
@@ -131,11 +134,11 @@ onMounted(async () => {
     const data = await statsApi.getOverview()
 
     stats.value = [
-      { label: '总藏书', value: data.totalBooks || 0 },
-      { label: '在借数量', value: data.activeBorrows || 0 },
-      { label: '读者总数', value: data.totalReaders || 0 },
-      { label: '分类数', value: data.totalCategories || 0 },
-      { label: '逾期未还', value: data.overdueCount || 0 }
+      { label: '总藏书', value: String(data.totalBooks || 0) },
+      { label: '在借数量', value: String(data.activeBorrows || 0) },
+      { label: '读者总数', value: String(data.totalReaders || 0) },
+      { label: '分类数', value: String(data.totalCategories || 0) },
+      { label: '逾期未还', value: String(data.overdueCount || 0) }
     ]
   } catch (e) { console.error('fetchStats failed:', e) }
 

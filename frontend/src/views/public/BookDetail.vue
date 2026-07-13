@@ -5,9 +5,15 @@
         <n-button text @click="$router.push('/books')">
           <template #icon><n-icon><ArrowBackOutline /></n-icon></template>返回搜索
         </n-button>
-        <n-button text @click="$router.push('/login')">
-          <template #icon><n-icon><PersonOutline /></n-icon></template>登录
-        </n-button>
+        <n-space>
+          <n-button text @click="toggleTheme">
+            <template #icon><n-icon><MoonOutline v-if="!isDark" /><SunnyOutline v-else /></n-icon></template>
+            {{ isDark ? '浅色' : '深色' }}
+          </n-button>
+          <n-button text @click="$router.push('/login')">
+            <template #icon><n-icon><PersonOutline /></n-icon></template>登录
+          </n-button>
+        </n-space>
       </div>
     </n-layout-header>
     <n-layout-content>
@@ -59,18 +65,28 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { NIcon } from 'naive-ui'
 import { useMessage } from 'naive-ui'
-import { ArrowBackOutline, PersonOutline, BookOutline, TimeOutline } from '@vicons/ionicons5'
+import { ArrowBackOutline, PersonOutline, BookOutline, TimeOutline, MoonOutline, SunnyOutline } from '@vicons/ionicons5'
 import HoldingsTable from '../../components/HoldingsTable.vue'
 import { bookApi, borrowApi, holdApi } from '../../api'
+import { useThemeStore } from '../../stores/theme'
 import type { BookDetail } from '../../types/api'
 
 const route = useRoute()
 const router = useRouter()
 const message = useMessage()
+const themeStore = useThemeStore()
+const isDark = ref(themeStore.isDark)
+
 const book = ref<BookDetail | null>(null)
 const loading = ref(true)
 const holdCount = ref(0)
 const holdLoading = ref(false)
+
+function toggleTheme() {
+  themeStore.toggleTheme()
+  isDark.value = themeStore.isDark
+}
+
 function hasToken() { return !!localStorage.getItem('token') }
 
 onMounted(async () => {
@@ -102,6 +118,7 @@ async function handleBorrow() {
     router.push('/reader/books')
   } catch (e: unknown) { message.error((e as Error).message) }
 }
+
 async function handleHold() {
   if (!hasToken()) { router.push('/login'); return }
   if (!book.value) return

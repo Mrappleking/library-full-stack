@@ -40,7 +40,7 @@
       <div style="display:flex;gap:12px;align-items:flex-start;width:100%;">
         <n-upload
           :action="'/api/upload/cover'"
-          :headers="{ 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '') }"
+          :headers="uploadHeaders"
           accept=".jpg,.jpeg,.png,.webp"
           :max="1"
           :show-file-list="false"
@@ -84,9 +84,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, h } from 'vue'
+import { ref, reactive, onMounted, h, computed } from 'vue'
 import { useMessage, NTag, NButton, NPopconfirm, NUpload, NSpin } from 'naive-ui'
 import { bookApi, categoryApi } from '@/api'
+import api from '@/api/index'
 import type { BookSummary, BookItemSummary, BookListResponse, BookItemsResponse } from '@/types/api'
 import type { DataTableColumn } from 'naive-ui'
 
@@ -208,7 +209,24 @@ const editingId = ref<number | null>(null)
 const saving = ref(false)
 const form = reactive({ isbn: '', title: '', author: '', publisher: '', year: undefined as number | undefined, categoryId: null as number | null, total: 1, location: '', desc: '', cover: '' })
 const uploading = ref(false)
-function beforeUpload({ file }: { file: File }) {
+const uploadHeaders = computed(() => ({ Authorization: `Bearer ${localStorage.getItem('token') || ''}` }))
+
+function handleUploadFinish({ event }: { event?: ProgressEvent }) {
+  uploading.value = false
+  if (!event) return
+  const resp = JSON.parse((event.target as XMLHttpRequest).response)
+  if (resp.path) {
+    form.cover = resp.path
+    message.success('封面上传成功')
+  }
+}
+
+function handleUploadError() {
+  uploading.value = false
+  message.error('上传失败')
+}
+
+function beforeUpload({ file }: { file: any }) {
   const allowed = ['image/jpeg', 'image/png', 'image/webp']
   if (!allowed.includes(file.type)) {
     message.error('只接受 jpg/png/webp 格式')
@@ -220,20 +238,6 @@ function beforeUpload({ file }: { file: File }) {
   }
   uploading.value = true
   return true
-}
-
-function handleUploadFinish({ event }: { event: ProgressEvent }) {
-  uploading.value = false
-  const resp = JSON.parse((event.target as XMLHttpRequest).response)
-  if (resp.path) {
-    form.cover = resp.path
-    message.success('封面上传成功')
-  }
-}
-
-function handleUploadError() {
-  uploading.value = false
-  message.error('上传失败')
 }
 
 const rulesData = {
@@ -268,12 +272,11 @@ const copyForm = reactive({ barcode: '', callNumber: '', location: '', price: nu
 
 function openAddCopy(row: any) { copyBookId.value = row.id; copyForm.barcode = ''; copyForm.callNumber = ''; copyForm.location = ''; copyForm.price = null; showCopyModal.value = true }
 
-import api from '@/api'
 async function handleAddCopy() {
   if (!copyForm.barcode) { message.warning('条码号必填'); return }
   copySaving.value = true
   try {
-    await api.post(`/book-items`, { ...copyForm, bookId: copyBookId.value })
+    await api.post(`/books/${copyBookId.value}/items`, copyForm)
     message.success('复本已添加')
     showCopyModal.value = false; fetchBooks()
   } catch (e: unknown) { message.error((e as Error).message) }

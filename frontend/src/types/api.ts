@@ -64,6 +64,7 @@ export interface ReaderResponse {
   id: number; username: string; name: string; role: 'admin' | 'reader'
   phone?: string | null; email?: string | null; totalFines?: number
   patronCategory?: { id: number; name: string } | null
+  borrowRecords?: any[]
   createdAt: string
 }
 

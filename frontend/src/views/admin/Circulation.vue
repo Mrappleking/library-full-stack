@@ -57,7 +57,7 @@ const queue = ref<any[]>([])
 
 async function onScan(barcode: string) {
   try {
-    const data = await api.get(`/book-items/${encodeURIComponent(barcode)}`)
+    const data: any = await api.get(`/book-items/${encodeURIComponent(barcode)}`)
     currentItem.value = data.item
     currentBorrow.value = data.currentBorrow ?? null
     playBeep(data.currentBorrow ? 'return' : 'borrow')
@@ -85,7 +85,7 @@ async function commitAll() {
       if (op.action === 'borrow') {
         await borrowApi.borrow(op.itemId)
       } else {
-        const data = await borrowApi.returnBook(op.currentBorrowId)
+        const data: any = await borrowApi.returnBook(op.currentBorrowId)
         if (data.fine) message.warning(`逾期罚款: ¥${data.fine.amount}`)
       }
       message.success(op.action === 'borrow' ? '借书成功' : '还书成功')

@@ -81,6 +81,10 @@
     UPDATE books SET available = available + 1 WHERE id=#{id}
   </update>
 
+  <update id="incrementTotal">
+    UPDATE books SET total = total + 1 WHERE id=#{id}
+  </update>
+
   <update id="updateStatus">
     UPDATE books SET status = #{status}, updated_at = NOW() WHERE id = #{id}
   </update>

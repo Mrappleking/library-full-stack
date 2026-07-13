@@ -12,12 +12,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 
 @Component
 @Order(1)
@@ -25,7 +27,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(JwtAuthFilter.class);
     private static final String USER_CACHE_PREFIX = "user:";
-    private static final int USER_CACHE_TTL_SECONDS = 300;
+
+    @Value("${app.cache.user-ttl-seconds:300}")
+    private int userCacheTtlSeconds;
+    
+    @Value("${app.security.public-paths:/api/auth/login,/api/auth/register,/api/health}")
+    private List<String> publicPaths;
+    
+    @Value("${app.security.reader-public-paths:/api/facets,/api/books,/api/categories,/api/rules,/api/holds/count}")
+    private List<String> readerPublicPaths;
 
     private final JwtUtil jwtUtil;
     private final UserMapper userMapper;
@@ -107,14 +117,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
      * Fully public paths — completely open, all HTTP methods.
      */
     private boolean isPublicPath(String path) {
-        return path.equals("/api/auth/login")
-                || path.equals("/api/auth/register")
-                || path.equals("/api/health")
-                || path.equals("/")
-                || path.startsWith("/covers")
-                || path.startsWith("/swagger-ui")
-                || path.startsWith("/api-docs")
-                || path.startsWith("/v3/api-docs");
+        if (path.equals("/") || path.startsWith("/covers") 
+                || path.startsWith("/swagger-ui") || path.startsWith("/api-docs") 
+                || path.startsWith("/v3/api-docs")) {
+            return true;
+        }
+        return publicPaths.stream().anyMatch(p -> path.equals(p));
     }
 
     /**
@@ -122,11 +130,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
      * POST/PUT/DELETE on these paths require authentication.
      */
     private boolean isReadOnlyPublicPath(String path) {
-        return path.equals("/api/facets")
-                || path.startsWith("/api/books")
-                || path.startsWith("/api/categories")
-                || path.startsWith("/api/rules")
-                || path.startsWith("/api/holds/count");
+        return readerPublicPaths.stream().anyMatch(p -> path.equals(p) || path.startsWith(p));
     }
 
     /**
@@ -148,7 +152,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
         int version = user.getTokenVersion() != null ? user.getTokenVersion() : 0;
         try {
-            cacheService.set(cacheKey, version, USER_CACHE_TTL_SECONDS, java.util.concurrent.TimeUnit.SECONDS);
+            cacheService.set(cacheKey, version, userCacheTtlSeconds, java.util.concurrent.TimeUnit.SECONDS);
         } catch (Exception e) {
             log.debug("Failed to set cache: {}", e.getMessage());
         }

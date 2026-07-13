@@ -100,6 +100,7 @@ public class BorrowService {
         }
 
         if (targetBookId == null) throw AppException.notFound("图书不存在");
+        if (targetItemId == null) throw AppException.badRequest("该书暂无可用复本");
 
         User user = userMapper.findById(userId);
         BookItem item = targetItemId != null ? bookItemMapper.findById(targetItemId) : null;

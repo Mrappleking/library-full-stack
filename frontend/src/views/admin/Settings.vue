@@ -149,9 +149,9 @@ onMounted(async () => {
       api.get('/rules/patron-categories'),
       api.get('/rules/item-types')
     ])
-    rules.value = r.status === 'fulfilled' ? r.value : []
-    patronCategories.value = p.status === 'fulfilled' ? p.value : []
-    itemTypes.value = i.status === 'fulfilled' ? i.value : []
+    rules.value = r.status === 'fulfilled' ? (r.value as any) : []
+    patronCategories.value = p.status === 'fulfilled' ? (p.value as any) : []
+    itemTypes.value = i.status === 'fulfilled' ? (i.value as any) : []
   } catch (e) { console.error('fetchSettings failed:', e) }
   loading.value = false
 })

@@ -21,8 +21,14 @@
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
 }
+html.dark .sk-cover {
+  background: linear-gradient(90deg, #2d3748 25%, #4a5568 50%, #2d3748 75%);
+}
 .sk-body { display: flex; flex-direction: column; gap: 8px; align-items: center; }
 .sk-line { height: 12px; border-radius: 6px; background: linear-gradient(90deg, #e8e8ee 25%, #f0f0f5 50%, #e8e8ee 75%); background-size: 200% 100%; animation: shimmer 1.5s ease-in-out infinite; }
+html.dark .sk-line {
+  background: linear-gradient(90deg, #2d3748 25%, #4a5568 50%, #2d3748 75%);
+}
 .sk-title { width: 80%; }
 .sk-author { width: 55%; height: 10px; }
 .sk-meta { width: 40%; height: 10px; }

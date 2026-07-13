@@ -9,12 +9,14 @@ import java.util.List;
 @Mapper
 public interface HoldMapper {
     Hold findById(Integer id);
+    Hold findByIdForUpdate(Integer id);
     List<Hold> findByUserId(Integer userId);
     List<Hold> findAll(@Param("status") String status, @Param("bookId") Integer bookId);
     Hold findNextPendingByBookId(Integer bookId);
     Hold findExistingHold(@Param("userId") Integer userId, @Param("bookId") Integer bookId);
     long countActiveByUserId(Integer userId);
     long countPendingByBookId(Integer bookId);
+    long countAllPending();
     List<Hold> findExpiredReadyHolds();
     List<Hold> findAllPage(@Param("status") String status, @Param("bookId") Integer bookId, @Param("offset") int offset, @Param("limit") int limit);
     long countAllPage(@Param("status") String status, @Param("bookId") Integer bookId);
