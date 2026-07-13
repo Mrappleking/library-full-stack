@@ -54,7 +54,7 @@ function isActive(key: string, value: string) { return props.active[key] === val
 .facet-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
 .facet-count {
   font-size: 11px; padding: 1px 8px; border-radius: 10px;
-  background: rgba(0,0,0,0.04); color: var(--n-text-color-3);
+  background: var(--n-divider-color); color: var(--n-text-color-3);
   min-width: 28px; text-align: center;
 }
 </style>
