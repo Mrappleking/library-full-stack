@@ -16,7 +16,7 @@ class UserServiceTest extends AbstractServiceTest {
 
     @BeforeEach
     void setUp() {
-        userService = new UserService(userMapper);
+        userService = new UserService(userMapper, borrowRecordMapper);
     }
 
     @Test
