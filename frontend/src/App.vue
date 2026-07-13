@@ -40,20 +40,33 @@ html {
 html:not(.dark) {
   background-color: #f3f4f6;
   color-scheme: light;
+  --theme-text-color: #111827;
+  --theme-text-color-2: #374151;
+  --theme-text-color-3: #6b7280;
+  --theme-bg-color: #ffffff;
+  --theme-body-bg: #f3f4f6;
 }
 
 html.dark {
   background-color: #111827;
   color-scheme: dark;
+  --theme-text-color: #f9fafb;
+  --theme-text-color-2: #e5e7eb;
+  --theme-text-color-3: #d1d5db;
+  --theme-bg-color: #1f2937;
+  --theme-body-bg: #111827;
 }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
   min-height: 100vh;
+  color: var(--theme-text-color);
+  background-color: var(--theme-body-bg);
 }
 
 #app {
   min-height: 100vh;
+  color: var(--theme-text-color);
 }
 
 * {
@@ -61,6 +74,52 @@ body {
               color 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
               border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
               box-shadow 0.3s ease;
+}
+
+html:not(.dark) .n-layout-content {
+  background: #ffffff !important;
+  color: #111827 !important;
+}
+
+html.dark .n-layout-content {
+  background: #1f2937 !important;
+  color: #f9fafb !important;
+}
+
+html:not(.dark) .n-layout {
+  background: #f3f4f6 !important;
+}
+
+html.dark .n-layout {
+  background: #111827 !important;
+}
+
+html:not(.dark) h1,
+html:not(.dark) h2,
+html:not(.dark) h3,
+html:not(.dark) h4,
+html:not(.dark) h5,
+html:not(.dark) h6 {
+  color: #111827 !important;
+}
+
+html.dark h1,
+html.dark h2,
+html.dark h3,
+html.dark h4,
+html.dark h5,
+html.dark h6 {
+  color: #f9fafb !important;
+}
+
+html:not(.dark) .n-descriptions {
+  --n-color-card: #ffffff;
+  --n-color-text: #111827;
+}
+
+html.dark .n-descriptions {
+  --n-color-card: #1f2937;
+  --n-color-text: #f9fafb;
 }
 
 .fade-slide-enter-active,

@@ -150,7 +150,7 @@ async function handleHold() {
 .cover-letter { font-size: 80px; font-weight: 700; color: rgba(255,255,255,0.9); }
 .cover-actions { margin-top: 20px; }
 .info-section { flex: 1; min-width: 0; }
-.book-title { margin: 0 0 4px; font-size: 26px; font-weight: 700; }
+.book-title { margin: 0 0 4px; font-size: 26px; font-weight: 700; color: var(--n-text-color-1); }
 .book-author { margin: 0 0 8px; font-size: 14px; color: var(--n-text-color-3); }
-.section-title { margin: 0 0 12px; font-size: 16px; font-weight: 600; }
+.section-title { margin: 0 0 12px; font-size: 16px; font-weight: 600; color: var(--n-text-color-1); }
 </style>
