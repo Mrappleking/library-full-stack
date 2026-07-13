@@ -12,7 +12,7 @@
 <style scoped>
 .skeleton-card {
   width: 190px; border-radius: 12px; overflow: hidden;
-  background: var(--n-card-color); border: 1px solid var(--n-border-color);
+  background: var(--lib-bg-card); border: 1px solid var(--lib-border);
   padding: 16px 17px 18px;
 }
 .sk-cover {

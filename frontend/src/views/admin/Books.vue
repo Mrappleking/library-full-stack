@@ -147,30 +147,30 @@ const ExpandItems = {
     }
     onMounted(() => { load() })
     return () => {
-      if (items.value.length === 0) return h('div', { style: 'padding:12px;color:var(--n-text-color-3);' }, '暂无复本')
+      if (items.value.length === 0) return h('div', { style: 'padding:12px;color:var(--lib-text-tertiary);' }, '暂无复本')
       return h('div', { style: 'padding:8px 0;' }, [
         h('table', { style: 'width:100%;border-collapse:collapse;font-size:13px;' }, [
           h('thead', {}, h('tr', {}, [
-            h('th', { style: 'text-align:left;padding:4px 12px;color:var(--n-text-color-3);' }, '条码号'),
-            h('th', { style: 'text-align:left;padding:4px 12px;color:var(--n-text-color-3);' }, '索书号'),
-            h('th', { style: 'text-align:left;padding:4px 12px;color:var(--n-text-color-3);' }, '馆藏地'),
-            h('th', { style: 'text-align:left;padding:4px 12px;color:var(--n-text-color-3);' }, '状态'),
-            h('th', { style: 'text-align:left;padding:4px 12px;color:var(--n-text-color-3);' }, '品相'),
-            h('th', { style: 'text-align:right;padding:4px 12px;color:var(--n-text-color-3);' }, '价格')
+            h('th', { style: 'text-align:left;padding:4px 12px;color:var(--lib-text-tertiary);' }, '条码号'),
+            h('th', { style: 'text-align:left;padding:4px 12px;color:var(--lib-text-tertiary);' }, '索书号'),
+            h('th', { style: 'text-align:left;padding:4px 12px;color:var(--lib-text-tertiary);' }, '馆藏地'),
+            h('th', { style: 'text-align:left;padding:4px 12px;color:var(--lib-text-tertiary);' }, '状态'),
+            h('th', { style: 'text-align:left;padding:4px 12px;color:var(--lib-text-tertiary);' }, '品相'),
+            h('th', { style: 'text-align:right;padding:4px 12px;color:var(--lib-text-tertiary);' }, '价格')
           ])),
           h('tbody', {}, items.value.map((i: BookItemSummary) => {
             const statusColors: Record<string, any> = { available: 'success', borrowed: 'warning', repairing: 'info', lost: 'error', withdrawn: 'default' }
             const conMap: Record<string, string> = { normal: '正常', damaged: '破损', repairing: '修补中', lost: '遗失', withdrawn: '剔除' }
-            return h('tr', { style: 'border-top:1px solid var(--n-divider-color);' }, [
-              h('td', { style: 'padding:6px 12px;font-family:monospace;color:var(--n-text-color);' }, i.barcode),
-              h('td', { style: 'padding:6px 12px;color:var(--n-text-color-2);' }, i.callNumber || '-'),
-              h('td', { style: 'padding:6px 12px;color:var(--n-text-color-2);' }, i.location || '-'),
+            return h('tr', { style: 'border-top:1px solid var(--lib-divider);' }, [
+              h('td', { style: 'padding:6px 12px;font-family:monospace;color:var(--lib-text-primary);' }, i.barcode),
+              h('td', { style: 'padding:6px 12px;color:var(--lib-text-secondary);' }, i.callNumber || '-'),
+              h('td', { style: 'padding:6px 12px;color:var(--lib-text-secondary);' }, i.location || '-'),
               h('td', { style: 'padding:6px 12px;' }, h(NTag, { type: statusColors[i.status] || 'default', size: 'tiny' }, () => {
                 const labels: Record<string, string> = { available: '在架', borrowed: '借出', repairing: '修补', lost: '遗失', withdrawn: '剔除' }
                 return labels[i.status] || i.status
               })),
-              h('td', { style: 'padding:6px 12px;color:var(--n-text-color-3);' }, (i.condition && conMap[i.condition]) || i.condition || '-'),
-              h('td', { style: 'padding:6px 12px;text-align:right;color:var(--n-text-color-2);' }, i.price ? `¥${i.price}` : '-')
+              h('td', { style: 'padding:6px 12px;color:var(--lib-text-tertiary);' }, (i.condition && conMap[i.condition]) || i.condition || '-'),
+              h('td', { style: 'padding:6px 12px;text-align:right;color:var(--lib-text-secondary);' }, i.price ? `¥${i.price}` : '-')
             ])
           }))
         ])

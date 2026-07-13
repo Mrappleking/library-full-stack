@@ -170,13 +170,13 @@ onMounted(async () => {
   display: flex; align-items: center; gap: 12px; margin-bottom: 4px;
 }
 .page-title {
-  font-size: 22px; font-weight: 700; color: var(--n-text-color); margin: 0;
+  font-size: 22px; font-weight: 700; color: var(--lib-text-primary); margin: 0;
 }
 .stat-card {
   position: relative; overflow: hidden;
-  background: var(--n-card-color); border-radius: 12px;
+  background: var(--lib-bg-card); border-radius: 12px;
   padding: 20px; display: flex; align-items: center; gap: 16px;
-  border: 1px solid var(--n-border-color);
+  border: 1px solid var(--lib-border);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .stat-card:hover {
@@ -186,12 +186,12 @@ onMounted(async () => {
 .stat-icon-wrap {
   width: 46px; height: 46px; border-radius: 12px;
   display: flex; align-items: center; justify-content: center;
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  background: color-mix(in srgb, var(--lib-primary) 12%, transparent);
   flex-shrink: 0;
 }
 .stat-body { display: flex; flex-direction: column; gap: 2px; }
-.stat-value { font-size: 26px; font-weight: 700; color: var(--n-text-color); line-height: 1.1; }
-.stat-label { font-size: 12px; color: var(--n-text-color-3); }
+.stat-value { font-size: 26px; font-weight: 700; color: var(--lib-text-primary); line-height: 1.1; }
+.stat-label { font-size: 12px; color: var(--lib-text-tertiary); }
 .stat-glow {
   position: absolute; top: -20px; right: -20px; width: 100px; height: 100px;
   pointer-events: none; border-radius: 50%;
@@ -204,12 +204,12 @@ onMounted(async () => {
   border-radius: 10px; cursor: pointer;
   transition: background 0.15s ease, transform 0.15s ease;
 }
-.action-item:hover { background: var(--n-color); transform: translateX(4px); }
+.action-item:hover { background: var(--lib-bg-hover); transform: translateX(4px); }
 .action-icon {
   width: 42px; height: 42px; border-radius: 10px;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 .action-text { display: flex; flex-direction: column; gap: 1px; }
-.action-name { font-size: 14px; font-weight: 600; color: var(--n-text-color); }
-.action-desc { font-size: 12px; color: var(--n-text-color-3); }
+.action-name { font-size: 14px; font-weight: 600; color: var(--lib-text-primary); }
+.action-desc { font-size: 12px; color: var(--lib-text-tertiary); }
 </style>

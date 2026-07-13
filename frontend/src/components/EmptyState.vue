@@ -25,5 +25,5 @@ defineProps<{ message?: string }>()
   padding: 60px 0; gap: 16px;
 }
 .empty-icon { opacity: 0.6; }
-.empty-message { font-size: 14px; color: var(--n-text-color-3); }
+.empty-message { font-size: 14px; color: var(--lib-text-tertiary); }
 </style>

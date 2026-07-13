@@ -279,12 +279,12 @@ const ExpandPanel = {
     }
     onMounted(() => { load() })
     return () => records.value.length === 0
-      ? h('div', { style: 'padding:12px;color:var(--n-text-color-3);' }, '暂无借阅记录')
+      ? h('div', { style: 'padding:12px;color:var(--lib-text-tertiary);' }, '暂无借阅记录')
       : h('div', { style: 'padding:8px 0;' },
           records.value.map((r: any) =>
-            h('div', { style: 'display:flex;gap:16px;padding:6px 12px;font-size:13px;color:var(--n-text-color-2);' }, [
+            h('div', { style: 'display:flex;gap:16px;padding:6px 12px;font-size:13px;color:var(--lib-text-secondary);' }, [
               h('span', r.book?.title || '未知'),
-              h('span', { style: 'color:var(--n-text-color-3);' }, new Date(r.borrowDate).toLocaleDateString('zh-CN')),
+              h('span', { style: 'color:var(--lib-text-tertiary);' }, new Date(r.borrowDate).toLocaleDateString('zh-CN')),
               h(NTag, { size: 'tiny', type: r.status === 'active' ? 'success' : 'default' }, () => r.status === 'active' ? '在借' : '已还')
             ])
           )

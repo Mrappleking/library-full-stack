@@ -187,7 +187,7 @@ onUnmounted(() => {
 .books-page { padding: 24px; max-width: 1400px; margin: 0 auto; }
 
 .page-header { margin-bottom: 8px; }
-.page-subtitle { margin: 0; font-size: 14px; color: var(--n-text-color-3); }
+.page-subtitle { margin: 0; font-size: 14px; color: var(--lib-text-tertiary); }
 
 .skeleton-grid {
   display: grid;
@@ -207,18 +207,18 @@ onUnmounted(() => {
 }
 
 .book-card {
-  background: var(--n-card-color);
+  background: var(--lib-bg-card);
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
   transition: all 0.25s ease;
-  border: 1px solid var(--n-divider-color);
+  border: 1px solid var(--lib-divider);
 }
 
 .book-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
-  border-color: var(--n-primary-color);
+  border-color: var(--lib-primary);
 }
 
 .cover-wrapper {
@@ -271,7 +271,7 @@ onUnmounted(() => {
 .book-author {
   margin: 0 0 12px;
   font-size: 13px;
-  color: var(--n-text-color-3);
+  color: var(--lib-text-tertiary);
 }
 
 .book-meta {
@@ -289,7 +289,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   padding: 80px 0;
-  color: var(--n-text-color-3);
+  color: var(--lib-text-tertiary);
 }
 
 .empty-state p {

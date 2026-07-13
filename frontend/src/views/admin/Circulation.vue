@@ -111,5 +111,5 @@ function playBeep(type: string) {
 
 <style scoped>
 .circulation { padding: 16px; }
-.empty { text-align: center; color: var(--n-text-color-3); padding: 24px; }
+.empty { text-align: center; color: var(--lib-text-tertiary); padding: 24px; }
 </style>
