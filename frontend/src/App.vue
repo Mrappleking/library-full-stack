@@ -18,16 +18,11 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
 import { zhCN, dateZhCN } from 'naive-ui'
 import { useThemeStore } from './stores/theme'
 import ToastContainer from './components/ToastContainer.vue'
 
 const themeStore = useThemeStore()
-
-onMounted(() => {
-  themeStore.loadTheme()
-})
 </script>
 
 <style>
@@ -43,19 +38,22 @@ html {
 }
 
 html:not(.dark) {
-  background-color: #f9fafb;
+  background-color: #f3f4f6;
   color-scheme: light;
-  color: #000000;
 }
 
 html.dark {
-  background-color: #0f172a;
+  background-color: #111827;
   color-scheme: dark;
-  color: #f3f4f6;
 }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+  min-height: 100vh;
+}
+
+#app {
+  min-height: 100vh;
 }
 
 * {
