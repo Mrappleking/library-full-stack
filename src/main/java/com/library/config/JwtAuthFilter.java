@@ -62,6 +62,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
+        // 1.5. POST /api/system/logs is public for error reporting
+        if ("/api/system/logs".equals(path) && "POST".equals(method)) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         // 2. Read-only public paths — only GET/HEAD allowed without auth
         if (isReadOnlyPublicPath(path) && ("GET".equals(method) || "HEAD".equals(method))) {
             chain.doFilter(request, response);
@@ -119,7 +125,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private boolean isPublicPath(String path) {
         if (path.equals("/") || path.startsWith("/covers") 
                 || path.startsWith("/swagger-ui") || path.startsWith("/api-docs") 
-                || path.startsWith("/v3/api-docs") || path.startsWith("/api/system/logs")) {
+                || path.startsWith("/v3/api-docs")) {
             return true;
         }
         return publicPaths.stream().anyMatch(p -> path.equals(p));

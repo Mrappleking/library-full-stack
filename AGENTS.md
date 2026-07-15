@@ -388,3 +388,4 @@ find frontend/src -name '*.vue' | wc -l
 find src -name '*.xml' -path '*/mappers/*' | wc -l
 ```
 注意：- **提交前跑测试。** `./mvnw test`（102 个测试全部通过再提交），可以拓展测试集，但要保证适用性和通用性。
+最后要注意删除中间文件和commit并提交到分支上去并写好详细coomit注释。
