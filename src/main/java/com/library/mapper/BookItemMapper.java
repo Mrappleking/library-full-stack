@@ -21,5 +21,6 @@ public interface BookItemMapper {
     List<Map<String, Object>> countByLocation(Map<String, Object> params);
     void insert(BookItem item);
     int updateStatus(@Param("id") Integer id, @Param("status") String status);
+    int updateStatusIfAvailable(@Param("id") Integer id, @Param("status") String status);
     void incrementRequests(Integer id);
 }

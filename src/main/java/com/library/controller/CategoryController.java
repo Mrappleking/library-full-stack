@@ -1,5 +1,6 @@
 package com.library.controller;
 
+import com.library.annotation.RequireAdmin;
 import com.library.dto.request.CategoryCreateRequest;
 import com.library.dto.request.CategoryUpdateRequest;
 import com.library.dto.response.ApiResponse;
@@ -29,17 +30,20 @@ public class CategoryController {
     }
 
     @PostMapping
+    @RequireAdmin
     public ResponseEntity<ApiResponse<Category>> create(@Valid @RequestBody CategoryCreateRequest data) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created("分类创建成功", categoryService.create(data.getName(), data.getDesc())));
     }
 
     @PutMapping("/{id}")
+    @RequireAdmin
     public ResponseEntity<ApiResponse<Category>> update(@PathVariable Integer id, @Valid @RequestBody CategoryUpdateRequest data) {
         return ResponseEntity.ok(ApiResponse.success("分类更新成功", categoryService.update(id, data.getName(), data.getDesc())));
     }
 
     @DeleteMapping("/{id}")
+    @RequireAdmin
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Integer id) {
         categoryService.delete(id);
         return ResponseEntity.ok(ApiResponse.success("分类删除成功", null));

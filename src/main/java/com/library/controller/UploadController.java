@@ -1,7 +1,7 @@
 package com.library.controller;
 
+import com.library.annotation.RequireAdmin;
 import com.library.dto.response.ApiResponse;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -33,11 +33,8 @@ public class UploadController {
     );
 
     @PostMapping("/cover")
-    public ResponseEntity<ApiResponse<java.util.Map<String, String>>> uploadCover(@RequestParam("file") MultipartFile file, HttpServletRequest request) {
-        String role = (String) request.getAttribute("userRole");
-        if (!"admin".equals(role)) {
-            return ResponseEntity.status(403).body(ApiResponse.forbidden("仅管理员可上传封面"));
-        }
+    @RequireAdmin
+    public ResponseEntity<ApiResponse<java.util.Map<String, String>>> uploadCover(@RequestParam("file") MultipartFile file) {
 
         if (file.isEmpty()) {
             return ResponseEntity.badRequest().body(ApiResponse.badRequest("文件不能为空"));

@@ -1,12 +1,12 @@
 package com.library.controller;
 
+import com.library.annotation.RequireAdmin;
 import com.library.dto.request.ErrorLogRequest;
 import com.library.dto.response.ApiResponse;
 import com.library.entity.ErrorLog;
 import com.library.service.CacheService;
 import com.library.service.ErrorLogService;
 import com.library.service.MonitorService;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,23 +28,17 @@ public class SystemController {
     }
 
     @PostMapping("/clear-cache")
-    public ResponseEntity<ApiResponse<Void>> clearCache(HttpServletRequest request) {
-        String role = (String) request.getAttribute("userRole");
-        if (!"admin".equals(role)) {
-            return ResponseEntity.status(403).body(ApiResponse.forbidden("仅管理员可清除缓存"));
-        }
+    @RequireAdmin
+    public ResponseEntity<ApiResponse<Void>> clearCache() {
         cacheService.deletePattern("*");
         return ResponseEntity.ok(ApiResponse.success("缓存已清除", null));
     }
 
     @PostMapping("/clear-cache/{key}")
-    public ResponseEntity<ApiResponse<Void>> clearCacheByKey(@PathVariable String key, HttpServletRequest request) {
+    @RequireAdmin
+    public ResponseEntity<ApiResponse<Void>> clearCacheByKey(@PathVariable String key) {
         if (key == null) {
             return ResponseEntity.badRequest().body(ApiResponse.badRequest("缓存键不能为空"));
-        }
-        String role = (String) request.getAttribute("userRole");
-        if (!"admin".equals(role)) {
-            return ResponseEntity.status(403).body(ApiResponse.forbidden("仅管理员可清除缓存"));
         }
         cacheService.delete(key);
         return ResponseEntity.ok(ApiResponse.success("缓存已清除: " + key, null));
@@ -83,16 +77,11 @@ public class SystemController {
     }
 
     @GetMapping("/logs")
+    @RequireAdmin
     public ResponseEntity<ApiResponse<List<ErrorLog>>> getLogs(
-        HttpServletRequest request,
         @RequestParam(required = false) String type,
         @RequestParam(required = false) Integer userId
     ) {
-        String role = (String) request.getAttribute("userRole");
-        if (!"admin".equals(role)) {
-            return ResponseEntity.status(403).body(ApiResponse.forbidden("仅管理员可查看日志"));
-        }
-
         List<ErrorLog> logs;
         if (type != null && !type.isEmpty()) {
             logs = errorLogService.getLogsByType(type);
@@ -106,12 +95,8 @@ public class SystemController {
     }
 
     @GetMapping("/logs/stats")
-    public ResponseEntity<ApiResponse<Object>> getLogStats(HttpServletRequest request) {
-        String role = (String) request.getAttribute("userRole");
-        if (!"admin".equals(role)) {
-            return ResponseEntity.status(403).body(ApiResponse.forbidden("仅管理员可查看日志统计"));
-        }
-
+    @RequireAdmin
+    public ResponseEntity<ApiResponse<Object>> getLogStats() {
         return ResponseEntity.ok(ApiResponse.success("success", new java.util.HashMap<String, Long>() {{
             put("vue", errorLogService.countByType("vue"));
             put("api", errorLogService.countByType("api"));
@@ -122,22 +107,14 @@ public class SystemController {
     }
 
     @GetMapping("/monitor/stats")
-    public ResponseEntity<ApiResponse<Object>> getMonitorStats(HttpServletRequest request) {
-        String role = (String) request.getAttribute("userRole");
-        if (!"admin".equals(role)) {
-            return ResponseEntity.status(403).body(ApiResponse.forbidden("仅管理员可查看监控统计"));
-        }
-
+    @RequireAdmin
+    public ResponseEntity<ApiResponse<Object>> getMonitorStats() {
         return ResponseEntity.ok(ApiResponse.success("success", monitorService.getStats()));
     }
 
     @PostMapping("/monitor/reset")
-    public ResponseEntity<ApiResponse<Void>> resetMonitorStats(HttpServletRequest request) {
-        String role = (String) request.getAttribute("userRole");
-        if (!"admin".equals(role)) {
-            return ResponseEntity.status(403).body(ApiResponse.forbidden("仅管理员可重置监控统计"));
-        }
-
+    @RequireAdmin
+    public ResponseEntity<ApiResponse<Void>> resetMonitorStats() {
         monitorService.resetStats();
         return ResponseEntity.ok(ApiResponse.success("监控统计已重置", null));
     }

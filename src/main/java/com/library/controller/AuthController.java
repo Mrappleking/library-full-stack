@@ -1,5 +1,6 @@
 package com.library.controller;
 
+import com.library.annotation.RequireAdmin;
 import com.library.dto.request.CancelAccountRequest;
 import com.library.dto.request.ChangePasswordRequest;
 import com.library.dto.request.LoginRequest;
@@ -7,7 +8,6 @@ import com.library.dto.request.RegisterRequest;
 import com.library.dto.response.ApiResponse;
 import com.library.dto.response.LoginResponse;
 import com.library.dto.response.UserProfile;
-import com.library.exception.AppException;
 import com.library.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -43,20 +43,14 @@ public class AuthController {
     }
 
     @GetMapping("/users")
-    public ResponseEntity<ApiResponse<List<UserProfile>>> listUsers(HttpServletRequest request) {
-        String role = (String) request.getAttribute("userRole");
-        if (!"admin".equals(role)) {
-            throw AppException.forbidden("仅管理员可执行此操作");
-        }
+    @RequireAdmin
+    public ResponseEntity<ApiResponse<List<UserProfile>>> listUsers() {
         return ResponseEntity.ok(ApiResponse.success(authService.listUsers()));
     }
 
     @PostMapping("/admin/create")
-    public ResponseEntity<ApiResponse<UserProfile>> createAdmin(@Valid @RequestBody RegisterRequest data, HttpServletRequest request) {
-        String role = (String) request.getAttribute("userRole");
-        if (!"admin".equals(role)) {
-            throw AppException.forbidden("仅管理员可执行此操作");
-        }
+    @RequireAdmin
+    public ResponseEntity<ApiResponse<UserProfile>> createAdmin(@Valid @RequestBody RegisterRequest data) {
         return ResponseEntity.ok(ApiResponse.created(authService.createAdmin(data)));
     }
 
@@ -82,21 +76,15 @@ public class AuthController {
     }
 
     @PostMapping("/admin/force-logout/{userId}")
-    public ResponseEntity<ApiResponse<Void>> forceLogout(@PathVariable Integer userId, HttpServletRequest request) {
-        String role = (String) request.getAttribute("userRole");
-        if (!"admin".equals(role)) {
-            throw AppException.forbidden("仅管理员可执行此操作");
-        }
+    @RequireAdmin
+    public ResponseEntity<ApiResponse<Void>> forceLogout(@PathVariable Integer userId) {
         authService.forceLogout(userId);
         return ResponseEntity.ok(ApiResponse.success("用户已被强制下线", null));
     }
 
     @PostMapping("/admin/delete-user/{userId}")
-    public ResponseEntity<ApiResponse<Void>> adminDeleteUser(@PathVariable Integer userId, HttpServletRequest request) {
-        String role = (String) request.getAttribute("userRole");
-        if (!"admin".equals(role)) {
-            throw AppException.forbidden("仅管理员可执行此操作");
-        }
+    @RequireAdmin
+    public ResponseEntity<ApiResponse<Void>> adminDeleteUser(@PathVariable Integer userId) {
         authService.adminDeleteUser(userId);
         return ResponseEntity.ok(ApiResponse.success("用户已删除", null));
     }
