@@ -11,7 +11,6 @@
     <result property="email" column="u_email"/>
     <result property="totalFines" column="u_total_fines"/>
     <result property="patronCategoryId" column="u_patronCategoryId"/>
-    <result property="tokenVersion" column="u_token_version"/>
     <result property="createdAt" column="u_created_at"/>
     <result property="updatedAt" column="u_updated_at"/>
   </resultMap>
@@ -81,7 +80,7 @@
            bi.bookId as bi_bookId, bi.itemTypeId as bi_itemTypeId,
            u.id as u_id, u.username as u_username, u.name as u_name, u.role as u_role,
            u.phone as u_phone, u.email as u_email, u.total_fines as u_total_fines,
-           u.patronCategoryId as u_patronCategoryId, u.token_version as u_token_version,
+           u.patronCategoryId as u_patronCategoryId,
            u.created_at as u_created_at, u.updated_at as u_updated_at
     FROM borrow_records br
     LEFT JOIN books b ON br.bookId = b.id
@@ -132,7 +131,7 @@
            bi.bookId as bi_bookId, bi.itemTypeId as bi_itemTypeId,
            u.id as u_id, u.username as u_username, u.name as u_name, u.role as u_role,
            u.phone as u_phone, u.email as u_email, u.total_fines as u_total_fines,
-           u.patronCategoryId as u_patronCategoryId, u.token_version as u_token_version,
+           u.patronCategoryId as u_patronCategoryId,
            u.created_at as u_created_at, u.updated_at as u_updated_at
     FROM borrow_records br
     LEFT JOIN books b ON br.bookId = b.id
@@ -167,7 +166,7 @@
            bi.bookId as bi_bookId, bi.itemTypeId as bi_itemTypeId,
            u.id as u_id, u.username as u_username, u.name as u_name, u.role as u_role,
            u.phone as u_phone, u.email as u_email, u.total_fines as u_total_fines,
-           u.patronCategoryId as u_patronCategoryId, u.token_version as u_token_version,
+           u.patronCategoryId as u_patronCategoryId,
            u.created_at as u_created_at, u.updated_at as u_updated_at
     FROM borrow_records br
     LEFT JOIN books b ON br.bookId = b.id
