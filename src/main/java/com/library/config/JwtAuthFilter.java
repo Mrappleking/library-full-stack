@@ -77,6 +77,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         // 3. All other paths (including write operations on read-only paths) require auth
         String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            log.warn("Authorization header missing or invalid: path={}, method={}", path, method);
             writeError(response, 401, "未登录或Token无效");
             return;
         }
@@ -136,7 +137,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
      * POST/PUT/DELETE on these paths require authentication.
      */
     private boolean isReadOnlyPublicPath(String path) {
-        return readerPublicPaths.stream().anyMatch(p -> path.equals(p) || path.startsWith(p));
+        return readerPublicPaths.stream().anyMatch(p -> path.equals(p) || path.startsWith(p + "/"));
     }
 
     /**
