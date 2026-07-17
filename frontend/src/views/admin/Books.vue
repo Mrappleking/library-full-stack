@@ -48,11 +48,11 @@
           @error="handleUploadError"
           @before-upload="beforeUpload"
         >
-          <n-button :disabled="!editingId">选择封面</n-button>
+          <n-button>选择封面</n-button>
         </n-upload>
         <n-spin v-if="uploading" size="small" />
         <img v-else-if="form.cover" :src="form.cover" style="max-width:100px;max-height:140px;border-radius:4px;object-fit:cover;" />
-        <span v-else style="color:#8a8f98;font-size:13px;align-self:center;">未设置封面</span>
+        <span v-else style="color:var(--lib-text-tertiary);font-size:13px;align-self:center;">未设置封面</span>
       </div>
     </n-form-item>
         <n-form-item label="描述"><n-input v-model:value="form.desc" type="textarea" placeholder="图书简介" /></n-form-item>
@@ -125,7 +125,7 @@ const columns: DataTableColumn[] = [
       return h('div', { style: 'display:flex;gap:6px' }, [
         h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑'),
         h(NButton, { size: 'small', onClick: () => openAddCopy(row) }, () => '加复本'),
-        h(NPopconfirm, { onPositiveClick: () => handleDelete(row.id) }, {
+        h(NPopconfirm, { positiveText: '确定', negativeText: '取消', onPositiveClick: () => handleDelete(row.id) }, {
           trigger: () => h(NButton, { size: 'small', type: 'error', text: true }, () => '删除'),
           default: () => '确认删除该图书？'
         })

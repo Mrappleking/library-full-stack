@@ -1,10 +1,10 @@
 import axios from 'axios'
-import type { AxiosRequestConfig } from 'axios'
+import type { InternalAxiosRequestConfig } from 'axios'
 import type { LoginResponse, UserProfile } from '@/types/api'
 import router from '@/router'
 import { errorMonitor } from '@/utils/errorMonitor'
 
-interface ApiRequestConfig extends AxiosRequestConfig {
+interface ApiRequestConfig extends InternalAxiosRequestConfig {
   __startTime?: number
 }
 
@@ -13,6 +13,7 @@ const axiosInstance = axios.create({ baseURL: '/api' })
 axiosInstance.interceptors.request.use((config: ApiRequestConfig) => {
   const token = localStorage.getItem('token')
   if (token && !['/auth/login', '/auth/register'].includes(config.url || '')) {
+    config.headers = config.headers || {}
     config.headers.Authorization = `Bearer ${token}`
   }
   config.__startTime = Date.now()
@@ -60,15 +61,15 @@ axiosInstance.interceptors.response.use(
 )
 
 const api = {
-  get: <T>(url: string, config?: ApiRequestConfig) =>
+  get: <T>(url: string, config?: Partial<ApiRequestConfig>) =>
     axiosInstance.get<T>(url, config) as unknown as Promise<T>,
-  post: <T>(url: string, data?: unknown, config?: ApiRequestConfig) =>
+  post: <T>(url: string, data?: unknown, config?: Partial<ApiRequestConfig>) =>
     axiosInstance.post<T>(url, data, config) as unknown as Promise<T>,
-  put: <T>(url: string, data?: unknown, config?: ApiRequestConfig) =>
+  put: <T>(url: string, data?: unknown, config?: Partial<ApiRequestConfig>) =>
     axiosInstance.put<T>(url, data, config) as unknown as Promise<T>,
-  delete: <T>(url: string, config?: ApiRequestConfig) =>
+  delete: <T>(url: string, config?: Partial<ApiRequestConfig>) =>
     axiosInstance.delete<T>(url, config) as unknown as Promise<T>,
-  getBlob: (url: string, config?: ApiRequestConfig) =>
+  getBlob: (url: string, config?: Partial<ApiRequestConfig>) =>
     axiosInstance.get<Blob>(url, { ...config, responseType: 'blob' }) as unknown as Promise<Blob>,
 } as const
 

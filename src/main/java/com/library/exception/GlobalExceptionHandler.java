@@ -78,7 +78,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ApiResponse<Void>> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
-        String type = e.getRequiredType() != null ? e.getRequiredType().getSimpleName() : "unknown";
+        Class<?> requiredType = e.getRequiredType();
+        String type = requiredType != null ? requiredType.getSimpleName() : "unknown";
         log.warn("Type mismatch: {} should be {} for param {}", e.getValue(), type, e.getName());
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)

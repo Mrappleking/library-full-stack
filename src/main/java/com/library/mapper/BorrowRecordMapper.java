@@ -23,6 +23,7 @@ public interface BorrowRecordMapper {
     void insert(BorrowRecord record);
     void returnBook(@Param("id") Integer id, @Param("returnDate") LocalDateTime returnDate, @Param("status") String status);
     void renew(@Param("id") Integer id, @Param("dueDate") LocalDateTime dueDate);
+    void updateStatus(@Param("id") Integer id, @Param("status") String status);
     long countActive();
     long countOverdue();
     List<Map<String, Object>> monthlyStats(LocalDateTime since);

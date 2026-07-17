@@ -17,4 +17,5 @@ public class UserProfile {
     private Double totalFines;
     private LocalDateTime createdAt;
     private List<BorrowRecordResponse> borrowRecords;
+    private PatronCategoryRef patronCategory;
 }

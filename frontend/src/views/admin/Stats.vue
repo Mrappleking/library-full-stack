@@ -52,7 +52,7 @@ const popularColumns: DataTableColumn[] = [
   { title: '书名', key: 'title', ellipsis: { tooltip: true } },
   { title: '作者', key: 'author', width: 120 },
   { title: '分类', key: 'category.name', width: 100 },
-  { title: '借阅次数', key: '_count.borrowRecords', width: 90, render: (r: any) => h('span', { style: 'font-weight:600;color:#5e6ad2' }, r._count?.borrowRecords || 0) }
+  { title: '借阅次数', key: '_count.borrowRecords', width: 90, render: (r: any) => h('span', { style: 'font-weight:600;color:var(--lib-primary)' }, r._count?.borrowRecords || 0) }
 ]
 
 const monthlyColumns: DataTableColumn[] = [

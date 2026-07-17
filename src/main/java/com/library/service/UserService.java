@@ -4,9 +4,11 @@ import com.library.dto.response.BookRef;
 import com.library.dto.response.BorrowRecordResponse;
 import com.library.dto.response.UserProfile;
 import com.library.entity.BorrowRecord;
+import com.library.entity.PatronCategory;
 import com.library.entity.User;
 import com.library.exception.AppException;
 import com.library.mapper.BorrowRecordMapper;
+import com.library.mapper.PatronCategoryMapper;
 import com.library.mapper.UserMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,10 +23,12 @@ public class UserService {
 
     private final UserMapper userMapper;
     private final BorrowRecordMapper borrowRecordMapper;
+    private final PatronCategoryMapper patronCategoryMapper;
 
-    public UserService(UserMapper userMapper, BorrowRecordMapper borrowRecordMapper) {
+    public UserService(UserMapper userMapper, BorrowRecordMapper borrowRecordMapper, PatronCategoryMapper patronCategoryMapper) {
         this.userMapper = userMapper;
         this.borrowRecordMapper = borrowRecordMapper;
+        this.patronCategoryMapper = patronCategoryMapper;
     }
 
     /**
@@ -97,6 +101,12 @@ public class UserService {
         p.setPatronCategoryId(user.getPatronCategoryId());
         p.setTotalFines(user.getTotalFines() != null ? user.getTotalFines().doubleValue() : 0);
         p.setCreatedAt(user.getCreatedAt());
+        if (user.getPatronCategoryId() != null) {
+            PatronCategory pc = patronCategoryMapper.findById(user.getPatronCategoryId());
+            if (pc != null) {
+                p.setPatronCategory(new com.library.dto.response.PatronCategoryRef(pc.getId(), pc.getName()));
+            }
+        }
         return p;
     }
 

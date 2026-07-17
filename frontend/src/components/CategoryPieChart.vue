@@ -33,7 +33,7 @@ const chartContainer = ref<HTMLElement | null>(null)
 
 onUnmounted(() => {
   if (chartContainer.value) {
-    const chartEl = chartContainer.value.querySelector('.chart')
+    const chartEl = chartContainer.value.querySelector('.chart') as HTMLElement | null
     if (chartEl) {
       const chart = getInstanceByDom(chartEl)
       if (chart) {

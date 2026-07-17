@@ -3,7 +3,7 @@ import axios from 'axios'
 interface ErrorLog {
   id: string
   timestamp: number
-  type: 'vue' | 'api' | 'global' | 'unhandled'
+  type: 'vue' | 'api' | 'global' | 'unhandled' | 'data-mismatch'
   message: string
   stack?: string
   url?: string
@@ -13,6 +13,11 @@ interface ErrorLog {
   props?: string
   userId?: number
   userRole?: string
+  expectedType?: string
+  actualType?: string
+  expectedFields?: string[]
+  missingFields?: string[]
+  responseSample?: string
 }
 
 class ErrorMonitor {
@@ -108,6 +113,70 @@ class ErrorMonitor {
       method,
       statusCode,
     })
+  }
+
+  checkResponseStructure(url: string, response: unknown, expectedFields: string[]): boolean {
+    if (!response || typeof response !== 'object') {
+      this.log({
+        type: 'data-mismatch',
+        message: `API响应不是对象类型: ${url}`,
+        url,
+        expectedType: 'object',
+        actualType: typeof response,
+        responseSample: JSON.stringify(response).substring(0, 200),
+      })
+      return false
+    }
+
+    const missingFields = expectedFields.filter(field => !(field in response))
+
+    if (missingFields.length > 0) {
+      this.log({
+        type: 'data-mismatch',
+        message: `API响应缺少预期字段: ${url}`,
+        url,
+        expectedFields,
+        missingFields,
+        responseSample: JSON.stringify(response).substring(0, 300),
+      })
+      return false
+    }
+
+    return true
+  }
+
+  validateArrayResponse(url: string, response: unknown, expectedItemFields?: string[]): boolean {
+    if (!Array.isArray(response)) {
+      this.log({
+        type: 'data-mismatch',
+        message: `API响应不是数组类型: ${url}`,
+        url,
+        expectedType: 'array',
+        actualType: typeof response,
+        responseSample: JSON.stringify(response).substring(0, 200),
+      })
+      return false
+    }
+
+    if (expectedItemFields && response.length > 0) {
+      const firstItem = response[0]
+      if (typeof firstItem === 'object' && firstItem !== null) {
+        const missingFields = expectedItemFields.filter(field => !(field in firstItem))
+        if (missingFields.length > 0) {
+          this.log({
+            type: 'data-mismatch',
+            message: `API响应数组项缺少预期字段: ${url}`,
+            url,
+            expectedFields: expectedItemFields,
+            missingFields,
+            responseSample: JSON.stringify(firstItem).substring(0, 200),
+          })
+          return false
+        }
+      }
+    }
+
+    return true
   }
 
   private async reportLogs(): Promise<void> {

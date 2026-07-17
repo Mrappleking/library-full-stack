@@ -4,6 +4,10 @@
   --lib-primary-dark: #4338ca;
   --lib-gradient-start: #5e6ad2;
   --lib-gradient-end: #7c6fdb;
+  --lib-success: #10b981;
+  --lib-warning: #f59e0b;
+  --lib-error: #ef4444;
+  --lib-info: #3b82f6;
 }
 
 html:not(.dark) {
@@ -235,6 +239,257 @@ html.dark .n-tag--error {
 
 html.dark .n-tag__content {
   color: inherit !important;
+}
+
+html.dark .n-data-table {
+  --n-color: var(--lib-bg-card) !important;
+  --n-color-text: var(--lib-text-primary) !important;
+  --n-color-border: var(--lib-border) !important;
+  --n-color-header: var(--lib-bg-card) !important;
+  --n-color-header-text: var(--lib-text-secondary) !important;
+  --n-color-row-hover: var(--lib-bg-hover) !important;
+}
+
+html.dark .n-data-table td {
+  background-color: var(--lib-bg-content) !important;
+  color: var(--lib-text-secondary) !important;
+  border-color: var(--lib-border) !important;
+}
+
+html.dark .n-data-table tr:hover td {
+  background-color: var(--lib-bg-hover) !important;
+}
+
+html.dark .n-input {
+  --n-color: var(--lib-bg-card) !important;
+  --n-color-text: var(--lib-text-primary) !important;
+  --n-color-placeholder: var(--lib-text-muted) !important;
+  --n-color-border: var(--lib-border) !important;
+  --n-color-border-hover: var(--lib-text-muted) !important;
+}
+
+html.dark .n-input__input {
+  color: var(--lib-text-primary) !important;
+}
+
+html.dark .n-input__placeholder {
+  color: var(--lib-text-muted) !important;
+}
+
+html.dark .n-select {
+  --n-color: var(--lib-bg-card) !important;
+  --n-color-text: var(--lib-text-primary) !important;
+  --n-color-placeholder: var(--lib-text-muted) !important;
+  --n-color-border: var(--lib-border) !important;
+  --n-color-border-hover: var(--lib-text-muted) !important;
+}
+
+html.dark .n-base-selection {
+  --n-color: var(--lib-bg-card) !important;
+  --n-color-text: var(--lib-text-primary) !important;
+  --n-color-placeholder: var(--lib-text-muted) !important;
+  --n-color-border: var(--lib-border) !important;
+}
+
+html.dark .n-base-selection-input {
+  color: var(--lib-text-primary) !important;
+}
+
+html.dark .n-base-selection-placeholder {
+  color: var(--lib-text-muted) !important;
+}
+
+html.dark .n-popover {
+  --n-color: var(--lib-bg-card) !important;
+  --n-color-text: var(--lib-text-primary) !important;
+}
+
+html.dark .n-modal {
+  --n-color: var(--lib-bg-card) !important;
+  --n-color-text: var(--lib-text-primary) !important;
+}
+
+html.dark .n-card {
+  --n-color: var(--lib-bg-card) !important;
+  --n-color-text: var(--lib-text-primary) !important;
+  --n-color-border: var(--lib-border) !important;
+}
+
+html.dark .n-space {
+  color: var(--lib-text-primary) !important;
+}
+
+html.dark .n-layout-sider {
+  background-color: var(--lib-bg-card) !important;
+}
+
+html.dark .n-menu {
+  --n-color-item: var(--lib-bg-card) !important;
+  --n-color-item-hover: var(--lib-bg-hover) !important;
+  --n-color-item-active: var(--lib-bg-hover) !important;
+  --n-color-text-item: var(--lib-text-secondary) !important;
+  --n-color-text-item-hover: var(--lib-text-primary) !important;
+  --n-color-text-item-active: var(--lib-primary-light) !important;
+}
+
+html.dark .n-pagination {
+  --n-color: var(--lib-bg-card) !important;
+  --n-color-text: var(--lib-text-primary) !important;
+  --n-color-border: var(--lib-border) !important;
+}
+
+html.dark .n-form-item-label {
+  color: var(--lib-text-tertiary) !important;
+}
+
+html.dark .n-form-item-asterisk {
+  color: var(--lib-error) !important;
+}
+
+html.dark .n-spin {
+  --n-color-spin: var(--lib-primary-light) !important;
+}
+
+html.dark .n-divider {
+  --n-color: var(--lib-border) !important;
+}
+
+html.dark .n-grid {
+  color: var(--lib-text-primary) !important;
+}
+
+html.dark .n-grid-item {
+  color: var(--lib-text-primary) !important;
+}
+
+html.dark .n-upload {
+  --n-color: var(--lib-bg-card) !important;
+  --n-color-text: var(--lib-text-primary) !important;
+  --n-color-border: var(--lib-border) !important;
+}
+
+html.dark .n-popconfirm {
+  --n-color: var(--lib-bg-card) !important;
+  --n-color-text: var(--lib-text-primary) !important;
+}
+
+html.dark .n-message {
+  --n-color: var(--lib-bg-card) !important;
+  --n-color-text: var(--lib-text-primary) !important;
+}
+
+html.dark .n-notification {
+  --n-color: var(--lib-bg-card) !important;
+  --n-color-text: var(--lib-text-primary) !important;
+}
+
+html.dark .n-dialog {
+  --n-color: var(--lib-bg-card) !important;
+  --n-color-text: var(--lib-text-primary) !important;
+}
+
+html.dark .n-table {
+  --n-color: var(--lib-bg-card) !important;
+  --n-color-text: var(--lib-text-primary) !important;
+  --n-color-border: var(--lib-border) !important;
+}
+
+html.dark .n-base-select-menu {
+  --n-color: var(--lib-bg-card) !important;
+  --n-color-text: var(--lib-text-primary) !important;
+}
+
+html.dark .n-select-option {
+  background-color: var(--lib-bg-card) !important;
+  color: var(--lib-text-primary) !important;
+}
+
+html.dark .n-select-option:hover {
+  background-color: var(--lib-bg-hover) !important;
+}
+
+html.dark .n-select-option.n-select-option--active {
+  background-color: var(--lib-bg-hover) !important;
+  color: var(--lib-primary-light) !important;
+}
+
+html.dark .n-button {
+  --n-color: transparent !important;
+  --n-color-hover: rgba(255, 255, 255, 0.08) !important;
+  --n-color-active: rgba(255, 255, 255, 0.12) !important;
+  --n-text-color: var(--lib-text-secondary) !important;
+  --n-text-color-hover: var(--lib-text-primary) !important;
+  --n-border: 1px solid var(--lib-border) !important;
+  --n-border-hover: 1px solid var(--lib-text-muted) !important;
+}
+
+html.dark .n-button.n-button--primary {
+  --n-color: rgba(79, 70, 229, 0.8) !important;
+  --n-color-hover: rgba(99, 102, 241, 0.9) !important;
+  --n-text-color: #ffffff !important;
+  --n-text-color-hover: #ffffff !important;
+  --n-border: none !important;
+}
+
+html.dark .n-button.n-button--secondary {
+  --n-color: transparent !important;
+  --n-color-hover: rgba(255, 255, 255, 0.08) !important;
+  --n-text-color: var(--lib-text-secondary) !important;
+  --n-text-color-hover: var(--lib-text-primary) !important;
+  --n-border: 1px solid var(--lib-border) !important;
+  --n-border-hover: 1px solid var(--lib-text-muted) !important;
+}
+
+html.dark .n-button.n-button--info {
+  --n-color: rgba(59, 130, 246, 0.15) !important;
+  --n-color-hover: rgba(59, 130, 246, 0.25) !important;
+  --n-text-color: #60a5fa !important;
+  --n-text-color-hover: #93c5fd !important;
+  --n-border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  --n-border-hover: 1px solid rgba(59, 130, 246, 0.5) !important;
+}
+
+html.dark .n-button.n-button--error {
+  --n-color: rgba(239, 68, 68, 0.15) !important;
+  --n-color-hover: rgba(239, 68, 68, 0.25) !important;
+  --n-text-color: #f87171 !important;
+  --n-text-color-hover: #fca5a5 !important;
+  --n-border: 1px solid rgba(239, 68, 68, 0.3) !important;
+  --n-border-hover: 1px solid rgba(239, 68, 68, 0.5) !important;
+}
+
+html.dark .n-button.n-button--success {
+  --n-color: rgba(16, 185, 129, 0.15) !important;
+  --n-color-hover: rgba(16, 185, 129, 0.25) !important;
+  --n-text-color: #34d399 !important;
+  --n-text-color-hover: #6ee7b7 !important;
+  --n-border: 1px solid rgba(16, 185, 129, 0.3) !important;
+  --n-border-hover: 1px solid rgba(16, 185, 129, 0.5) !important;
+}
+
+html.dark .n-button.n-button--warning {
+  --n-color: rgba(245, 158, 11, 0.15) !important;
+  --n-color-hover: rgba(245, 158, 11, 0.25) !important;
+  --n-text-color: #fbbf24 !important;
+  --n-text-color-hover: #fcd34d !important;
+  --n-border: 1px solid rgba(245, 158, 11, 0.3) !important;
+  --n-border-hover: 1px solid rgba(245, 158, 11, 0.5) !important;
+}
+
+html.dark .n-button.n-button--text {
+  --n-color: transparent !important;
+  --n-color-hover: rgba(255, 255, 255, 0.08) !important;
+  --n-text-color: var(--lib-text-secondary) !important;
+  --n-text-color-hover: var(--lib-text-primary) !important;
+  --n-border: none !important;
+}
+
+html.dark .n-button.n-button--ghost {
+  --n-color: transparent !important;
+  --n-color-hover: rgba(255, 255, 255, 0.08) !important;
+  --n-text-color: var(--lib-text-secondary) !important;
+  --n-text-color-hover: var(--lib-text-primary) !important;
+  --n-border: none !important;
 }
 
 .fade-slide-enter-active,

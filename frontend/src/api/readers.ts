@@ -2,8 +2,8 @@ import api from './index'
 import type { ReaderResponse, UserProfile } from '../types/api'
 
 export const readerApi = {
-  getAllReaders: (params: { page?: number; limit?: number } = {}) =>
-    api.get<{ readers: ReaderResponse[]; total: number; page: number; limit: number; pages: number }>('/readers', { params }),
+  getAllReaders: (params: { page?: number; limit?: number; keyword?: string; patronCategoryId?: number; sortBy?: string; sortDir?: string } = {}) =>
+    api.get<{ data: ReaderResponse[]; total: number; page: number; limit: number; pages: number }>('/readers', { params }),
 
   getById: (id: number) =>
     api.get<ReaderResponse>(`/readers/${id}`),

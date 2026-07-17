@@ -25,7 +25,7 @@ class BorrowServiceTest extends AbstractServiceTest {
     void setUp() {
         CacheService cacheService = mock(CacheService.class);
         AuditService auditService = new AuditService(auditLogMapper);
-        ruleService = new RuleService(circulationRuleMapper, cacheService);
+        ruleService = new RuleService(circulationRuleMapper, patronCategoryMapper, itemTypeMapper, cacheService);
         fineService = new FineService(fineMapper, userMapper, auditService);
         bookService = new BookService(bookMapper, bookItemMapper, categoryMapper, borrowRecordMapper, auditService, cacheService);
         holdService = new HoldService(holdMapper, bookMapper, bookItemMapper, bookService, auditService);
@@ -77,7 +77,7 @@ class BorrowServiceTest extends AbstractServiceTest {
         when(borrowRecordMapper.findActiveByUserAndBook(1, 1)).thenReturn(null);
         when(borrowRecordMapper.countActiveByUserId(1)).thenReturn(0L);
         when(bookMapper.decrementAvailable(1)).thenReturn(1);
-        when(bookItemMapper.updateStatus(10, "borrowed")).thenReturn(1);
+        when(bookItemMapper.updateStatusIfAvailable(10, "borrowed")).thenReturn(1);
 
         doAnswer(inv -> {
             BorrowRecord r = inv.getArgument(0);

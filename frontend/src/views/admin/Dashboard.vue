@@ -47,23 +47,23 @@
           </template>
           <div class="quick-actions">
             <div class="action-item" @click="$router.push('/admin/books')">
-              <div class="action-icon" style="background: #5e6ad222; color: #5e6ad2"><n-icon size="22"><BookOutline /></n-icon></div>
+              <div class="action-icon action-icon--primary"><n-icon size="22"><BookOutline /></n-icon></div>
               <div class="action-text"><span class="action-name">图书管理</span><span class="action-desc">增删改查图书信息</span></div>
             </div>
             <div class="action-item" @click="$router.push('/admin/borrows')">
-              <div class="action-icon" style="background: #f0a02022; color: #f0a020"><n-icon size="22"><SwapHorizontalOutline /></n-icon></div>
+              <div class="action-icon action-icon--warning"><n-icon size="22"><SwapHorizontalOutline /></n-icon></div>
               <div class="action-text"><span class="action-name">借阅管理</span><span class="action-desc">处理借书、还书、续借</span></div>
             </div>
             <div class="action-item" @click="$router.push('/admin/readers')">
-              <div class="action-icon" style="background: #18a05822; color: #18a058"><n-icon size="22"><PeopleOutline /></n-icon></div>
+              <div class="action-icon action-icon--success"><n-icon size="22"><PeopleOutline /></n-icon></div>
               <div class="action-text"><span class="action-name">读者管理</span><span class="action-desc">管理读者信息</span></div>
             </div>
             <div class="action-item" @click="$router.push('/admin/circulation')">
-              <div class="action-icon" style="background: #2080f022; color: #2080f0"><n-icon size="22"><ScanOutline /></n-icon></div>
+              <div class="action-icon action-icon--info"><n-icon size="22"><ScanOutline /></n-icon></div>
               <div class="action-text"><span class="action-name">流通台</span><span class="action-desc">扫码借还操作</span></div>
             </div>
             <div class="action-item" @click="$router.push('/admin/stats')">
-              <div class="action-icon" style="background: #d0305022; color: #d03050"><n-icon size="22"><BarChartOutline /></n-icon></div>
+              <div class="action-icon action-icon--error"><n-icon size="22"><BarChartOutline /></n-icon></div>
               <div class="action-text"><span class="action-name">统计报表</span><span class="action-desc">借阅量、热门图书</span></div>
             </div>
           </div>
@@ -209,6 +209,11 @@ onMounted(async () => {
   width: 42px; height: 42px; border-radius: 10px;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
+.action-icon--primary { background: color-mix(in srgb, var(--lib-primary) 15%, transparent); color: var(--lib-primary); }
+.action-icon--success { background: color-mix(in srgb, var(--lib-success) 15%, transparent); color: var(--lib-success); }
+.action-icon--warning { background: color-mix(in srgb, var(--lib-warning) 15%, transparent); color: var(--lib-warning); }
+.action-icon--info { background: color-mix(in srgb, var(--lib-info) 15%, transparent); color: var(--lib-info); }
+.action-icon--error { background: color-mix(in srgb, var(--lib-error) 15%, transparent); color: var(--lib-error); }
 .action-text { display: flex; flex-direction: column; gap: 1px; }
 .action-name { font-size: 14px; font-weight: 600; color: var(--lib-text-primary); }
 .action-desc { font-size: 12px; color: var(--lib-text-tertiary); }
