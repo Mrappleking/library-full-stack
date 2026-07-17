@@ -7,6 +7,7 @@
         <n-input v-model:value="search" placeholder="搜索书名/作者/ISBN" clearable style="width: 260px;" @keyup.enter="fetchBooks" />
         <n-select v-model:value="filterCategory" placeholder="全部分类" clearable :options="catOptions" style="width: 160px;" @update:value="fetchBooks" />
         <n-button @click="fetchBooks">搜索</n-button>
+        <n-button @click="resetSearch">重置</n-button>
       </n-space>
       <n-button type="primary" @click="openCreate">添加图书</n-button>
     </n-space>
@@ -97,7 +98,7 @@ const loading = ref(false)
 const search = ref('')
 const filterCategory = ref<number | null>(null)
 const catOptions = ref<{ label: string; value: number }[]>([])
-const pagination = reactive({ page: 1, pageSize: 20, itemCount: 0 })
+const pagination = reactive({ page: 1, pageSize: 20, itemCount: 0, prefix: (info: any) => `共 ${info.itemCount} 本` })
 const expandedKeys = ref<number[]>([])
 
 const columns: DataTableColumn[] = [
@@ -203,6 +204,7 @@ async function fetchCategories() {
 
 function onPage(page: number) { pagination.page = page; fetchBooks() }
 function onExpand(keys: number[]) { expandedKeys.value = keys }
+function resetSearch() { search.value = ''; filterCategory.value = null; pagination.page = 1; fetchBooks() }
 
 const showModal = ref(false)
 const editingId = ref<number | null>(null)
