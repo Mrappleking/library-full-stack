@@ -8,8 +8,10 @@
       <n-input v-model:value="searchQuery" placeholder="搜索读者名/用户名/书名" clearable style="width: 260px;" @keyup.enter="fetchRecords">
         <template #prefix><n-icon><search-outline /></n-icon></template>
       </n-input>
+      <n-select v-model:value="filterCategory" :options="categoryOptions" placeholder="全部分类" clearable style="width: 140px;" @update:value="fetchRecords" />
       <n-select v-model:value="filterStatus" :options="statusOptions" placeholder="全部状态" clearable style="width: 120px;" @update:value="fetchRecords" />
       <n-button @click="fetchRecords" secondary>搜索</n-button>
+      <n-button @click="resetFilters" secondary type="warning">重置</n-button>
       <n-button @click="exportCsv" :loading="exporting" secondary type="info" style="margin-left: auto;">
         <template #icon><n-icon><download-outline /></n-icon></template>
         导出 CSV
@@ -37,8 +39,8 @@
 import { ref, computed, onMounted, h } from 'vue'
 import { useMessage, NTag, NButton, NPopconfirm, NIcon } from 'naive-ui'
 import { DownloadOutline, SearchOutline } from '@vicons/ionicons5'
-import { borrowApi } from '@/api'
-import type { BorrowRecordResponse } from '@/types/api'
+import { borrowApi, categoryApi } from '@/api'
+import type { BorrowRecordResponse, CategoryResponse } from '@/types/api'
 import type { DataTableColumn } from 'naive-ui'
 import { BorrowStatus } from '@/constants'
 import { getBorrowStatusTag } from '@/utils/statusTag'
@@ -51,8 +53,15 @@ const page = ref(1)
 const total = ref(0)
 const searchQuery = ref('')
 const filterStatus = ref('')
+const filterCategory = ref<number | null>(null)
+const categories = ref<CategoryResponse[]>([])
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / 20)))
+
+const categoryOptions = computed(() => [
+  { label: '全部分类', value: null },
+  ...categories.value.map(c => ({ label: c.name, value: c.id }))
+])
 
 const statusOptions = [
   { label: '全部状态', value: '' },
@@ -102,7 +111,13 @@ const columns: DataTableColumn[] = [
 async function fetchRecords() {
   loading.value = true
   try {
-    const res = await borrowApi.getAllBorrows({ page: page.value, limit: 20 })
+    const res = await borrowApi.getAllBorrows({ 
+      page: page.value, 
+      limit: 20,
+      search: searchQuery.value || undefined,
+      status: filterStatus.value || undefined,
+      categoryId: filterCategory.value || undefined
+    })
     records.value = res.borrows || []
     total.value = res.total || 0
   } catch (e: unknown) {
@@ -110,6 +125,14 @@ async function fetchRecords() {
     records.value = []
   }
   loading.value = false
+}
+
+function resetFilters() {
+  searchQuery.value = ''
+  filterStatus.value = ''
+  filterCategory.value = null
+  page.value = 1
+  fetchRecords()
 }
 
 async function handleReturn(id: number) {
@@ -130,5 +153,17 @@ async function exportCsv() {
   exporting.value = false
 }
 
-onMounted(() => fetchRecords())
+async function loadCategories() {
+  try {
+    const res = await categoryApi.getCategories()
+    categories.value = res.categories || []
+  } catch {
+    categories.value = []
+  }
+}
+
+onMounted(async () => {
+  await loadCategories()
+  fetchRecords()
+})
 </script>

@@ -57,10 +57,10 @@ public class BorrowService {
         return result;
     }
 
-    public Map<String, Object> listBorrows(int page, int limit, String search, String status) {
+    public Map<String, Object> listBorrows(int page, int limit, String search, String status, Integer categoryId) {
         int offset = (page - 1) * limit;
-        List<BorrowRecord> records = borrowRecordMapper.findAllPage(offset, limit, search, status);
-        long total = borrowRecordMapper.countAll(search, status);
+        List<BorrowRecord> records = borrowRecordMapper.findAllPage(offset, limit, search, status, categoryId);
+        long total = borrowRecordMapper.countAll(search, status, categoryId);
 
         Map<String, Object> result = new HashMap<>();
         result.put("borrows", records);

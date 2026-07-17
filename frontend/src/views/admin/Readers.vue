@@ -30,6 +30,7 @@
       :expanded-row-keys="expandedKeys"
       @update:expanded-row-keys="onExpand"
       :pagination="pagination"
+      remote
       @update:page="onPageChange"
       @update:page-size="onPageSizeChange"
       @update:sorter="handleSorterChange"

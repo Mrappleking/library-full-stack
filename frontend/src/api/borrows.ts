@@ -5,7 +5,7 @@ export const borrowApi = {
   getMyBorrows: () =>
     api.get<{ borrows: BorrowRecordResponse[] }>('/borrows/my'),
 
-  getAllBorrows: (params: { page?: number; limit?: number } = {}) =>
+  getAllBorrows: (params: { page?: number; limit?: number; search?: string; status?: string; categoryId?: number } = {}) =>
     api.get<{ borrows: BorrowRecordResponse[]; total: number; page: number; limit: number; pages: number }>('/borrows', { params }),
 
   getAllBorrowsCsv: () =>

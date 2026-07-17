@@ -4,15 +4,17 @@ import type { BookDetail, BookItemsResponse, FacetsResponse, BookListResponse, B
 interface BookCreateData {
   isbn: string; title: string; author: string
   publisher?: string; year?: number
+  total: number; location?: string; desc?: string
   clcNumber?: string; physicalDesc?: string; cover?: string
-  language?: string; country?: string; categoryId: number
+  language?: string; country?: string; categoryId?: number | null
 }
 
 interface BookUpdateData {
   isbn?: string; title?: string; author?: string
   publisher?: string; year?: number
+  total?: number; location?: string; desc?: string
   clcNumber?: string; physicalDesc?: string; cover?: string
-  language?: string; country?: string; categoryId?: number
+  language?: string; country?: string; categoryId?: number | null
 }
 
 export const bookApi = {

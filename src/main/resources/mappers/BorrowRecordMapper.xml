@@ -176,6 +176,9 @@
       <if test="status != null and status != ''">
         AND br.status = #{status}
       </if>
+      <if test="categoryId != null">
+        AND b.categoryId = #{categoryId}
+      </if>
       <if test="search != null and search != ''">
         AND (u.name LIKE CONCAT('%', #{search}, '%') OR u.username LIKE CONCAT('%', #{search}, '%')
         OR b.title LIKE CONCAT('%', #{search}, '%'))
@@ -189,14 +192,18 @@
   </select>
 
   <select id="countAll" resultType="long">
-    SELECT COUNT(*) FROM borrow_records
+    SELECT COUNT(*) FROM borrow_records br
+    LEFT JOIN books b ON br.bookId = b.id
     <where>
       <if test="status != null and status != ''">
-        AND status = #{status}
+        AND br.status = #{status}
+      </if>
+      <if test="categoryId != null">
+        AND b.categoryId = #{categoryId}
       </if>
       <if test="search != null and search != ''">
-        AND (userId IN (SELECT id FROM users WHERE name LIKE CONCAT('%', #{search}, '%') OR username LIKE CONCAT('%', #{search}, '%'))
-        OR bookId IN (SELECT id FROM books WHERE title LIKE CONCAT('%', #{search}, '%')))
+        AND (br.userId IN (SELECT id FROM users WHERE name LIKE CONCAT('%', #{search}, '%') OR username LIKE CONCAT('%', #{search}, '%'))
+        OR br.bookId IN (SELECT id FROM books WHERE title LIKE CONCAT('%', #{search}, '%')))
       </if>
     </where>
   </select>

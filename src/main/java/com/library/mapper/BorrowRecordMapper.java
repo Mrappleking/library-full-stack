@@ -17,9 +17,9 @@ public interface BorrowRecordMapper {
     long countActiveByBookId(Integer bookId);
     List<BorrowRecord> findAll();
     List<BorrowRecord> findByUserIdPage(@Param("userId") Integer userId, @Param("offset") int offset, @Param("limit") int limit);
-    List<BorrowRecord> findAllPage(@Param("offset") int offset, @Param("limit") int limit, @Param("search") String search, @Param("status") String status);
+    List<BorrowRecord> findAllPage(@Param("offset") int offset, @Param("limit") int limit, @Param("search") String search, @Param("status") String status, @Param("categoryId") Integer categoryId);
     long countByUserId(@Param("userId") Integer userId);
-    long countAll(@Param("search") String search, @Param("status") String status);
+    long countAll(@Param("search") String search, @Param("status") String status, @Param("categoryId") Integer categoryId);
     void insert(BorrowRecord record);
     void returnBook(@Param("id") Integer id, @Param("returnDate") LocalDateTime returnDate, @Param("status") String status);
     void renew(@Param("id") Integer id, @Param("dueDate") LocalDateTime dueDate);
