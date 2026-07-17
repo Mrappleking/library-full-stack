@@ -1,6 +1,7 @@
 package com.library.entity;
 
 import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -8,6 +9,7 @@ import java.time.LocalDateTime;
 public class User {
     private Integer id;
     private String username;
+    @JsonIgnore
     private String password;
     private String name;
     private String role;

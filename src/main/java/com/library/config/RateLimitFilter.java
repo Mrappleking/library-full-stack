@@ -39,26 +39,52 @@ public class RateLimitFilter extends OncePerRequestFilter {
     }
     
     private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
+    private final Map<String, Bucket> authBuckets = new ConcurrentHashMap<>();
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
         
-        String clientIp = getClientIp(request);
-        Bucket bucket = buckets.computeIfAbsent(clientIp, this::createNewBucket);
+        String path = request.getRequestURI();
         
-        if (bucket.tryConsume(1)) {
-            // 允许通过，继续处理请求
-            filterChain.doFilter(request, response);
+        if (isAuthEndpoint(path)) {
+            String clientIp = getClientIp(request);
+            Bucket authBucket = authBuckets.computeIfAbsent(clientIp, this::createAuthBucket);
+            if (authBucket.tryConsume(1)) {
+                filterChain.doFilter(request, response);
+            } else {
+                response.setStatus(429);
+                response.setContentType("application/json;charset=UTF-8");
+                response.getWriter().write(objectMapper.writeValueAsString(
+                    ApiResponse.error(429, "登录请求过于频繁，请稍后再试")
+                ));
+            }
         } else {
-            // 请求过于频繁，返回 429 状态码
-            response.setStatus(429);
-            response.setContentType("application/json;charset=UTF-8");
-            response.getWriter().write(objectMapper.writeValueAsString(
-                ApiResponse.error(429, "请求过于频繁，请稍后再试")
-            ));
+            String clientIp = getClientIp(request);
+            Bucket bucket = buckets.computeIfAbsent(clientIp, this::createNewBucket);
+            if (bucket.tryConsume(1)) {
+                filterChain.doFilter(request, response);
+            } else {
+                response.setStatus(429);
+                response.setContentType("application/json;charset=UTF-8");
+                response.getWriter().write(objectMapper.writeValueAsString(
+                    ApiResponse.error(429, "请求过于频繁，请稍后再试")
+                ));
+            }
         }
+    }
+    
+    private boolean isAuthEndpoint(String path) {
+        return "/api/auth/login".equals(path) || "/api/auth/register".equals(path);
+    }
+    
+    private Bucket createAuthBucket(String ip) {
+        Bandwidth limit = Bandwidth.builder()
+                .capacity(10)
+                .refillGreedy(10, Duration.ofSeconds(60))
+                .build();
+        return Bucket.builder().addLimit(limit).build();
     }
     
     private Bucket createNewBucket(String ip) {
