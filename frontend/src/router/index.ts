@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { getUser } from '../api'
+import { UserRole } from '../constants'
 
 const routes = [
   { path: '/', redirect: '/books' },
@@ -10,7 +11,7 @@ const routes = [
   {
     path: '/admin',
     component: () => import('../views/admin/Layout.vue'),
-    meta: { role: 'admin' },
+    meta: { role: UserRole.ADMIN },
     children: [
       { path: '', redirect: '/admin/dashboard' },
       { path: 'dashboard', component: () => import('../views/admin/Dashboard.vue') },
@@ -27,7 +28,7 @@ const routes = [
   {
     path: '/reader',
     component: () => import('../views/reader/Layout.vue'),
-    meta: { role: 'reader' },
+    meta: { role: UserRole.READER },
     children: [
       { path: '', redirect: '/reader/books' },
       { path: 'books', component: () => import('../views/reader/Books.vue') },
@@ -50,7 +51,7 @@ router.beforeEach((to, _from, next) => {
   const publicRouteNames = ['Login', 'Search', 'BookDetail']
   if (to.name && publicRouteNames.includes(to.name as string)) {
     if (to.path === '/login' && user) {
-      next(user.role === 'admin' ? '/admin/dashboard' : '/reader/books')
+      next(user.role === UserRole.ADMIN ? '/admin/dashboard' : '/reader/books')
     } else {
       next()
     }
@@ -62,7 +63,7 @@ router.beforeEach((to, _from, next) => {
     return
   }
   if (to.meta.role && to.meta.role !== user.role) {
-    next(user.role === 'admin' ? '/admin/dashboard' : '/reader/books')
+    next(user.role === UserRole.ADMIN ? '/admin/dashboard' : '/reader/books')
     return
   }
   next()

@@ -40,6 +40,8 @@ import { DownloadOutline, SearchOutline } from '@vicons/ionicons5'
 import { borrowApi } from '@/api'
 import type { BorrowRecordResponse } from '@/types/api'
 import type { DataTableColumn } from 'naive-ui'
+import { BorrowStatus } from '@/constants'
+import { getBorrowStatusTag } from '@/utils/statusTag'
 
 const message = useMessage()
 const records = ref<BorrowRecordResponse[]>([])
@@ -54,16 +56,10 @@ const totalPages = computed(() => Math.max(1, Math.ceil(total.value / 20)))
 
 const statusOptions = [
   { label: '全部状态', value: '' },
-  { label: '在借', value: 'active' },
-  { label: '已还', value: 'returned' },
-  { label: '逾期', value: 'overdue' }
+  { label: '在借', value: BorrowStatus.ACTIVE },
+  { label: '已还', value: BorrowStatus.RETURNED },
+  { label: '逾期', value: BorrowStatus.OVERDUE }
 ]
-
-const statusMap: Record<string, { type: 'success' | 'warning' | 'error' | 'info' | 'default'; label: string }> = {
-  active: { type: 'success', label: '在借' },
-  returned: { type: 'default', label: '已还' },
-  overdue: { type: 'error', label: '逾期' }
-}
 
 const columns: DataTableColumn[] = [
   { title: '读者', key: 'user.name', width: 100 },
@@ -75,7 +71,7 @@ const columns: DataTableColumn[] = [
   {
     title: '状态', key: 'status', width: 70,
     render(row: any) {
-      const s = statusMap[row.status] || { type: 'default' as const, label: row.status }
+      const s = getBorrowStatusTag(row.status)
       return h(NTag, { type: s.type, size: 'small' }, () => s.label)
     }
   },
@@ -90,12 +86,12 @@ const columns: DataTableColumn[] = [
   {
     title: '操作', key: 'actions', width: 80,
     render(row: any) {
-      if (row.status !== 'active') return ''
-      return h(NPopconfirm, { onPositiveClick: () => handleReturn(row.id) }, {
+      if (row.status !== BorrowStatus.ACTIVE) return ''
+      return h(NPopconfirm, { positiveText: '确定', negativeText: '取消', onPositiveClick: () => handleReturn(row.id) }, {
         trigger: () => h(NButton, { size: 'small' }, () => '还书'),
         default: () => {
           const isOverdue = new Date(row.dueDate) < new Date()
-          if (isOverdue) return h('span', {}, [h('span', { style: 'color:#ef4444;' }, '⚠ 此借阅已逾期'), h('br'), '确认还书？将会自动计算逾期罚金。'])
+          if (isOverdue) return '⚠ 此借阅已逾期\n确认还书？将会自动计算逾期罚金。'
           return '确认还书？'
         }
       })
@@ -121,13 +117,11 @@ async function handleReturn(id: number) {
   catch (e: unknown) { message.error((e as Error).message) }
 }
 
-import axios from 'axios'
 async function exportCsv() {
   exporting.value = true
   try {
-    const token = localStorage.getItem('token')
-    const resp = await axios.get('/api/borrows', { params: { export: 'csv' }, responseType: 'blob', headers: { Authorization: `Bearer ${token}` } })
-    const url = window.URL.createObjectURL(new Blob([resp.data], { type: 'text/csv;charset=utf-8' }))
+    const resp = await borrowApi.getAllBorrowsCsv()
+    const url = window.URL.createObjectURL(new Blob([resp], { type: 'text/csv;charset=utf-8' }))
     const a = document.createElement('a')
     a.href = url; a.download = 'borrows-all.csv'; a.click()
     window.URL.revokeObjectURL(url)

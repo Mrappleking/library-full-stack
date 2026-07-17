@@ -60,11 +60,17 @@ export interface CirculationRuleResponse {
   patronCategory: { id: number; name: string }; itemType: { id: number; name: string }
 }
 
+export interface BorrowRecordSummary {
+  id: number; bookId: number; borrowDate: string; dueDate: string
+  returnDate?: string | null; status: string; renewed: boolean
+  book: { id: number; title: string; author: string; isbn: string }
+}
+
 export interface ReaderResponse {
   id: number; username: string; name: string; role: 'admin' | 'reader'
   phone?: string | null; email?: string | null; totalFines?: number
   patronCategory?: { id: number; name: string } | null
-  borrowRecords?: any[]
+  borrowRecords?: BorrowRecordSummary[]
   createdAt: string
 }
 

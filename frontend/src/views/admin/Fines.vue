@@ -23,6 +23,8 @@ import { useMessage, NTag, NButton } from 'naive-ui'
 import { fineApi } from '@/api'
 import type { FineResponse } from '@/types/api'
 import type { DataTableColumn } from 'naive-ui'
+import { FineType } from '@/constants'
+import { getFineTypeTag } from '@/utils/statusTag'
 
 const message = useMessage()
 const fines = ref<FineResponse[]>([])
@@ -31,9 +33,9 @@ const filterType = ref<string | null>(null)
 const filterPaid = ref<string | null>(null)
 
 const typeOptions = [
-  { label: '逾期', value: 'overdue' },
-  { label: '遗失', value: 'lost' },
-  { label: '破损', value: 'damage' }
+  { label: '逾期', value: FineType.OVERDUE },
+  { label: '遗失', value: FineType.LOSS },
+  { label: '破损', value: FineType.DAMAGE }
 ]
 const paidOptions = [
   { label: '未缴', value: 'false' },
@@ -47,12 +49,7 @@ const columns: DataTableColumn[] = [
   {
     title: '类型', key: 'type', width: 70,
     render(row: any) {
-      const m: Record<string, { type: 'success' | 'warning' | 'error' | 'info' | 'default'; label: string }> = {
-        overdue: { type: 'error', label: '逾期' },
-        lost: { type: 'warning', label: '遗失' },
-        damage: { type: 'info', label: '破损' }
-      }
-      const s = m[row.type] || { type: 'default' as const, label: row.type }
+      const s = getFineTypeTag(row.type)
       return h(NTag, { type: s.type, size: 'small' }, () => s.label)
     }
   },

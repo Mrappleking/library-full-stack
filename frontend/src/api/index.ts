@@ -1,20 +1,27 @@
 import axios from 'axios'
+import type { AxiosRequestConfig } from 'axios'
 import type { LoginResponse, UserProfile } from '@/types/api'
 import router from '@/router'
 import { errorMonitor } from '@/utils/errorMonitor'
 
+interface ApiRequestConfig extends AxiosRequestConfig {
+  __startTime?: number
+}
+
 const axiosInstance = axios.create({ baseURL: '/api' })
 
-axiosInstance.interceptors.request.use(config => {
+axiosInstance.interceptors.request.use((config: ApiRequestConfig) => {
   const token = localStorage.getItem('token')
-  if (token) config.headers.Authorization = `Bearer ${token}`
-  ;(config as any).__startTime = Date.now()
+  if (token && !['/auth/login', '/auth/register'].includes(config.url || '')) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  config.__startTime = Date.now()
   return config
 })
 
 axiosInstance.interceptors.response.use(
   res => {
-    const duration = Date.now() - ((res.config as any).__startTime || 0)
+    const duration = Date.now() - ((res.config as ApiRequestConfig).__startTime || 0)
     if (duration > 5000) {
       console.warn(`[SlowAPI] ${res.config.method?.toUpperCase()} ${res.config.url} took ${duration}ms`)
     }
@@ -53,14 +60,16 @@ axiosInstance.interceptors.response.use(
 )
 
 const api = {
-  get: <T>(url: string, config?: any) =>
+  get: <T>(url: string, config?: ApiRequestConfig) =>
     axiosInstance.get<T>(url, config) as unknown as Promise<T>,
-  post: <T>(url: string, data?: any, config?: any) =>
+  post: <T>(url: string, data?: unknown, config?: ApiRequestConfig) =>
     axiosInstance.post<T>(url, data, config) as unknown as Promise<T>,
-  put: <T>(url: string, data?: any, config?: any) =>
+  put: <T>(url: string, data?: unknown, config?: ApiRequestConfig) =>
     axiosInstance.put<T>(url, data, config) as unknown as Promise<T>,
-  delete: <T>(url: string, config?: any) =>
+  delete: <T>(url: string, config?: ApiRequestConfig) =>
     axiosInstance.delete<T>(url, config) as unknown as Promise<T>,
+  getBlob: (url: string, config?: ApiRequestConfig) =>
+    axiosInstance.get<Blob>(url, { ...config, responseType: 'blob' }) as unknown as Promise<Blob>,
 } as const
 
 export default api

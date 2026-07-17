@@ -58,6 +58,7 @@ import { useMessage, NButton, NTag, useDialog, type DataTableColumn } from 'naiv
 import { readerApi } from '@/api'
 import api from '@/api'
 import type { ReaderResponse } from '@/types/api'
+import { BorrowStatus } from '@/constants'
 
 const message = useMessage()
 const dialog = useDialog()
@@ -111,7 +112,7 @@ const columns = computed<DataTableColumn[]>(() => [
   {
     title: '操作', key: 'actions', width: 240,
     render(row: any) {
-      return h('span', { style: 'display:flex;gap:6px;' }, [
+      return h('div', { style: 'display:flex;gap:6px;' }, [
         h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑'),
         h(NButton, { size: 'small', onClick: () => handleResetPassword(row) }, () => '重置密码'),
         h(NButton, { size: 'small', type: 'error', onClick: () => handleAdminDelete(row) }, () => '强制删除')
@@ -125,46 +126,14 @@ async function fetchReaders() {
   try {
     const res = await readerApi.getAllReaders({
       page: pagination.page,
-      limit: pagination.pageSize
+      limit: pagination.pageSize,
+      keyword: searchKeyword.value.trim() || undefined,
+      patronCategoryId: searchCategory.value || undefined,
+      sortBy: sortBy.value,
+      sortDir: sortDir.value
     })
-    // Backend returns array directly (no pagination wrapper)
-    let list: ReaderResponse[]
-    if (Array.isArray(res)) {
-      list = res as ReaderResponse[]
-    } else {
-      list = (res as any).readers || []
-    }
-
-    // Client-side filter by keyword
-    const kw = searchKeyword.value.toLowerCase().trim()
-    if (kw) {
-      list = list.filter(r =>
-        (r.username && r.username.toLowerCase().includes(kw)) ||
-        (r.name && r.name.toLowerCase().includes(kw)) ||
-        (r.phone && r.phone.includes(kw))
-      )
-    }
-
-    // Client-side filter by category
-    if (searchCategory.value) {
-      list = list.filter(r => r.patronCategory?.id === searchCategory.value)
-    }
-
-    // Client-side sort
-    list.sort((a: any, b: any) => {
-      const va = a[sortBy.value]
-      const vb = b[sortBy.value]
-      if (va == null) return 1
-      if (vb == null) return -1
-      const cmp = typeof va === 'string' ? va.localeCompare(vb) : va - vb
-      return sortDir.value === 'asc' ? cmp : -cmp
-    })
-
-    pagination.itemCount = list.length
-
-    // Client-side pagination
-    const start = (pagination.page - 1) * pagination.pageSize
-    readers.value = list.slice(start, start + pagination.pageSize)
+    readers.value = res.data || []
+    pagination.itemCount = res.total || 0
   } catch { /* ignore */ }
   loading.value = false
 }
@@ -207,11 +176,12 @@ function handleSorterChange(sorter: { columnKey: string; order: string } | null)
 async function loadCategories() {
   try {
     const data: any[] = await api.get('/rules/patron-categories')
-    categoryOptions.value = data.map((c: any) => ({ label: c.name, value: c.id }))
+    const newOptions = data.map((c: any) => ({ label: c.name, value: c.id }))
+    categoryOptions.value = newOptions
     const map: Record<number, string> = {}
     data.forEach((c: any) => { map[c.id] = c.name })
     categoryMap.value = map
-  } catch { /* ignore */ }
+  } catch (e) { console.error('[Readers] loadCategories error:', e) }
 }
 
 function onExpand(keys: number[]) { expandedKeys.value = keys }
@@ -232,6 +202,7 @@ async function handleSave() {
     message.success('已更新')
     showModal.value = false
     fetchReaders()
+    loadCategories()
   } catch (e: unknown) { message.error((e as Error).message) }
   saving.value = false
 }
@@ -308,9 +279,9 @@ const ExpandPanel = defineComponent({
             h('span', { style: 'color:var(--lib-text-tertiary);' }, new Date(r.borrowDate).toLocaleDateString('zh-CN')),
             h(NTag, { 
               size: 'tiny', 
-              type: r.status === 'active' ? 'success' : 'default',
-              style: r.status === 'active' ? 'background-color:rgba(16,185,129,0.15);color:#10b981;' : 'background-color:var(--lib-bg-hover);color:var(--lib-text-secondary);'
-            }, () => r.status === 'active' ? '在借' : '已还')
+              type: r.status === BorrowStatus.ACTIVE ? 'success' : 'default',
+              style: r.status === BorrowStatus.ACTIVE ? 'background-color:color-mix(in srgb, var(--lib-success) 15%, transparent);color:var(--lib-success);' : 'background-color:var(--lib-bg-hover);color:var(--lib-text-secondary);'
+            }, () => r.status === BorrowStatus.ACTIVE ? '在借' : '已还')
           ])
         )
       )

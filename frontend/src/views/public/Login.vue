@@ -60,6 +60,7 @@ import LoginBg from '../../components/LoginBg.vue'
 import { useAuthStore } from '../../stores/auth'
 import { useThemeStore } from '../../stores/theme'
 import type { LoginResponse } from '../../types/api'
+import { UserRole } from '../../constants'
 
 const router = useRouter(); const message = useMessage()
 const themeStore = useThemeStore()
@@ -76,7 +77,7 @@ function toggleTheme() {
 async function handleLogin() {
   if (!form.value.username || !form.value.password) { message.warning('请输入用户名和密码'); return }
   loading.value = true
-  try { const data = await doLogin(form.value.username, form.value.password); useAuthStore().login(data); message.success('登录成功'); router.push(data.user.role === 'admin' ? '/admin/dashboard' : '/reader/books') }
+  try { const data = await doLogin(form.value.username, form.value.password); useAuthStore().login(data); message.success('登录成功'); router.push(data.user.role === UserRole.ADMIN ? '/admin/dashboard' : '/reader/books') }
   catch (e: unknown) { message.error((e as Error).message || '登录失败') } finally { loading.value = false }
 }
 

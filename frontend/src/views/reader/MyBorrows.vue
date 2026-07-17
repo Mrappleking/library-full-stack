@@ -43,6 +43,8 @@ import { useAuthStore } from '@/stores/auth'
 import { borrowApi, holdApi } from '@/api'
 import type { DataTableColumn } from 'naive-ui'
 import type { BorrowRecordResponse, HoldResponse } from '@/types/api'
+import { BorrowStatus, HoldStatus } from '@/constants'
+import { getBorrowStatusTag, getHoldStatusTag } from '@/utils/statusTag'
 
 const message = useMessage()
 const auth = useAuthStore()
@@ -60,25 +62,20 @@ const columns: DataTableColumn<BorrowRecordResponse>[] = [
   {
     title: '状态', key: 'status', width: 80,
     render(row) {
-      const m: Record<string, { type: 'success' | 'warning' | 'error' | 'info' | 'default'; label: string }> = {
-        active: { type: 'success', label: '在借' },
-        overdue: { type: 'error', label: '逾期' },
-        returned: { type: 'default', label: '已还' }
-      }
-      const s = m[row.status] || { type: 'default' as const, label: row.status }
+      const s = getBorrowStatusTag(row.status)
       return h(NTag, { type: s.type, size: 'small' }, () => s.label)
     }
   },
   {
     title: '操作', key: 'actions', width: 100,
     render(row) {
-      if (row.status !== 'active') return ''
+      if (row.status !== BorrowStatus.ACTIVE && row.status !== BorrowStatus.OVERDUE) return ''
       return h('div', { style: 'display:flex;gap:6px' }, [
-        h(NPopconfirm, { onPositiveClick: () => handleReturn(row.id) }, {
+        h(NPopconfirm, { positiveText: '确定', negativeText: '取消', onPositiveClick: () => handleReturn(row.id) }, {
           trigger: () => h(NButton, { size: 'tiny', type: 'warning' }, () => '还书'),
           default: () => '确认还书？'
         }),
-        h(NButton, { size: 'tiny', onClick: () => handleRenew(row.id) }, () => '续借')
+        row.status === BorrowStatus.ACTIVE && h(NButton, { size: 'tiny', onClick: () => handleRenew(row.id) }, () => '续借')
       ])
     }
   }
@@ -90,21 +87,15 @@ const holdColumns: DataTableColumn<HoldResponse>[] = [
   {
     title: '状态', key: 'status', width: 100,
     render(row) {
-      const m: Record<string, { type: 'success' | 'warning' | 'error' | 'info' | 'default'; label: string }> = {
-        pending: { type: 'info', label: '等待中' },
-        ready: { type: 'success', label: '可领取' },
-        fulfilled: { type: 'default', label: '已完成' },
-        cancelled: { type: 'error', label: '已取消' }
-      }
-      const s = m[row.status] || { type: 'default' as const, label: row.status }
+      const s = getHoldStatusTag(row.status)
       return h(NTag, { type: s.type, size: 'small' }, () => s.label)
     }
   },
   {
     title: '操作', key: 'actions', width: 80,
     render(row) {
-      if (row.status !== 'pending') return ''
-      return h(NPopconfirm, { onPositiveClick: () => handleCancelHold(row.id) }, {
+      if (row.status !== HoldStatus.PENDING) return ''
+      return h(NPopconfirm, { positiveText: '确定', negativeText: '取消', onPositiveClick: () => handleCancelHold(row.id) }, {
         trigger: () => h(NButton, { size: 'tiny', type: 'error' }, () => '取消'),
         default: () => '确认取消预约？'
       })
@@ -149,13 +140,11 @@ async function handleCancelHold(id: number) {
   catch (e: unknown) { message.error((e as Error).message) }
 }
 
-import axios from 'axios'
 async function exportCsv() {
   exporting.value = true
   try {
-    const token = localStorage.getItem('token')
-    const resp = await axios.get('/api/borrows/history', { params: { export: 'csv' }, responseType: 'blob', headers: { Authorization: `Bearer ${token}` } })
-    const url = window.URL.createObjectURL(new Blob([resp.data], { type: 'text/csv;charset=utf-8' }))
+    const resp = await borrowApi.getHistoryCsv()
+    const url = window.URL.createObjectURL(new Blob([resp], { type: 'text/csv;charset=utf-8' }))
     const a = document.createElement('a')
     a.href = url; a.download = 'borrows-my.csv'; a.click()
     window.URL.revokeObjectURL(url)

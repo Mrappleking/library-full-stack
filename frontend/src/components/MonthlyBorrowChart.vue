@@ -1,13 +1,13 @@
 <template>
-  <div class="chart-container">
+  <div ref="chartContainer" class="chart-container">
     <v-chart class="chart" :option="chartOption" autoresize />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onUnmounted, ref } from 'vue'
 import VChart from 'vue-echarts'
-import { use } from 'echarts/core'
+import { use, getInstanceByDom } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart } from 'echarts/charts'
 import {
@@ -30,6 +30,20 @@ const props = defineProps<{
   data: Array<{ month: string; borrows: number }>
   isDark?: boolean
 }>()
+
+const chartContainer = ref<HTMLElement | null>(null)
+
+onUnmounted(() => {
+  if (chartContainer.value) {
+    const chartEl = chartContainer.value.querySelector('.chart')
+    if (chartEl) {
+      const chart = getInstanceByDom(chartEl)
+      if (chart) {
+        chart.dispose()
+      }
+    }
+  }
+})
 
 const chartOption = computed(() => {
   const months = props.data.map(d => d.month)
