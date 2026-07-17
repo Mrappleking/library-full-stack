@@ -2,15 +2,30 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org/dtd Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.library.mapper.UserMapper">
 
-  <select id="findById" resultType="com.library.entity.User">
+  <resultMap id="userResult" type="com.library.entity.User">
+    <id property="id" column="id"/>
+    <result property="username" column="username"/>
+    <result property="password" column="password"/>
+    <result property="name" column="name"/>
+    <result property="role" column="role"/>
+    <result property="phone" column="phone"/>
+    <result property="email" column="email"/>
+    <result property="totalFines" column="total_fines"/>
+    <result property="patronCategoryId" column="patronCategoryId"/>
+    <result property="tokenVersion" column="token_version"/>
+    <result property="createdAt" column="created_at"/>
+    <result property="updatedAt" column="updated_at"/>
+  </resultMap>
+
+  <select id="findById" resultMap="userResult">
     SELECT * FROM users WHERE id = #{id}
   </select>
 
-  <select id="findByUsername" resultType="com.library.entity.User">
+  <select id="findByUsername" resultMap="userResult">
     SELECT * FROM users WHERE username = #{username}
   </select>
 
-  <select id="findAll" resultType="com.library.entity.User">
+  <select id="findAll" resultMap="userResult">
     SELECT * FROM users ORDER BY created_at DESC
   </select>
 
@@ -35,26 +50,27 @@
     UPDATE users SET token_version = token_version + 1, updated_at = NOW() WHERE id = #{userId}
   </update>
 
-  <select id="findPage" resultType="com.library.entity.User">
+  <select id="findPage" resultMap="userResult">
     SELECT * FROM users ORDER BY created_at DESC LIMIT #{limit} OFFSET #{offset}
   </select>
 
-  <select id="searchReaders" resultType="com.library.entity.User">
-    SELECT * FROM users WHERE role = 'reader'
+  <select id="searchReaders" resultMap="userResult">
+    SELECT u.* FROM users u LEFT JOIN patron_categories pc ON u.patronCategoryId = pc.id WHERE u.role = 'reader'
     <if test="keyword != null and keyword != ''">
-      AND (username LIKE CONCAT('%', #{keyword}, '%')
-           OR name LIKE CONCAT('%', #{keyword}, '%')
-           OR phone LIKE CONCAT('%', #{keyword}, '%'))
+      AND (u.username LIKE CONCAT('%', #{keyword}, '%')
+           OR u.name LIKE CONCAT('%', #{keyword}, '%')
+           OR u.phone LIKE CONCAT('%', #{keyword}, '%')
+           OR pc.name LIKE CONCAT('%', #{keyword}, '%'))
     </if>
     <if test="patronCategoryId != null">
-      AND patronCategoryId = #{patronCategoryId}
+      AND u.patronCategoryId = #{patronCategoryId}
     </if>
     ORDER BY
     <choose>
-      <when test="sortBy == 'name'">name</when>
-      <when test="sortBy == 'username'">username</when>
-      <when test="sortBy == 'patronCategoryId'">patronCategoryId</when>
-      <otherwise>created_at</otherwise>
+      <when test="sortBy == 'name'">u.name</when>
+      <when test="sortBy == 'username'">u.username</when>
+      <when test="sortBy == 'patronCategoryId'">u.patronCategoryId</when>
+      <otherwise>u.created_at</otherwise>
     </choose>
     <choose>
       <when test="sortDir == 'asc'">ASC</when>
@@ -64,14 +80,15 @@
   </select>
 
   <select id="countSearchReaders" resultType="long">
-    SELECT COUNT(*) FROM users WHERE role = 'reader'
+    SELECT COUNT(*) FROM users u LEFT JOIN patron_categories pc ON u.patronCategoryId = pc.id WHERE u.role = 'reader'
     <if test="keyword != null and keyword != ''">
-      AND (username LIKE CONCAT('%', #{keyword}, '%')
-           OR name LIKE CONCAT('%', #{keyword}, '%')
-           OR phone LIKE CONCAT('%', #{keyword}, '%'))
+      AND (u.username LIKE CONCAT('%', #{keyword}, '%')
+           OR u.name LIKE CONCAT('%', #{keyword}, '%')
+           OR u.phone LIKE CONCAT('%', #{keyword}, '%')
+           OR pc.name LIKE CONCAT('%', #{keyword}, '%'))
     </if>
     <if test="patronCategoryId != null">
-      AND patronCategoryId = #{patronCategoryId}
+      AND u.patronCategoryId = #{patronCategoryId}
     </if>
   </select>
 

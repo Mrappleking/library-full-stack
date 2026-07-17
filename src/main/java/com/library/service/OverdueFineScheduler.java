@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 
 import java.math.BigDecimal;
@@ -48,7 +49,6 @@ public class OverdueFineScheduler {
     /**
      * Runs daily at 2:00 AM to auto-create fines for overdue borrows.
      * Idempotent: skips borrow records that already have a fine.
-     * Note: Transaction handled per-record in fineService.createFine()
      */
     @Scheduled(cron = "0 0 2 * * ?")
     public void autoFineOverdueBorrows() {
@@ -59,44 +59,11 @@ public class OverdueFineScheduler {
 
         for (BorrowRecord record : overdueRecords) {
             try {
-                // Idempotency check: skip if a fine already exists for this borrow
-                Integer existingFineId = fineMapper.findByBorrowRecordId(record.getId());
-                if (existingFineId != null) {
+                if (processOverdueRecord(record)) {
+                    created++;
+                } else {
                     skipped++;
-                    continue;
                 }
-
-                LocalDateTime now = LocalDateTime.now();
-                long daysOverdue = ChronoUnit.DAYS.between(record.getDueDate(), now);
-                if (daysOverdue <= 0) {
-                    skipped++;
-                    continue;
-                }
-
-                // Get user and book item to determine correct circulation rule
-                User user = userMapper.findById(record.getUserId());
-                BookItem bookItem = record.getBookItemId() != null ? bookItemMapper.findById(record.getBookItemId()) : null;
-                
-                if (user == null) {
-                    log.warn("User not found for record {}, skipping fine creation", record.getId());
-                    skipped++;
-                    continue;
-                }
-                
-                Integer patronCategoryId = user.getPatronCategoryId();
-                Integer itemTypeId = bookItem != null ? bookItem.getItemTypeId() : null;
-
-                CirculationRule rule = ruleService.getRule(patronCategoryId, itemTypeId);
-                if (rule == null) {
-                    log.warn("No circulation rule found for record {}, skipping fine creation", record.getId());
-                    skipped++;
-                    continue;
-                }
-                
-                BigDecimal fineAmount = rule.getFinePerDay().multiply(BigDecimal.valueOf(daysOverdue));
-
-                fineService.createFine(record.getId(), record.getUserId(), fineAmount, "overdue");
-                created++;
             } catch (Exception e) {
                 log.error("Failed to auto-create fine for borrowRecordId={}", record.getId(), e);
             }
@@ -105,5 +72,50 @@ public class OverdueFineScheduler {
         if (created > 0 || skipped > 0) {
             log.info("Overdue fine task complete: created={}, skipped={}, total={}", created, skipped, overdueRecords.size());
         }
+    }
+
+    /**
+     * Process a single overdue record within a transaction.
+     * Returns true if fine was created, false if skipped.
+     */
+    @Transactional
+    public boolean processOverdueRecord(BorrowRecord record) {
+        Integer existingFineId = fineMapper.findByBorrowRecordId(record.getId());
+        if (existingFineId != null) {
+            return false;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        long daysOverdue = ChronoUnit.DAYS.between(record.getDueDate(), now);
+        if (daysOverdue <= 0) {
+            return false;
+        }
+
+        User user = userMapper.findById(record.getUserId());
+        if (user == null) {
+            log.warn("User not found for record {}", record.getId());
+            return false;
+        }
+
+        BookItem bookItem = record.getBookItemId() != null ? 
+            bookItemMapper.findById(record.getBookItemId()) : null;
+
+        Integer patronCategoryId = user.getPatronCategoryId();
+        Integer itemTypeId = bookItem != null ? bookItem.getItemTypeId() : null;
+
+        CirculationRule rule = ruleService.getRule(patronCategoryId, itemTypeId);
+        if (rule == null) {
+            log.warn("No circulation rule found for record {}", record.getId());
+            return false;
+        }
+
+        BigDecimal fineAmount = rule.getFinePerDay().multiply(BigDecimal.valueOf(daysOverdue));
+        if (fineAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            return false;
+        }
+
+        fineService.createFine(record.getId(), record.getUserId(), fineAmount, "overdue");
+        borrowRecordMapper.updateStatus(record.getId(), "overdue");
+        return true;
     }
 }
