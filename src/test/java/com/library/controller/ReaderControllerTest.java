@@ -13,8 +13,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.List;
-
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -34,6 +32,9 @@ class ReaderControllerTest {
     @MockBean
     private JwtUtil jwtUtil;
 
+    @MockBean
+    private com.library.mapper.UserMapper userMapper;
+
     private final String adminToken = "Bearer test-admin-token";
 
     @BeforeEach
@@ -41,6 +42,12 @@ class ReaderControllerTest {
         when(jwtUtil.validateToken(anyString())).thenReturn(true);
         when(jwtUtil.getUserIdFromToken(anyString())).thenReturn(1);
         when(jwtUtil.getRoleFromToken(anyString())).thenReturn("admin");
+        when(jwtUtil.getTokenVersionFromToken(anyString())).thenReturn(0);
+        
+        com.library.entity.User adminUser = new com.library.entity.User();
+        adminUser.setId(1);
+        adminUser.setTokenVersion(0);
+        when(userMapper.findById(1)).thenReturn(adminUser);
     }
 
     @Test
@@ -50,12 +57,19 @@ class ReaderControllerTest {
         u.setUsername("reader1");
         u.setRole("reader");
 
-        when(userService.findAll()).thenReturn(List.of(u));
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        result.put("data", java.util.List.of(u));
+        result.put("total", 1L);
+        result.put("page", 1);
+        result.put("limit", 10);
+        result.put("pages", 1);
+
+        when(userService.searchReaders(any(), any(), anyInt(), anyInt(), any(), any())).thenReturn(result);
 
         mockMvc.perform(get("/api/readers").header("Authorization", adminToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.data[0].username").value("reader1"));
+                .andExpect(jsonPath("$.data.data[0].username").value("reader1"));
     }
 
     @Test

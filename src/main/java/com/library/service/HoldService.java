@@ -3,6 +3,7 @@ package com.library.service;
 import com.library.entity.*;
 import com.library.exception.AppException;
 import com.library.mapper.*;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,7 +22,9 @@ public class HoldService {
     private final BookItemMapper bookItemMapper;
     private final BookService bookService;
     private final AuditService auditService;
-    private static final int MAX_HOLDS = 3;
+    
+    @Value("${app.hold.max-holds-per-reader:3}")
+    private int maxHoldsPerReader;
 
     public HoldService(HoldMapper holdMapper, BookMapper bookMapper,
                        BookItemMapper bookItemMapper, BookService bookService,
@@ -48,8 +51,8 @@ public class HoldService {
 
         // 3. Max holds limit
         long activeCount = holdMapper.countActiveByUserId(userId);
-        if (activeCount >= MAX_HOLDS) {
-            throw AppException.badRequest("预约数量已达上限: " + MAX_HOLDS + "个");
+        if (activeCount >= maxHoldsPerReader) {
+            throw AppException.badRequest("预约数量已达上限: " + maxHoldsPerReader + "个");
         }
 
         Hold hold = new Hold();
@@ -62,7 +65,7 @@ public class HoldService {
 
     @Transactional
     public void cancelHold(Integer holdId, Integer userId) {
-        Hold hold = holdMapper.findById(holdId);
+        Hold hold = holdMapper.findByIdForUpdate(holdId);
         if (hold == null) throw AppException.notFound("预约记录不存在");
         if (!hold.getUserId().equals(userId)) throw AppException.forbidden("无权操作");
         if (List.of("fulfilled", "cancelled", "expired").contains(hold.getStatus())) {
@@ -103,7 +106,7 @@ public class HoldService {
 
     @Transactional
     public Hold fulfillHold(Integer holdId) {
-        Hold hold = holdMapper.findById(holdId);
+        Hold hold = holdMapper.findByIdForUpdate(holdId);
         if (hold == null) throw AppException.notFound("预约记录不存在");
         if (!"ready".equals(hold.getStatus())) {
             throw AppException.badRequest("预约状态不是待取书，无法履约");
@@ -133,6 +136,10 @@ public class HoldService {
         return holdMapper.countPendingByBookId(bookId);
     }
 
+    public long countPendingHolds() {
+        return holdMapper.countAllPending();
+    }
+
     /**
      * Auto-expire ready holds past their pickup window (3 days).
      */
@@ -149,6 +156,10 @@ public class HoldService {
 
     @Transactional
     private void expireHold(Integer holdId, Integer bookItemId, Integer bookId) {
+        Hold hold = holdMapper.findByIdForUpdate(holdId);
+        if (hold == null || !"ready".equals(hold.getStatus())) {
+            return;
+        }
         holdMapper.updateStatus(holdId, "expired");
         if (bookItemId != null) {
             BookItem item = bookItemMapper.findByIdForUpdate(bookItemId);

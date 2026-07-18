@@ -86,6 +86,10 @@
     UPDATE book_items SET status=#{status}, updated_at=NOW() WHERE id=#{id}
   </update>
 
+  <update id="updateStatusIfAvailable">
+    UPDATE book_items SET status=#{status}, updated_at=NOW() WHERE id=#{id} AND status='available'
+  </update>
+
   <update id="incrementRequests">
     UPDATE book_items SET requests = requests + 1 WHERE id=#{id}
   </update>

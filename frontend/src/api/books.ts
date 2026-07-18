@@ -1,5 +1,21 @@
 import api from './index'
-import type { BookDetail, BookItemsResponse, FacetsResponse, BookListResponse, BookListParams } from '../types/api'
+import type { BookDetail, BookItemsResponse, FacetsResponse, BookListResponse, BookListParams, BookSummary } from '../types/api'
+
+interface BookCreateData {
+  isbn: string; title: string; author: string
+  publisher?: string; year?: number
+  total: number; location?: string; desc?: string
+  clcNumber?: string; physicalDesc?: string; cover?: string
+  language?: string; country?: string; categoryId?: number | null
+}
+
+interface BookUpdateData {
+  isbn?: string; title?: string; author?: string
+  publisher?: string; year?: number
+  total?: number; location?: string; desc?: string
+  clcNumber?: string; physicalDesc?: string; cover?: string
+  language?: string; country?: string; categoryId?: number | null
+}
 
 export const bookApi = {
   list: (params: BookListParams = {}) =>
@@ -14,11 +30,11 @@ export const bookApi = {
   getFacets: (params: BookListParams = {}) =>
     api.get<FacetsResponse>('/books/facets', { params }),
 
-  create: (data: any) =>
-    api.post('/books', data),
+  create: (data: BookCreateData) =>
+    api.post<BookSummary>('/books', data),
 
-  update: (id: number, data: any) =>
-    api.put(`/books/${id}`, data),
+  update: (id: number, data: BookUpdateData) =>
+    api.put<BookSummary>(`/books/${id}`, data),
 
   delete: (id: number) =>
     api.delete(`/books/${id}`),

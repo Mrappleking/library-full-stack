@@ -7,6 +7,7 @@
         <n-input v-model:value="search" placeholder="搜索书名/作者/ISBN" clearable style="width: 260px;" @keyup.enter="fetchBooks" />
         <n-select v-model:value="filterCategory" placeholder="全部分类" clearable :options="catOptions" style="width: 160px;" @update:value="fetchBooks" />
         <n-button @click="fetchBooks">搜索</n-button>
+        <n-button @click="resetSearch">重置</n-button>
       </n-space>
       <n-button type="primary" @click="openCreate">添加图书</n-button>
     </n-space>
@@ -40,7 +41,7 @@
       <div style="display:flex;gap:12px;align-items:flex-start;width:100%;">
         <n-upload
           :action="'/api/upload/cover'"
-          :headers="{ 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '') }"
+          :headers="uploadHeaders"
           accept=".jpg,.jpeg,.png,.webp"
           :max="1"
           :show-file-list="false"
@@ -48,11 +49,11 @@
           @error="handleUploadError"
           @before-upload="beforeUpload"
         >
-          <n-button :disabled="!editingId">选择封面</n-button>
+          <n-button>选择封面</n-button>
         </n-upload>
         <n-spin v-if="uploading" size="small" />
         <img v-else-if="form.cover" :src="form.cover" style="max-width:100px;max-height:140px;border-radius:4px;object-fit:cover;" />
-        <span v-else style="color:#8a8f98;font-size:13px;align-self:center;">未设置封面</span>
+        <span v-else style="color:var(--lib-text-tertiary);font-size:13px;align-self:center;">未设置封面</span>
       </div>
     </n-form-item>
         <n-form-item label="描述"><n-input v-model:value="form.desc" type="textarea" placeholder="图书简介" /></n-form-item>
@@ -84,9 +85,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, h } from 'vue'
+import { ref, reactive, onMounted, h, computed } from 'vue'
 import { useMessage, NTag, NButton, NPopconfirm, NUpload, NSpin } from 'naive-ui'
 import { bookApi, categoryApi } from '@/api'
+import api from '@/api/index'
 import type { BookSummary, BookItemSummary, BookListResponse, BookItemsResponse } from '@/types/api'
 import type { DataTableColumn } from 'naive-ui'
 
@@ -96,7 +98,7 @@ const loading = ref(false)
 const search = ref('')
 const filterCategory = ref<number | null>(null)
 const catOptions = ref<{ label: string; value: number }[]>([])
-const pagination = reactive({ page: 1, pageSize: 20, itemCount: 0 })
+const pagination = reactive({ page: 1, pageSize: 20, itemCount: 0, prefix: (info: any) => `共 ${info.itemCount} 本` })
 const expandedKeys = ref<number[]>([])
 
 const columns: DataTableColumn[] = [
@@ -124,7 +126,7 @@ const columns: DataTableColumn[] = [
       return h('div', { style: 'display:flex;gap:6px' }, [
         h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑'),
         h(NButton, { size: 'small', onClick: () => openAddCopy(row) }, () => '加复本'),
-        h(NPopconfirm, { onPositiveClick: () => handleDelete(row.id) }, {
+        h(NPopconfirm, { positiveText: '确定', negativeText: '取消', onPositiveClick: () => handleDelete(row.id) }, {
           trigger: () => h(NButton, { size: 'small', type: 'error', text: true }, () => '删除'),
           default: () => '确认删除该图书？'
         })
@@ -146,30 +148,30 @@ const ExpandItems = {
     }
     onMounted(() => { load() })
     return () => {
-      if (items.value.length === 0) return h('div', { style: 'padding:12px;color:#8a8f98;' }, '暂无复本')
+      if (items.value.length === 0) return h('div', { style: 'padding:12px;color:var(--lib-text-tertiary);' }, '暂无复本')
       return h('div', { style: 'padding:8px 0;' }, [
         h('table', { style: 'width:100%;border-collapse:collapse;font-size:13px;' }, [
           h('thead', {}, h('tr', {}, [
-            h('th', { style: 'text-align:left;padding:4px 12px;color:#8a8f98;' }, '条码号'),
-            h('th', { style: 'text-align:left;padding:4px 12px;color:#8a8f98;' }, '索书号'),
-            h('th', { style: 'text-align:left;padding:4px 12px;color:#8a8f98;' }, '馆藏地'),
-            h('th', { style: 'text-align:left;padding:4px 12px;color:#8a8f98;' }, '状态'),
-            h('th', { style: 'text-align:left;padding:4px 12px;color:#8a8f98;' }, '品相'),
-            h('th', { style: 'text-align:right;padding:4px 12px;color:#8a8f98;' }, '价格')
+            h('th', { style: 'text-align:left;padding:4px 12px;color:var(--lib-text-tertiary);' }, '条码号'),
+            h('th', { style: 'text-align:left;padding:4px 12px;color:var(--lib-text-tertiary);' }, '索书号'),
+            h('th', { style: 'text-align:left;padding:4px 12px;color:var(--lib-text-tertiary);' }, '馆藏地'),
+            h('th', { style: 'text-align:left;padding:4px 12px;color:var(--lib-text-tertiary);' }, '状态'),
+            h('th', { style: 'text-align:left;padding:4px 12px;color:var(--lib-text-tertiary);' }, '品相'),
+            h('th', { style: 'text-align:right;padding:4px 12px;color:var(--lib-text-tertiary);' }, '价格')
           ])),
           h('tbody', {}, items.value.map((i: BookItemSummary) => {
             const statusColors: Record<string, any> = { available: 'success', borrowed: 'warning', repairing: 'info', lost: 'error', withdrawn: 'default' }
             const conMap: Record<string, string> = { normal: '正常', damaged: '破损', repairing: '修补中', lost: '遗失', withdrawn: '剔除' }
-            return h('tr', { style: 'border-top:1px solid rgba(255,255,255,0.05);' }, [
-              h('td', { style: 'padding:6px 12px;font-family:monospace;' }, i.barcode),
-              h('td', { style: 'padding:6px 12px;color:#d0d6e0;' }, i.callNumber || '-'),
-              h('td', { style: 'padding:6px 12px;color:#d0d6e0;' }, i.location || '-'),
+            return h('tr', { style: 'border-top:1px solid var(--lib-divider);' }, [
+              h('td', { style: 'padding:6px 12px;font-family:monospace;color:var(--lib-text-primary);' }, i.barcode),
+              h('td', { style: 'padding:6px 12px;color:var(--lib-text-secondary);' }, i.callNumber || '-'),
+              h('td', { style: 'padding:6px 12px;color:var(--lib-text-secondary);' }, i.location || '-'),
               h('td', { style: 'padding:6px 12px;' }, h(NTag, { type: statusColors[i.status] || 'default', size: 'tiny' }, () => {
                 const labels: Record<string, string> = { available: '在架', borrowed: '借出', repairing: '修补', lost: '遗失', withdrawn: '剔除' }
                 return labels[i.status] || i.status
               })),
-              h('td', { style: 'padding:6px 12px;color:#8a8f98;' }, (i.condition && conMap[i.condition]) || i.condition || '-'),
-              h('td', { style: 'padding:6px 12px;text-align:right;color:#d0d6e0;' }, i.price ? `¥${i.price}` : '-')
+              h('td', { style: 'padding:6px 12px;color:var(--lib-text-tertiary);' }, (i.condition && conMap[i.condition]) || i.condition || '-'),
+              h('td', { style: 'padding:6px 12px;text-align:right;color:var(--lib-text-secondary);' }, i.price ? `¥${i.price}` : '-')
             ])
           }))
         ])
@@ -202,13 +204,31 @@ async function fetchCategories() {
 
 function onPage(page: number) { pagination.page = page; fetchBooks() }
 function onExpand(keys: number[]) { expandedKeys.value = keys }
+function resetSearch() { search.value = ''; filterCategory.value = null; pagination.page = 1; fetchBooks() }
 
 const showModal = ref(false)
 const editingId = ref<number | null>(null)
 const saving = ref(false)
 const form = reactive({ isbn: '', title: '', author: '', publisher: '', year: undefined as number | undefined, categoryId: null as number | null, total: 1, location: '', desc: '', cover: '' })
 const uploading = ref(false)
-function beforeUpload({ file }: { file: File }) {
+const uploadHeaders = computed(() => ({ Authorization: `Bearer ${localStorage.getItem('token') || ''}` }))
+
+function handleUploadFinish({ event }: { event?: ProgressEvent }) {
+  uploading.value = false
+  if (!event) return
+  const resp = JSON.parse((event.target as XMLHttpRequest).response)
+  if (resp.path) {
+    form.cover = resp.path
+    message.success('封面上传成功')
+  }
+}
+
+function handleUploadError() {
+  uploading.value = false
+  message.error('上传失败')
+}
+
+function beforeUpload({ file }: { file: any }) {
   const allowed = ['image/jpeg', 'image/png', 'image/webp']
   if (!allowed.includes(file.type)) {
     message.error('只接受 jpg/png/webp 格式')
@@ -220,20 +240,6 @@ function beforeUpload({ file }: { file: File }) {
   }
   uploading.value = true
   return true
-}
-
-function handleUploadFinish({ event }: { event: ProgressEvent }) {
-  uploading.value = false
-  const resp = JSON.parse((event.target as XMLHttpRequest).response)
-  if (resp.path) {
-    form.cover = resp.path
-    message.success('封面上传成功')
-  }
-}
-
-function handleUploadError() {
-  uploading.value = false
-  message.error('上传失败')
 }
 
 const rulesData = {
@@ -268,12 +274,11 @@ const copyForm = reactive({ barcode: '', callNumber: '', location: '', price: nu
 
 function openAddCopy(row: any) { copyBookId.value = row.id; copyForm.barcode = ''; copyForm.callNumber = ''; copyForm.location = ''; copyForm.price = null; showCopyModal.value = true }
 
-import api from '@/api'
 async function handleAddCopy() {
   if (!copyForm.barcode) { message.warning('条码号必填'); return }
   copySaving.value = true
   try {
-    await api.post(`/book-items`, { ...copyForm, bookId: copyBookId.value })
+    await api.post(`/books/${copyBookId.value}/items`, copyForm)
     message.success('复本已添加')
     showCopyModal.value = false; fetchBooks()
   } catch (e: unknown) { message.error((e as Error).message) }

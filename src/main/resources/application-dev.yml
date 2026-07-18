@@ -4,7 +4,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://127.0.0.1:3306/library?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     username: root
-    password: ${DB_PASSWORD:123456}
+    password: ${DB_PASSWORD:}
     druid:
       initial-size: 5
       min-idle: 5
@@ -29,7 +29,9 @@ mybatis:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:LibraryFullStack2024JWTSecretKeyForSpringBoot}
+    secret: ${JWT_SECRET:dev-only-secret-key-must-be-at-least-32-characters-long-for-JWT-HS256}
+  cors:
+    allowed-origins: http://localhost:5173,http://127.0.0.1:5173,http://localhost:5175,http://127.0.0.1:5175,http://localhost:5176,http://127.0.0.1:5176,http://localhost:5177,http://127.0.0.1:5177
 
 logging:
   level:

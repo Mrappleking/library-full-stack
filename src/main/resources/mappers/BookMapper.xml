@@ -2,14 +2,40 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.library.mapper.BookMapper">
 
+  <resultMap id="categoryResult" type="com.library.entity.Category">
+    <id property="id" column="c_id"/>
+    <result property="name" column="c_name"/>
+    <result property="desc" column="c_desc"/>
+    <result property="createdAt" column="c_created_at"/>
+    <result property="updatedAt" column="c_updated_at"/>
+  </resultMap>
+
   <resultMap id="bookResult" type="com.library.entity.Book">
     <id property="id" column="id"/>
+    <result property="isbn" column="isbn"/>
+    <result property="title" column="title"/>
+    <result property="author" column="author"/>
+    <result property="publisher" column="publisher"/>
+    <result property="year" column="year"/>
+    <result property="total" column="total"/>
+    <result property="available" column="available"/>
+    <result property="status" column="status"/>
+    <result property="location" column="location"/>
+    <result property="cover" column="cover"/>
+    <result property="desc" column="desc"/>
+    <result property="clcNumber" column="clcNumber"/>
+    <result property="physicalDesc" column="physicalDesc"/>
+    <result property="language" column="language"/>
+    <result property="country" column="country"/>
     <result property="categoryId" column="categoryId"/>
-    <association property="category" column="categoryId" select="com.library.mapper.CategoryMapper.findById"/>
+    <result property="createdAt" column="created_at"/>
+    <result property="updatedAt" column="updated_at"/>
+    <association property="category" resultMap="categoryResult"/>
   </resultMap>
 
   <select id="findById" resultMap="bookResult">
-    SELECT b.*, c.name as category_name, c.`desc` as category_desc
+    SELECT b.*, c.id as c_id, c.name as c_name, c.`desc` as c_desc,
+           c.created_at as c_created_at, c.updated_at as c_updated_at
     FROM books b LEFT JOIN categories c ON b.categoryId = c.id
     WHERE b.id = #{id}
   </select>
@@ -19,7 +45,9 @@
   </select>
 
   <select id="searchBooks" resultMap="bookResult">
-    SELECT b.* FROM books b LEFT JOIN categories c ON b.categoryId = c.id
+    SELECT b.*, c.id as c_id, c.name as c_name, c.`desc` as c_desc,
+           c.created_at as c_created_at, c.updated_at as c_updated_at
+    FROM books b LEFT JOIN categories c ON b.categoryId = c.id
     WHERE 1=1
     <if test="search != null">AND (b.title LIKE CONCAT('%', #{search}, '%') OR b.author LIKE CONCAT('%', #{search}, '%') OR b.isbn LIKE CONCAT('%', #{search}, '%'))</if>
     <if test="categoryId != null">AND b.categoryId = #{categoryId}</if>
@@ -79,6 +107,10 @@
 
   <update id="incrementAvailable">
     UPDATE books SET available = available + 1 WHERE id=#{id}
+  </update>
+
+  <update id="incrementTotal">
+    UPDATE books SET total = total + 1 WHERE id=#{id}
   </update>
 
   <update id="updateStatus">

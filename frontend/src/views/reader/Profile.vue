@@ -5,7 +5,7 @@
       <n-spin :show="loading">
         <n-form ref="formRef" :model="form" :rules="rules" label-placement="top">
           <n-form-item label="用户名"><n-text>{{ form.username }}</n-text></n-form-item>
-          <n-form-item label="角色"><n-tag :type="form.role === 'admin' ? 'error' : 'info'" size="small">{{ form.role === 'admin' ? '管理员' : '读者' }}</n-tag></n-form-item>
+          <n-form-item label="角色"><n-tag :type="form.role === UserRole.ADMIN ? 'error' : 'info'" size="small">{{ form.role === UserRole.ADMIN ? '管理员' : '读者' }}</n-tag></n-form-item>
           <n-form-item label="姓名" path="name">
             <n-input v-model:value="form.name" placeholder="真实姓名" maxlength="20" show-count />
           </n-form-item>
@@ -56,6 +56,7 @@ import { useMessage, type FormInst, type FormRules } from 'naive-ui'
 import { readerApi, getMe, setAuth, getUser } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import type { UserProfile } from '@/types/api'
+import { UserRole } from '@/constants'
 
 const message = useMessage()
 const auth = useAuthStore()

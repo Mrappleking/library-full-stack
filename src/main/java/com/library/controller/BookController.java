@@ -1,5 +1,6 @@
 package com.library.controller;
 
+import com.library.annotation.RequireAdmin;
 import com.library.dto.request.BookCreateRequest;
 import com.library.dto.request.BookUpdateRequest;
 import com.library.dto.request.BookListRequest;
@@ -74,19 +75,38 @@ public class BookController {
     }
 
     @PostMapping
+    @RequireAdmin
     public ResponseEntity<ApiResponse<Book>> create(@Valid @RequestBody BookCreateRequest data) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created("图书创建成功", bookService.create(data)));
     }
 
     @PutMapping("/{id}")
+    @RequireAdmin
     public ResponseEntity<ApiResponse<Book>> update(@PathVariable Integer id, @Valid @RequestBody BookUpdateRequest data) {
         return ResponseEntity.ok(ApiResponse.success("图书更新成功", bookService.update(id, data)));
     }
 
     @DeleteMapping("/{id}")
+    @RequireAdmin
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Integer id) {
         bookService.remove(id);
         return ResponseEntity.ok(ApiResponse.success("图书删除成功", null));
+    }
+
+    @PostMapping("/{id}/items")
+    @RequireAdmin
+    public ResponseEntity<ApiResponse<com.library.entity.BookItem>> addCopy(
+            @PathVariable Integer id,
+            @RequestBody Map<String, Object> body) {
+        String barcode = (String) body.get("barcode");
+        String callNumber = (String) body.get("callNumber");
+        String location = (String) body.get("location");
+        java.math.BigDecimal price = body.get("price") != null ? 
+            new java.math.BigDecimal(body.get("price").toString()) : null;
+        
+        com.library.entity.BookItem item = bookService.addCopy(id, barcode, callNumber, location, price);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.created("复本添加成功", item));
     }
 }

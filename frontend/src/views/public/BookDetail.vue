@@ -5,9 +5,15 @@
         <n-button text @click="$router.push('/books')">
           <template #icon><n-icon><ArrowBackOutline /></n-icon></template>返回搜索
         </n-button>
-        <n-button text @click="$router.push('/login')">
-          <template #icon><n-icon><PersonOutline /></n-icon></template>登录
-        </n-button>
+        <n-space>
+          <n-button text @click="toggleTheme">
+            <template #icon><n-icon><MoonOutline v-if="!isDark" /><SunnyOutline v-else /></n-icon></template>
+            {{ isDark ? '浅色' : '深色' }}
+          </n-button>
+          <n-button text @click="$router.push('/login')">
+            <template #icon><n-icon><PersonOutline /></n-icon></template>登录
+          </n-button>
+        </n-space>
       </div>
     </n-layout-header>
     <n-layout-content>
@@ -59,18 +65,28 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { NIcon } from 'naive-ui'
 import { useMessage } from 'naive-ui'
-import { ArrowBackOutline, PersonOutline, BookOutline, TimeOutline } from '@vicons/ionicons5'
+import { ArrowBackOutline, PersonOutline, BookOutline, TimeOutline, MoonOutline, SunnyOutline } from '@vicons/ionicons5'
 import HoldingsTable from '../../components/HoldingsTable.vue'
 import { bookApi, borrowApi, holdApi } from '../../api'
+import { useThemeStore } from '../../stores/theme'
 import type { BookDetail } from '../../types/api'
 
 const route = useRoute()
 const router = useRouter()
 const message = useMessage()
+const themeStore = useThemeStore()
+const isDark = ref(themeStore.isDark)
+
 const book = ref<BookDetail | null>(null)
 const loading = ref(true)
 const holdCount = ref(0)
 const holdLoading = ref(false)
+
+function toggleTheme() {
+  themeStore.toggleTheme()
+  isDark.value = themeStore.isDark
+}
+
 function hasToken() { return !!localStorage.getItem('token') }
 
 onMounted(async () => {
@@ -102,6 +118,7 @@ async function handleBorrow() {
     router.push('/reader/books')
   } catch (e: unknown) { message.error((e as Error).message) }
 }
+
 async function handleHold() {
   if (!hasToken()) { router.push('/login'); return }
   if (!book.value) return
@@ -116,9 +133,10 @@ async function handleHold() {
 </script>
 
 <style scoped>
-.detail-page { min-height: 100vh; background: var(--n-color-body); }
+.detail-page { min-height: 100vh; background: var(--lib-bg-page); }
 .header {
   padding: 0 28px; height: 56px; display: flex; align-items: center;
+  /* 硬编码: 头部渐变背景是品牌识别元素，与主题无关 */
   background: linear-gradient(135deg, #5e6ad2 0%, #7c6fdb 100%);
 }
 .header-inner { display: flex; justify-content: space-between; width: 100%; }
@@ -128,12 +146,13 @@ async function handleHold() {
 .cover-section { flex-shrink: 0; width: 240px; }
 .cover-img { width: 240px; height: 340px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
 .cover-placeholder { width: 240px; height: 340px; display: flex; align-items: center; justify-content: center;
+  /* 硬编码: 封面占位符使用品牌渐变色，与主题无关 */
   background: linear-gradient(135deg, #5e6ad2 0%, #7170ff 50%, #a78bfa 100%);
   border-radius: 8px; box-shadow: 0 4px 20px rgba(94,106,210,0.3); }
 .cover-letter { font-size: 80px; font-weight: 700; color: rgba(255,255,255,0.9); }
 .cover-actions { margin-top: 20px; }
 .info-section { flex: 1; min-width: 0; }
-.book-title { margin: 0 0 4px; font-size: 26px; font-weight: 700; }
-.book-author { margin: 0 0 8px; font-size: 14px; color: var(--n-text-color-3); }
-.section-title { margin: 0 0 12px; font-size: 16px; font-weight: 600; }
+.book-title { margin: 0 0 4px; font-size: 26px; font-weight: 700; color: var(--lib-text-primary); }
+.book-author { margin: 0 0 8px; font-size: 14px; color: var(--lib-text-tertiary); }
+.section-title { margin: 0 0 12px; font-size: 16px; font-weight: 600; color: var(--lib-text-primary); }
 </style>

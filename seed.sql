@@ -50,14 +50,14 @@ INSERT INTO circulation_rules (patronCategoryId, itemTypeId, maxBorrows, loanDay
 -- bcrypt hashes: reader123 / admin123
 INSERT INTO users (id, username, password, name, role, phone, email, patronCategoryId, total_fines, created_at, updated_at) VALUES
 (1,  'admin',       '$2a$10$YU3G2ym8V91HTnjEx4rZgeA8bOawPIH0.O3mIioRsuIJ/P8F4olD6', '系统管理员', 'admin', NULL, NULL, NULL, 0.00, NOW(), NOW()),
-(2,  '2023110101',  '$2a$10$bQhPxd4J2c629Tw9S/1zGuwEG3e.7Cj/xNtntoK3waGU3KsxevI5G', '张三',   'reader', '13800000001', '2023110101@sdust.edu.cn', 1, 0.00, NOW(), NOW()),
+(2,  '2023110101',  '$2a$10$bQhPxd4J2c629Tw9S/1zGuwEG3e.7Cj/xNtntoK3waGU3KsxevI5G', '张三',   'reader', '13800000001', '2023110101@sdust.edu.cn', 1, 0.70, NOW(), NOW()),
 (3,  '2022110201',  '$2a$10$bQhPxd4J2c629Tw9S/1zGuwEG3e.7Cj/xNtntoK3waGU3KsxevI5G', '李四',   'reader', '13800000002', '2022110201@sdust.edu.cn', 2, 60.00, NOW(), NOW()),
 (4,  'T2023001',    '$2a$10$bQhPxd4J2c629Tw9S/1zGuwEG3e.7Cj/xNtntoK3waGU3KsxevI5G', '王五',   'reader', '13800000003', 'wangwu@sdust.edu.cn', 3, 0.00, NOW(), NOW()),
-(5,  '2024110301',  '$2a$10$bQhPxd4J2c629Tw9S/1zGuwEG3e.7Cj/xNtntoK3waGU3KsxevI5G', '赵六',   'reader', '13800000004', '2024110301@sdust.edu.cn', 1, 0.00, NOW(), NOW()),
+(5,  '2024110301',  '$2a$10$bQhPxd4J2c629Tw9S/1zGuwEG3e.7Cj/xNtntoK3waGU3KsxevI5G', '赵六',   'reader', '13800000004', '2024110301@sdust.edu.cn', 1, 1.10, NOW(), NOW()),
 (6,  '2023110202',  '$2a$10$bQhPxd4J2c629Tw9S/1zGuwEG3e.7Cj/xNtntoK3waGU3KsxevI5G', '孙七',   'reader', '13800000005', '2023110202@sdust.edu.cn', 2, 0.00, NOW(), NOW()),
 (7,  'T2024002',    '$2a$10$bQhPxd4J2c629Tw9S/1zGuwEG3e.7Cj/xNtntoK3waGU3KsxevI5G', '周八',   'reader', '13800000006', 'zhouba@sdust.edu.cn', 3, 0.00, NOW(), NOW()),
 (8,  '2024110401',  '$2a$10$bQhPxd4J2c629Tw9S/1zGuwEG3e.7Cj/xNtntoK3waGU3KsxevI5G', '吴九',   'reader', '13800000007', '2024110401@sdust.edu.cn', 1, 0.00, NOW(), NOW()),
-(9,  '2022110302',  '$2a$10$bQhPxd4J2c629Tw9S/1zGuwEG3e.7Cj/xNtntoK3waGU3KsxevI5G', '郑十',   'reader', '13800000008', '2022110302@sdust.edu.cn', 2, 0.00, NOW(), NOW());
+(9,  '2022110302',  '$2a$10$bQhPxd4J2c629Tw9S/1zGuwEG3e.7Cj/xNtntoK3waGU3KsxevI5G', '郑十',   'reader', '13800000008', '2022110302@sdust.edu.cn', 2, 2.60, NOW(), NOW());
 
 -- ===== 5. Categories (5) =====
 INSERT INTO categories (id, name, `desc`, created_at, updated_at) VALUES
@@ -72,15 +72,15 @@ INSERT INTO books (id, isbn, title, author, publisher, year, total, available, s
 -- 计算机科学 (cat=1)
 (1,  '978-7-111-58444-5', '算法导论',             'Thomas H. Cormen',  '机械工业出版社',   2013, 5, 0, 'available', 'TP301.6',  '780页', 'chi', 'CN', 1, '算法导论 — Thomas H. Cormen 著', '/covers/1-算法导论.jpg', NOW(), NOW()),
 (2,  '978-7-111-52944-6', '深入理解计算机系统',     'Randal E. Bryant',  '机械工业出版社',   2016, 3, 3, 'available', 'TP303',    '737页', 'chi', 'CN', 1, '深入理解计算机系统 — Randal E. Bryant 著', '/covers/2-深入理解计算机系统.jpg', NOW(), NOW()),
-(3,  '978-7-302-57486-0', '机器学习',              '周志华',            '清华大学出版社',   2016, 3, 2, 'available', 'TP181',    '425页', 'chi', 'CN', 1, '机器学习 — 周志华 著', '/covers/3-机器学习.jpg', NOW(), NOW()),
+(3,  '978-7-302-57486-0', '机器学习',              '周志华',            '清华大学出版社',   2016, 3, 3, 'available', 'TP181',    '425页', 'chi', 'CN', 1, '机器学习 — 周志华 著', '/covers/3-机器学习.jpg', NOW(), NOW()),
 (4,  '978-7-121-41559-1', 'Python深度学习',        'François Chollet',  '电子工业出版社',   2022, 3, 3, 'available', 'TP311.56', '481页', 'chi', 'CN', 1, 'Python深度学习 — François Chollet 著', '/covers/4-Python深度学习.jpg', NOW(), NOW()),
 (5,  '978-7-115-60960-1', '计算机网络：自顶向下',   'James Kurose',      '人民邮电出版社',   2022, 3, 2, 'available', 'TP393',    '684页', 'chi', 'CN', 1, '计算机网络：自顶向下 — James Kurose 著', '/covers/5-计算机网络.jpg', NOW(), NOW()),
 (6,  '0-201-61586-X',     'Computer Networks',     'Andrew Tanenbaum',  'Prentice Hall',    2017, 3, 3, 'available', 'TP393',    '960pp', 'eng', 'US', 1, 'Computer Networks — Andrew Tanenbaum 著', '/covers/6-Computer Networks.jpg', NOW(), NOW()),
 -- 文学小说 (cat=2)
 (7,  '978-7-02-000220-7', '红楼梦',                '曹雪芹',            '人民文学出版社',   1996, 4, 3, 'available', 'I242.4',   '1606页','chi', 'CN', 2, '红楼梦 — 曹雪芹 著', '/covers/7-红楼梦.jpg', NOW(), NOW()),
-(8,  '978-7-5447-4254-2', '百年孤独',              '加西亚·马尔克斯',    '南海出版公司',     2011, 3, 3, 'available', 'I775.45',  '360页', 'chi', 'CN', 2, '百年孤独 — 加西亚·马尔克斯 著', '/covers/8-百年孤独.jpg', NOW(), NOW()),
+(8,  '978-7-5447-4254-2', '百年孤独',              '加西亚·马尔克斯',    '南海出版公司',     2011, 3, 3, 'borrowed', 'I775.45',  '360页', 'chi', 'CN', 2, '百年孤独 — 加西亚·马尔克斯 著', '/covers/8-百年孤独.jpg', NOW(), NOW()),
 (9,  '978-7-5063-5020-8', '平凡的世界',            '路遥',              '作家出版社',       2012, 3, 3, 'available', 'I247.5',   '1296页','chi', 'CN', 2, '平凡的世界 — 路遥 著', '/covers/9-平凡的世界.png', NOW(), NOW()),
-(10, '978-7-5404-7062-5', '活着',                  '余华',              '湖南文艺出版社',   2017, 3, 3, 'available', 'I247.57',  '191页', 'chi', 'CN', 2, '活着 — 余华 著', '/covers/10-活着.png', NOW(), NOW()),
+(10, '978-7-5404-7062-5', '活着',                  '余华',              '湖南文艺出版社',   2017, 3, 3, 'borrowed', 'I247.57',  '191页', 'chi', 'CN', 2, '活着 — 余华 著', '/covers/10-活着.png', NOW(), NOW()),
 -- 自然科学 (cat=3)
 (11, '978-7-301-27701-2', '时间简史',              '史蒂芬·霍金',       '北京大学出版社',   1998, 3, 2, 'available', 'P159-49',  '212页', 'chi', 'CN', 3, '时间简史 — 史蒂芬·霍金 著', '/covers/11-时间简史.jpg', NOW(), NOW()),
 (12, '978-7-5536-4786-9', '上帝掷骰子吗',          '曹天元',            '浙江教育出版社',   2018, 3, 3, 'available', 'O413-49',  '420页', 'chi', 'CN', 3, '上帝掷骰子吗 — 曹天元 著', '/covers/12-上帝掷骰子吗.jpg', NOW(), NOW()),
@@ -182,7 +182,7 @@ INSERT INTO book_items (barcode, callNumber, location, campus, `condition`, stat
 ('LIB-000020-3', 'TP312/1022', '青岛8楼阅览区', '青岛', 'normal', 'available', 79.00, 20, 1, '2025-01-01', NOW());
 
 -- ===== 8. Borrow Records =====
--- 张三 (id=2)·本科生: 2 active + 2 returned/overdue + 1 history
+-- 李四 (id=2)·本科生: 2 active + 2 returned/overdue + 1 history
 INSERT INTO borrow_records (userId, bookId, bookItemId, borrow_date, due_date, return_date, status, renewed, created_at, updated_at) VALUES
 (2, 1, 1, DATE_SUB(NOW(), INTERVAL 20 DAY), DATE_SUB(NOW(), INTERVAL -10 DAY), NULL, 'active', false, NOW(), NOW()),
 (2, 3, 10, DATE_SUB(NOW(), INTERVAL 15 DAY), DATE_SUB(NOW(), INTERVAL -15 DAY), NULL, 'active', false, NOW(), NOW()),
@@ -223,7 +223,7 @@ INSERT INTO borrow_records (userId, bookId, bookItemId, borrow_date, due_date, r
 (9, 5, 16, DATE_SUB(NOW(), INTERVAL 70 DAY), DATE_SUB(NOW(), INTERVAL 10 DAY), NULL, 'active', true, NOW(), NOW());
 
 -- ===== 9. Fines =====
--- 张三逾期还书: borrow_record user_id=2, book_id=10 (ID=4)
+-- 李四逾期还书: borrow_record user_id=2, book_id=10 (ID=4)
 -- 李四逾期未还: borrow_record user_id=3, book_id=6   (ID=9)
 -- We'll use direct subqueries
 INSERT INTO fines (borrowRecordId, userId, amount, type, paid, paid_at, created_at)
@@ -234,8 +234,23 @@ INSERT INTO fines (borrowRecordId, userId, amount, type, paid, paid_at, created_
 SELECT br.id, 3, 60.00, 'overdue', false, NULL, NOW()
 FROM borrow_records br WHERE br.userId = 3 AND br.bookId = 6 LIMIT 1;
 
+INSERT INTO fines (borrowRecordId, userId, amount, type, paid, paid_at, created_at)
+SELECT br.id, 2, 0.70, 'overdue', true, DATE_SUB(NOW(), INTERVAL 15 DAY), NOW()
+FROM borrow_records br WHERE br.userId = 2 AND br.bookId = 10 LIMIT 1;
+
+INSERT INTO fines (borrowRecordId, userId, amount, type, paid, paid_at, created_at)
+SELECT br.id, 5, 1.10, 'overdue', false, NULL, NOW()
+FROM borrow_records br WHERE br.userId = 5 AND br.bookId = 11 LIMIT 1;
+
+INSERT INTO fines (borrowRecordId, userId, amount, type, paid, paid_at, created_at)
+SELECT br.id, 9, 2.60, 'overdue', false, NULL, NOW()
+FROM borrow_records br WHERE br.userId = 9 AND br.bookId = 5 LIMIT 1;
+
 -- ===== 10. Update user total_fines =====
+UPDATE users SET total_fines = 0.70 WHERE id = 2;
 UPDATE users SET total_fines = 60.00 WHERE id = 3;
+UPDATE users SET total_fines = 1.10 WHERE id = 5;
+UPDATE users SET total_fines = 2.60 WHERE id = 9;
 
 -- ===== 11. Holds =====
 -- 算法导论 (book=1): set available=0 to force holds
@@ -246,7 +261,7 @@ INSERT INTO holds (userId, bookId, status, request_date, created_at) VALUES
 (5, 1, 'pending', NOW(), NOW()),
 (6, 1, 'pending', NOW(), NOW());
 
--- 机器学习 (book=3): ready hold for 张三(2)
+-- 机器学习 (book=3): ready hold for 李四(2)
 UPDATE books SET available = available - 1 WHERE id = 3;
 INSERT INTO holds (userId, bookId, bookItemId, status, request_date, expiry_date, created_at)
 SELECT 2, 3, bi.id, 'ready', NOW(), DATE_ADD(NOW(), INTERVAL 3 DAY), NOW()

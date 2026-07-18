@@ -1,5 +1,6 @@
 package com.library.controller;
 
+import com.library.annotation.RequireAdmin;
 import com.library.dto.request.HoldRequest;
 import com.library.dto.response.ApiResponse;
 import com.library.entity.Hold;
@@ -32,7 +33,7 @@ public class HoldController {
 
     @GetMapping("/count")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getPendingCount() {
-        return ResponseEntity.ok(ApiResponse.success(Map.of("pending", 0)));
+        return ResponseEntity.ok(ApiResponse.success(Map.of("pending", holdService.countPendingHolds())));
     }
 
     @GetMapping("/my")
@@ -42,6 +43,7 @@ public class HoldController {
     }
 
     @GetMapping
+    @RequireAdmin
     public ResponseEntity<ApiResponse<Map<String, Object>>> list(
             @RequestParam(required = false) String status,
             @RequestParam(required = false) Integer bookId,
@@ -58,6 +60,7 @@ public class HoldController {
     }
 
     @PostMapping("/{id}/fulfill")
+    @RequireAdmin
     public ResponseEntity<ApiResponse<Hold>> fulfill(@PathVariable Integer id) {
         return ResponseEntity.ok(ApiResponse.success("预约已履约", holdService.fulfillHold(id)));
     }

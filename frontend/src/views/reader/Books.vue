@@ -136,7 +136,10 @@ async function fetchBooks() {
     })
     books.value = data.books || []
     pagination.itemCount = data.total || 0
-  } catch { /* ignore */ }
+  } catch (e: unknown) {
+    message.error((e as Error).message || '获取图书列表失败')
+    books.value = []
+  }
   loading.value = false
 }
 
@@ -144,7 +147,9 @@ async function fetchCategories() {
   try {
     const data = await categoryApi.getAll()
     catOptions.value = (data || []).map((c: CategoryResponse) => ({ label: c.name, value: c.id }))
-  } catch { /* ignore */ }
+  } catch (e: unknown) {
+    message.error((e as Error).message || '获取分类列表失败')
+  }
 }
 
 function onPageSizeChange(size: number) {
@@ -187,7 +192,7 @@ onUnmounted(() => {
 .books-page { padding: 24px; max-width: 1400px; margin: 0 auto; }
 
 .page-header { margin-bottom: 8px; }
-.page-subtitle { margin: 0; font-size: 14px; color: var(--n-text-color-3); }
+.page-subtitle { margin: 0; font-size: 14px; color: var(--lib-text-tertiary); }
 
 .skeleton-grid {
   display: grid;
@@ -207,18 +212,18 @@ onUnmounted(() => {
 }
 
 .book-card {
-  background: var(--n-card-color);
+  background: var(--lib-bg-card);
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
   transition: all 0.25s ease;
-  border: 1px solid var(--n-divider-color);
+  border: 1px solid var(--lib-divider);
 }
 
 .book-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
-  border-color: var(--n-primary-color);
+  border-color: var(--lib-primary);
 }
 
 .cover-wrapper {
@@ -240,6 +245,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  /* 硬编码: 封面占位符使用品牌渐变色，与主题无关 */
   background: linear-gradient(135deg, #5e6ad2 0%, #7c6fdb 100%);
 }
 
@@ -271,7 +277,7 @@ onUnmounted(() => {
 .book-author {
   margin: 0 0 12px;
   font-size: 13px;
-  color: var(--n-text-color-3);
+  color: var(--lib-text-tertiary);
 }
 
 .book-meta {
@@ -289,7 +295,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   padding: 80px 0;
-  color: var(--n-text-color-3);
+  color: var(--lib-text-tertiary);
 }
 
 .empty-state p {

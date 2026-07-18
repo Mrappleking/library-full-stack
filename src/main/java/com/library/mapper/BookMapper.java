@@ -17,6 +17,7 @@ public interface BookMapper {
     void updateTotalAndAvailable(@Param("id") Integer id, @Param("total") Integer total, @Param("available") Integer available);
     int decrementAvailable(Integer id);
     int incrementAvailable(Integer id);
+    int incrementTotal(Integer id);
     void updateStatus(@Param("id") Integer id, @Param("status") String status);
     void deleteById(Integer id);
     long count();

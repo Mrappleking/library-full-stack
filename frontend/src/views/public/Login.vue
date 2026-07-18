@@ -1,8 +1,10 @@
 <template>
-  <div class="login-page">
+  <div class="login-page" :class="{ dark: isDark }">
     <LoginBg />
-    <n-config-provider :theme="darkTheme">
-      <div class="login-wrapper">
+    <div class="login-wrapper">
+      <div class="theme-toggle" @click="toggleTheme">
+        <n-icon><MoonOutline v-if="!isDark" /><SunnyOutline v-else /></n-icon>
+      </div>
       <div class="login-card">
         <div class="back-bar">
           <div class="back-btn" @click="$router.push('/books')">
@@ -45,27 +47,40 @@
         <template #footer><n-space justify="end"><n-button @click="showRegister=false">取消</n-button><n-button type="primary" :loading="regLoading" @click="handleRegister">注册</n-button></n-space></template>
       </n-modal>
     </div>
-  </n-config-provider>
-</div></template>
+  </div>
+</template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useMessage, NIcon, darkTheme, type FormInst } from 'naive-ui'
-import { PersonOutline, LockClosedOutline } from '@vicons/ionicons5'
+import { useMessage, NIcon, type FormInst } from 'naive-ui'
+import { PersonOutline, LockClosedOutline, MoonOutline, SunnyOutline } from '@vicons/ionicons5'
 import { doLogin, doRegister } from '../../api'
 import LoginBg from '../../components/LoginBg.vue'
 import { useAuthStore } from '../../stores/auth'
+import { useThemeStore } from '../../stores/theme'
 import type { LoginResponse } from '../../types/api'
+import { UserRole } from '../../constants'
+
 const router = useRouter(); const message = useMessage()
+const themeStore = useThemeStore()
+const isDark = ref(themeStore.isDark)
+
 const form = ref({ username: '', password: '' }); const loading = ref(false)
 const rules = { username: [{ required: true, message: '请输入用户名' }], password: [{ required: true, message: '请输入密码' }] }
+
+function toggleTheme() {
+  themeStore.toggleTheme()
+  isDark.value = themeStore.isDark
+}
+
 async function handleLogin() {
   if (!form.value.username || !form.value.password) { message.warning('请输入用户名和密码'); return }
   loading.value = true
-  try { const data = await doLogin(form.value.username, form.value.password); useAuthStore().login(data); message.success('登录成功'); router.push(data.user.role === 'admin' ? '/admin/dashboard' : '/reader/books') }
+  try { const data = await doLogin(form.value.username, form.value.password); useAuthStore().login(data); message.success('登录成功'); router.push(data.user.role === UserRole.ADMIN ? '/admin/dashboard' : '/reader/books') }
   catch (e: unknown) { message.error((e as Error).message || '登录失败') } finally { loading.value = false }
 }
+
 const showRegister = ref(false); const regLoading = ref(false)
 const regFormRef = ref<FormInst | null>(null)
 const reg = ref({ username: '', password: '', name: '', phone: '', confirmPassword: '' })
@@ -80,7 +95,32 @@ async function handleRegister() {
 </script>
 
 <style scoped>
-.login-wrapper { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+.login-wrapper { display: flex; align-items: center; justify-content: center; min-height: 100vh; position: relative; }
+.theme-toggle {
+  position: absolute; top: 24px; right: 24px;
+  width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
+  backdrop-filter: blur(12px);
+}
+.theme-toggle:hover {
+  color: rgba(255,255,255,0.9);
+  background: rgba(255,255,255,0.15);
+}
+.login-page:not(.dark) .theme-toggle {
+  color: rgba(0,0,0,0.5);
+  background: rgba(255,255,255,0.7);
+  border-color: rgba(0,0,0,0.1);
+}
+.login-page:not(.dark) .theme-toggle:hover {
+  color: rgba(0,0,0,0.8);
+  background: rgba(255,255,255,0.9);
+}
 .login-card {
   width: 420px; padding: 44px 40px 36px;
   background: rgba(15,16,22,0.75);
@@ -90,11 +130,17 @@ async function handleRegister() {
   box-shadow: 0 12px 50px rgba(0,0,0,0.5);
   position: relative; z-index: 1;
 }
+.login-page:not(.dark) .login-card {
+  background: rgba(255,255,255,0.85);
+  border-color: rgba(0,0,0,0.08);
+  box-shadow: 0 12px 50px rgba(0,0,0,0.15);
+}
 .logo-area {
   display: flex; align-items: center; gap: 18px;
   margin-bottom: 32px; text-align: left;
 }
 .school-badge { flex-shrink: 0; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3)); }
+.login-page:not(.dark) .school-badge { filter: drop-shadow(0 2px 8px rgba(0,0,0,0.15)); }
 .brand-text { display: flex; flex-direction: column; gap: 4px; }
 .brand-title {
   margin: 0; font-size: 24px; font-weight: 700;
@@ -103,11 +149,17 @@ async function handleRegister() {
   background-clip: text;
   letter-spacing: 1.5px;
 }
+.login-page:not(.dark) .brand-title {
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #818cf8 100%);
+}
 .brand-subtitle {
   margin: 0; font-size: 11px;
   color: rgba(255,255,255,0.35);
   letter-spacing: 2.5px;
   font-weight: 300;
+}
+.login-page:not(.dark) .brand-subtitle {
+  color: rgba(0,0,0,0.35);
 }
 .register-link { display: block; text-align: center; margin-top: 18px; font-size: 13px; cursor: pointer; }
 .back-bar {
@@ -122,21 +174,35 @@ async function handleRegister() {
   transition: all 0.25s ease;
   backdrop-filter: blur(12px);
 }
+.login-page:not(.dark) .back-btn {
+  background: rgba(0,0,0,0.04);
+  border-color: rgba(0,0,0,0.08);
+}
 .back-btn:hover {
   background: rgba(255,255,255,0.12);
   border-color: rgba(255,255,255,0.15);
   transform: translateX(-3px);
   box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
+.login-page:not(.dark) .back-btn:hover {
+  background: rgba(0,0,0,0.08);
+  border-color: rgba(0,0,0,0.12);
+}
 .back-arrow {
   display: inline-block; font-size: 18px; line-height: 1;
   color: rgba(255,255,255,0.6);
   transition: transform 0.25s ease;
+}
+.login-page:not(.dark) .back-arrow {
+  color: rgba(0,0,0,0.5);
 }
 .back-btn:hover .back-arrow { transform: translateX(-4px); }
 .back-text {
   font-size: 13px; font-weight: 500;
   color: rgba(255,255,255,0.7);
   letter-spacing: 0.5px;
+}
+.login-page:not(.dark) .back-text {
+  color: rgba(0,0,0,0.6);
 }
 </style>

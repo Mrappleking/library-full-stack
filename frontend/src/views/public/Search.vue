@@ -3,7 +3,6 @@
     <n-layout-header bordered class="header">
       <div class="header-inner">
         <div class="brand" @click="$router.push('/books')">
-          <!-- Library SVG icon -->
           <svg class="brand-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
             <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
@@ -16,6 +15,10 @@
           </div>
         </div>
         <n-space>
+          <n-button text @click="toggleTheme">
+            <template #icon><n-icon><MoonOutline v-if="!isDark" /><SunnyOutline v-else /></n-icon></template>
+            {{ isDark ? '浅色' : '深色' }}
+          </n-button>
           <n-button text @click="$router.push('/login')">
             <template #icon><n-icon><PersonOutline /></n-icon></template>登录
           </n-button>
@@ -67,17 +70,26 @@
 import { onMounted, computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { NIcon } from 'naive-ui'
-import { SearchOutline, PersonOutline } from '@vicons/ionicons5'
+import { SearchOutline, PersonOutline, MoonOutline, SunnyOutline } from '@vicons/ionicons5'
 import FacetPanel from '../../components/FacetPanel.vue'
 import BookGrid from '../../components/BookGrid.vue'
 import { useBookStore } from '../../stores/books'
+import { useThemeStore } from '../../stores/theme'
 import type { BookListParams } from '../../types/api'
 
 const router = useRouter()
 const store = useBookStore()
+const themeStore = useThemeStore()
+const isDark = ref(themeStore.isDark)
+
 const searchInput = ref('')
 const activeFilters = ref<Record<string, string>>({})
 const totalPages = computed(() => Math.max(1, Math.ceil(store.total / 20)))
+
+function toggleTheme() {
+  themeStore.toggleTheme()
+  isDark.value = themeStore.isDark
+}
 
 onMounted(async () => {
   await store.search({})
@@ -86,7 +98,6 @@ onMounted(async () => {
 
 async function onSearch(query: string) {
   searchInput.value = query
-  // Merge current activeFilters to preserve campus/category filters
   const params: BookListParams = { ...activeFilters.value }
   if (query) params.search = query
   else delete params.search
@@ -112,9 +123,10 @@ function onPage(p: number) { store.goTo(p) }
 </script>
 
 <style scoped>
-.search-page { min-height: 100vh; background: var(--n-color-body); }
+.search-page { min-height: 100vh; background: var(--lib-bg-page); }
 .header {
   padding: 0 28px; height: 64px; display: flex; align-items: center;
+  /* 硬编码: 头部渐变背景是品牌识别元素，与主题无关 */
   background: linear-gradient(135deg, #5e6ad2 0%, #7c6fdb 100%);
 }
 .header-inner { display: flex; align-items: center; justify-content: space-between; width: 100%; }
@@ -126,10 +138,10 @@ function onPage(p: number) { store.goTo(p) }
 .header :deep(.n-button:hover) { color: #fff !important; }
 .content { display: flex; padding: 24px 28px; gap: 24px; max-width: 1400px; margin: 0 auto; }
 .sidebar { flex-shrink: 0; width: 220px; }
-.sidebar-title { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; padding-left: 4px; }
+.sidebar-title { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; padding-left: 4px; color: var(--lib-text-tertiary); }
 .main { flex: 1; min-width: 0; }
 .search-area { display: flex; gap: 10px; margin-bottom: 16px; }
 .search-input { flex: 1; }
 .search-btn { width: 100px; }
-.result-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; font-size: 13px; }
+.result-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; font-size: 13px; color: var(--lib-text-tertiary); }
 </style>

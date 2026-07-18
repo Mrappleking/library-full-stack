@@ -96,7 +96,8 @@ CREATE TABLE `books` (
   `created_at` DATETIME NOT NULL DEFAULT NOW(),
   `updated_at` DATETIME NOT NULL DEFAULT NOW(),
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_isbn` (`isbn`)
+  UNIQUE KEY `uk_isbn` (`isbn`),
+  KEY `idx_categoryId` (`categoryId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 7. Book Items (copies)
@@ -139,7 +140,10 @@ CREATE TABLE `borrow_records` (
   PRIMARY KEY (`id`),
   KEY `idx_userId` (`userId`),
   KEY `idx_bookId` (`bookId`),
-  KEY `idx_status` (`status`)
+  KEY `idx_status` (`status`),
+  KEY `idx_bookItemId` (`bookItemId`),
+  KEY `idx_status_due_date` (`status`, `due_date`),
+  KEY `idx_userId_status` (`userId`, `status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 9. Fines
@@ -153,7 +157,9 @@ CREATE TABLE `fines` (
   `paid` TINYINT(1) DEFAULT 0,
   `paid_at` DATETIME DEFAULT NULL,
   `created_at` DATETIME NOT NULL DEFAULT NOW(),
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_userId` (`userId`),
+  KEY `idx_borrowRecordId` (`borrowRecordId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 10. Holds
@@ -168,7 +174,9 @@ CREATE TABLE `holds` (
   `expiry_date` DATETIME DEFAULT NULL,
   `fulfilled_at` DATETIME DEFAULT NULL,
   `created_at` DATETIME NOT NULL DEFAULT NOW(),
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_bookId_status` (`bookId`, `status`),
+  KEY `idx_userId_status` (`userId`, `status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 11. Audit Logs
@@ -182,3 +190,70 @@ CREATE TABLE `audit_logs` (
   `created_at` DATETIME NOT NULL DEFAULT NOW(),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 12. Error Logs
+DROP TABLE IF EXISTS `error_logs`;
+CREATE TABLE `error_logs` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `log_id` VARCHAR(50) DEFAULT NULL,
+  `type` VARCHAR(20) DEFAULT NULL,
+  `message` TEXT DEFAULT NULL,
+  `stack` TEXT DEFAULT NULL,
+  `url` VARCHAR(500) DEFAULT NULL,
+  `method` VARCHAR(10) DEFAULT NULL,
+  `status_code` INT DEFAULT NULL,
+  `component` VARCHAR(100) DEFAULT NULL,
+  `props` TEXT DEFAULT NULL,
+  `user_id` INT DEFAULT NULL,
+  `user_role` VARCHAR(20) DEFAULT NULL,
+  `timestamp` DATETIME DEFAULT NULL,
+  `created_at` DATETIME NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (`id`),
+  INDEX `idx_type` (`type`),
+  INDEX `idx_user_id` (`user_id`),
+  INDEX `idx_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ============================================================
+-- Migration SQL (for existing databases)
+-- ============================================================
+-- P2-17: books表加categoryId索引
+ALTER TABLE books ADD INDEX IF NOT EXISTS idx_categoryId (categoryId);
+
+-- P2-18: holds表加复合索引
+ALTER TABLE holds ADD INDEX IF NOT EXISTS idx_bookId_status (bookId, status);
+ALTER TABLE holds ADD INDEX IF NOT EXISTS idx_userId_status (userId, status);
+
+-- P2-19: fines表加索引
+ALTER TABLE fines ADD INDEX IF NOT EXISTS idx_userId (userId);
+ALTER TABLE fines ADD INDEX IF NOT EXISTS idx_borrowRecordId (borrowRecordId);
+
+-- ============================================================
+-- P2-25: Foreign Key Constraints
+-- ============================================================
+-- books → categories
+ALTER TABLE books ADD CONSTRAINT fk_books_categoryId FOREIGN KEY (categoryId) REFERENCES categories(id) ON DELETE SET NULL;
+
+-- book_items → books
+ALTER TABLE book_items ADD CONSTRAINT fk_book_items_bookId FOREIGN KEY (bookId) REFERENCES books(id) ON DELETE CASCADE;
+
+-- borrow_records → users
+ALTER TABLE borrow_records ADD CONSTRAINT fk_borrow_records_userId FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE;
+
+-- borrow_records → books
+ALTER TABLE borrow_records ADD CONSTRAINT fk_borrow_records_bookId FOREIGN KEY (bookId) REFERENCES books(id) ON DELETE CASCADE;
+
+-- borrow_records → book_items
+ALTER TABLE borrow_records ADD CONSTRAINT fk_borrow_records_bookItemId FOREIGN KEY (bookItemId) REFERENCES book_items(id) ON DELETE CASCADE;
+
+-- fines → users
+ALTER TABLE fines ADD CONSTRAINT fk_fines_userId FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE;
+
+-- fines → borrow_records
+ALTER TABLE fines ADD CONSTRAINT fk_fines_borrowRecordId FOREIGN KEY (borrowRecordId) REFERENCES borrow_records(id) ON DELETE SET NULL;
+
+-- holds → users
+ALTER TABLE holds ADD CONSTRAINT fk_holds_userId FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE;
+
+-- holds → books
+ALTER TABLE holds ADD CONSTRAINT fk_holds_bookId FOREIGN KEY (bookId) REFERENCES books(id) ON DELETE CASCADE;

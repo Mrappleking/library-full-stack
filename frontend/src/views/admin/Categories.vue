@@ -43,7 +43,7 @@ const columns: DataTableColumn[] = [
     render(row: any) {
       return h('div', { style: 'display:flex;gap:8px' }, [
         h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑'),
-        h(NPopconfirm, { onPositiveClick: () => handleDelete(row.id) }, {
+        h(NPopconfirm, { positiveText: '确定', negativeText: '取消', onPositiveClick: () => handleDelete(row.id) }, {
           trigger: () => h(NButton, { size: 'small', type: 'error', text: true }, () => '删除'),
           default: () => '确认删除？若该分类下有图书则无法删除。'
         })

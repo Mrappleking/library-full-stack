@@ -8,8 +8,10 @@
       <n-input v-model:value="searchQuery" placeholder="搜索读者名/用户名/书名" clearable style="width: 260px;" @keyup.enter="fetchRecords">
         <template #prefix><n-icon><search-outline /></n-icon></template>
       </n-input>
+      <n-select v-model:value="filterCategory" :options="categoryOptions" placeholder="全部分类" clearable style="width: 140px;" @update:value="fetchRecords" />
       <n-select v-model:value="filterStatus" :options="statusOptions" placeholder="全部状态" clearable style="width: 120px;" @update:value="fetchRecords" />
       <n-button @click="fetchRecords" secondary>搜索</n-button>
+      <n-button @click="resetFilters" secondary type="warning">重置</n-button>
       <n-button @click="exportCsv" :loading="exporting" secondary type="info" style="margin-left: auto;">
         <template #icon><n-icon><download-outline /></n-icon></template>
         导出 CSV
@@ -37,9 +39,11 @@
 import { ref, computed, onMounted, h } from 'vue'
 import { useMessage, NTag, NButton, NPopconfirm, NIcon } from 'naive-ui'
 import { DownloadOutline, SearchOutline } from '@vicons/ionicons5'
-import { borrowApi } from '@/api'
-import type { BorrowRecordResponse } from '@/types/api'
+import { borrowApi, categoryApi } from '@/api'
+import type { BorrowRecordResponse, CategoryResponse } from '@/types/api'
 import type { DataTableColumn } from 'naive-ui'
+import { BorrowStatus } from '@/constants'
+import { getBorrowStatusTag } from '@/utils/statusTag'
 
 const message = useMessage()
 const records = ref<BorrowRecordResponse[]>([])
@@ -49,21 +53,22 @@ const page = ref(1)
 const total = ref(0)
 const searchQuery = ref('')
 const filterStatus = ref('')
+const filterCategory = ref<number | null>(null)
+const categories = ref<CategoryResponse[]>([])
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / 20)))
 
+const categoryOptions = computed(() => [
+  { label: '全部分类', value: null },
+  ...categories.value.map(c => ({ label: c.name, value: c.id }))
+])
+
 const statusOptions = [
   { label: '全部状态', value: '' },
-  { label: '在借', value: 'active' },
-  { label: '已还', value: 'returned' },
-  { label: '逾期', value: 'overdue' }
+  { label: '在借', value: BorrowStatus.ACTIVE },
+  { label: '已还', value: BorrowStatus.RETURNED },
+  { label: '逾期', value: BorrowStatus.OVERDUE }
 ]
-
-const statusMap: Record<string, { type: 'success' | 'warning' | 'error' | 'info' | 'default'; label: string }> = {
-  active: { type: 'success', label: '在借' },
-  returned: { type: 'default', label: '已还' },
-  overdue: { type: 'error', label: '逾期' }
-}
 
 const columns: DataTableColumn[] = [
   { title: '读者', key: 'user.name', width: 100 },
@@ -75,7 +80,7 @@ const columns: DataTableColumn[] = [
   {
     title: '状态', key: 'status', width: 70,
     render(row: any) {
-      const s = statusMap[row.status] || { type: 'default' as const, label: row.status }
+      const s = getBorrowStatusTag(row.status)
       return h(NTag, { type: s.type, size: 'small' }, () => s.label)
     }
   },
@@ -90,12 +95,12 @@ const columns: DataTableColumn[] = [
   {
     title: '操作', key: 'actions', width: 80,
     render(row: any) {
-      if (row.status !== 'active') return ''
-      return h(NPopconfirm, { onPositiveClick: () => handleReturn(row.id) }, {
+      if (row.status !== BorrowStatus.ACTIVE) return ''
+      return h(NPopconfirm, { positiveText: '确定', negativeText: '取消', onPositiveClick: () => handleReturn(row.id) }, {
         trigger: () => h(NButton, { size: 'small' }, () => '还书'),
         default: () => {
           const isOverdue = new Date(row.dueDate) < new Date()
-          if (isOverdue) return h('span', {}, [h('span', { style: 'color:#ef4444;' }, '⚠ 此借阅已逾期'), h('br'), '确认还书？将会自动计算逾期罚金。'])
+          if (isOverdue) return '⚠ 此借阅已逾期\n确认还书？将会自动计算逾期罚金。'
           return '确认还书？'
         }
       })
@@ -106,11 +111,28 @@ const columns: DataTableColumn[] = [
 async function fetchRecords() {
   loading.value = true
   try {
-    const res = await borrowApi.getAllBorrows({ page: page.value, limit: 20 })
+    const res = await borrowApi.getAllBorrows({ 
+      page: page.value, 
+      limit: 20,
+      search: searchQuery.value || undefined,
+      status: filterStatus.value || undefined,
+      categoryId: filterCategory.value || undefined
+    })
     records.value = res.borrows || []
     total.value = res.total || 0
-  } catch { /* ignore */ }
+  } catch (e: unknown) {
+    message.error((e as Error).message || '获取借阅记录失败')
+    records.value = []
+  }
   loading.value = false
+}
+
+function resetFilters() {
+  searchQuery.value = ''
+  filterStatus.value = ''
+  filterCategory.value = null
+  page.value = 1
+  fetchRecords()
 }
 
 async function handleReturn(id: number) {
@@ -118,12 +140,11 @@ async function handleReturn(id: number) {
   catch (e: unknown) { message.error((e as Error).message) }
 }
 
-import api from '@/api'
 async function exportCsv() {
   exporting.value = true
   try {
-    const resp = await api.get('/borrows', { params: { export: 'csv' }, responseType: 'blob' })
-    const url = window.URL.createObjectURL(new Blob([resp.data], { type: 'text/csv;charset=utf-8' }))
+    const resp = await borrowApi.getAllBorrowsCsv()
+    const url = window.URL.createObjectURL(new Blob([resp], { type: 'text/csv;charset=utf-8' }))
     const a = document.createElement('a')
     a.href = url; a.download = 'borrows-all.csv'; a.click()
     window.URL.revokeObjectURL(url)
@@ -132,5 +153,17 @@ async function exportCsv() {
   exporting.value = false
 }
 
-onMounted(() => fetchRecords())
+async function loadCategories() {
+  try {
+    const res = await categoryApi.getAll()
+    categories.value = res || []
+  } catch {
+    categories.value = []
+  }
+}
+
+onMounted(async () => {
+  await loadCategories()
+  fetchRecords()
+})
 </script>

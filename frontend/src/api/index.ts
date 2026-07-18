@@ -1,25 +1,46 @@
 import axios from 'axios'
+import type { InternalAxiosRequestConfig } from 'axios'
 import type { LoginResponse, UserProfile } from '@/types/api'
 import router from '@/router'
+import { errorMonitor } from '@/utils/errorMonitor'
 
-const api = axios.create({ baseURL: '/api' })
+interface ApiRequestConfig extends InternalAxiosRequestConfig {
+  __startTime?: number
+}
 
-api.interceptors.request.use(config => {
+const axiosInstance = axios.create({ baseURL: '/api' })
+
+axiosInstance.interceptors.request.use((config: ApiRequestConfig) => {
   const token = localStorage.getItem('token')
-  if (token) config.headers.Authorization = `Bearer ${token}`
+  if (token && !['/auth/login', '/auth/register'].includes(config.url || '')) {
+    config.headers = config.headers || {}
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  config.__startTime = Date.now()
   return config
 })
 
-api.interceptors.response.use(
+axiosInstance.interceptors.response.use(
   res => {
+    const duration = Date.now() - ((res.config as ApiRequestConfig).__startTime || 0)
+    if (duration > 5000) {
+      console.warn(`[SlowAPI] ${res.config.method?.toUpperCase()} ${res.config.url} took ${duration}ms`)
+    }
+
     const apiResponse = res.data
     if (apiResponse && typeof apiResponse === 'object' && 'data' in apiResponse) {
-      // Unwrap ApiResponse: {code, message, data: T, timestamp} -> T
       return apiResponse.data
     }
     return res.data
   },
   err => {
+    errorMonitor.logApiError(
+      err.config?.url || '',
+      err.config?.method?.toUpperCase() || 'UNKNOWN',
+      err.response?.status || 0,
+      err.message || 'API request failed'
+    )
+
     if (err.response?.status === 401 && err.config?.url !== '/auth/login') {
       clearAuth()
       router.push('/login')
@@ -38,6 +59,19 @@ api.interceptors.response.use(
     return Promise.reject(new Error(msg))
   }
 )
+
+const api = {
+  get: <T>(url: string, config?: Partial<ApiRequestConfig>) =>
+    axiosInstance.get<T>(url, config) as unknown as Promise<T>,
+  post: <T>(url: string, data?: unknown, config?: Partial<ApiRequestConfig>) =>
+    axiosInstance.post<T>(url, data, config) as unknown as Promise<T>,
+  put: <T>(url: string, data?: unknown, config?: Partial<ApiRequestConfig>) =>
+    axiosInstance.put<T>(url, data, config) as unknown as Promise<T>,
+  delete: <T>(url: string, config?: Partial<ApiRequestConfig>) =>
+    axiosInstance.delete<T>(url, config) as unknown as Promise<T>,
+  getBlob: (url: string, config?: Partial<ApiRequestConfig>) =>
+    axiosInstance.get<Blob>(url, { ...config, responseType: 'blob' }) as unknown as Promise<Blob>,
+} as const
 
 export default api
 

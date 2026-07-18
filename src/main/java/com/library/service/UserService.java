@@ -1,8 +1,14 @@
 package com.library.service;
 
+import com.library.dto.response.BookRef;
+import com.library.dto.response.BorrowRecordResponse;
 import com.library.dto.response.UserProfile;
+import com.library.entity.BorrowRecord;
+import com.library.entity.PatronCategory;
 import com.library.entity.User;
 import com.library.exception.AppException;
+import com.library.mapper.BorrowRecordMapper;
+import com.library.mapper.PatronCategoryMapper;
 import com.library.mapper.UserMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,9 +22,13 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final UserMapper userMapper;
+    private final BorrowRecordMapper borrowRecordMapper;
+    private final PatronCategoryMapper patronCategoryMapper;
 
-    public UserService(UserMapper userMapper) {
+    public UserService(UserMapper userMapper, BorrowRecordMapper borrowRecordMapper, PatronCategoryMapper patronCategoryMapper) {
         this.userMapper = userMapper;
+        this.borrowRecordMapper = borrowRecordMapper;
+        this.patronCategoryMapper = patronCategoryMapper;
     }
 
     /**
@@ -31,12 +41,15 @@ public class UserService {
     }
 
     /**
-     * 根据 ID 查询用户，返回 UserProfile（不含密码）
+     * 根据 ID 查询用户，返回 UserProfile（不含密码），包含借阅记录
      */
     public UserProfile findById(Integer id) {
         User user = userMapper.findById(id);
         if (user == null) throw AppException.notFound("用户不存在");
-        return toProfile(user);
+        UserProfile profile = toProfile(user);
+        List<BorrowRecord> records = borrowRecordMapper.findByUserId(id);
+        profile.setBorrowRecords(records.stream().map(this::toBorrowRecordResponse).collect(Collectors.toList()));
+        return profile;
     }
 
     /**
@@ -88,6 +101,34 @@ public class UserService {
         p.setPatronCategoryId(user.getPatronCategoryId());
         p.setTotalFines(user.getTotalFines() != null ? user.getTotalFines().doubleValue() : 0);
         p.setCreatedAt(user.getCreatedAt());
+        if (user.getPatronCategoryId() != null) {
+            PatronCategory pc = patronCategoryMapper.findById(user.getPatronCategoryId());
+            if (pc != null) {
+                p.setPatronCategory(new com.library.dto.response.PatronCategoryRef(pc.getId(), pc.getName()));
+            }
+        }
         return p;
+    }
+
+    /**
+     * 将 BorrowRecord 实体转换为 BorrowRecordResponse DTO
+     */
+    private BorrowRecordResponse toBorrowRecordResponse(BorrowRecord record) {
+        BorrowRecordResponse r = new BorrowRecordResponse();
+        r.setId(record.getId());
+        r.setUserId(record.getUserId());
+        r.setBookId(record.getBookId());
+        r.setBookItemId(record.getBookItemId());
+        r.setBorrowDate(record.getBorrowDate());
+        r.setDueDate(record.getDueDate());
+        r.setReturnDate(record.getReturnDate());
+        r.setStatus(record.getStatus());
+        r.setRenewed(record.getRenewed());
+        if (record.getBook() != null) {
+            BookRef book = new BookRef(record.getBook().getId(), record.getBook().getTitle(),
+                    record.getBook().getAuthor(), record.getBook().getIsbn());
+            r.setBook(book);
+        }
+        return r;
     }
 }

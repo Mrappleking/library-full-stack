@@ -30,6 +30,7 @@
       :expanded-row-keys="expandedKeys"
       @update:expanded-row-keys="onExpand"
       :pagination="pagination"
+      remote
       @update:page="onPageChange"
       @update:page-size="onPageSizeChange"
       @update:sorter="handleSorterChange"
@@ -53,11 +54,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, h } from 'vue'
+import { ref, reactive, computed, onMounted, h, watch, defineComponent } from 'vue'
 import { useMessage, NButton, NTag, useDialog, type DataTableColumn } from 'naive-ui'
 import { readerApi } from '@/api'
 import api from '@/api'
 import type { ReaderResponse } from '@/types/api'
+import { BorrowStatus } from '@/constants'
 
 const message = useMessage()
 const dialog = useDialog()
@@ -111,7 +113,7 @@ const columns = computed<DataTableColumn[]>(() => [
   {
     title: '操作', key: 'actions', width: 240,
     render(row: any) {
-      return h('span', { style: 'display:flex;gap:6px;' }, [
+      return h('div', { style: 'display:flex;gap:6px;' }, [
         h(NButton, { size: 'small', onClick: () => openEdit(row) }, () => '编辑'),
         h(NButton, { size: 'small', onClick: () => handleResetPassword(row) }, () => '重置密码'),
         h(NButton, { size: 'small', type: 'error', onClick: () => handleAdminDelete(row) }, () => '强制删除')
@@ -125,46 +127,14 @@ async function fetchReaders() {
   try {
     const res = await readerApi.getAllReaders({
       page: pagination.page,
-      limit: pagination.pageSize
+      limit: pagination.pageSize,
+      keyword: searchKeyword.value.trim() || undefined,
+      patronCategoryId: searchCategory.value || undefined,
+      sortBy: sortBy.value,
+      sortDir: sortDir.value
     })
-    // Backend returns array directly (no pagination wrapper)
-    let list: ReaderResponse[]
-    if (Array.isArray(res)) {
-      list = res as ReaderResponse[]
-    } else {
-      list = (res as any).readers || []
-    }
-
-    // Client-side filter by keyword
-    const kw = searchKeyword.value.toLowerCase().trim()
-    if (kw) {
-      list = list.filter(r =>
-        (r.username && r.username.toLowerCase().includes(kw)) ||
-        (r.name && r.name.toLowerCase().includes(kw)) ||
-        (r.phone && r.phone.includes(kw))
-      )
-    }
-
-    // Client-side filter by category
-    if (searchCategory.value) {
-      list = list.filter(r => r.patronCategoryId === searchCategory.value)
-    }
-
-    // Client-side sort
-    list.sort((a: any, b: any) => {
-      const va = a[sortBy.value]
-      const vb = b[sortBy.value]
-      if (va == null) return 1
-      if (vb == null) return -1
-      const cmp = typeof va === 'string' ? va.localeCompare(vb) : va - vb
-      return sortDir.value === 'asc' ? cmp : -cmp
-    })
-
-    pagination.itemCount = list.length
-
-    // Client-side pagination
-    const start = (pagination.page - 1) * pagination.pageSize
-    readers.value = list.slice(start, start + pagination.pageSize)
+    readers.value = res.data || []
+    pagination.itemCount = res.total || 0
   } catch { /* ignore */ }
   loading.value = false
 }
@@ -206,12 +176,13 @@ function handleSorterChange(sorter: { columnKey: string; order: string } | null)
 
 async function loadCategories() {
   try {
-    const data = await api.get('/rules/patron-categories')
-    categoryOptions.value = data.map((c: any) => ({ label: c.name, value: c.id }))
+    const data: any[] = await api.get('/rules/patron-categories')
+    const newOptions = data.map((c: any) => ({ label: c.name, value: c.id }))
+    categoryOptions.value = newOptions
     const map: Record<number, string> = {}
     data.forEach((c: any) => { map[c.id] = c.name })
     categoryMap.value = map
-  } catch { /* ignore */ }
+  } catch (e) { console.error('[Readers] loadCategories error:', e) }
 }
 
 function onExpand(keys: number[]) { expandedKeys.value = keys }
@@ -232,6 +203,7 @@ async function handleSave() {
     message.success('已更新')
     showModal.value = false
     fetchReaders()
+    loadCategories()
   } catch (e: unknown) { message.error((e as Error).message) }
   saving.value = false
 }
@@ -267,30 +239,56 @@ async function handleAdminDelete(row: any) {
   })
 }
 
-const ExpandPanel = {
-  props: { readerId: Number },
-  setup(props: any) {
+const ExpandPanel = defineComponent({
+  name: 'ExpandPanel',
+  props: { readerId: { type: Number, required: true } },
+  setup(props) {
     const records = ref<any[]>([])
+    const loading = ref(false)
+
     const load = async () => {
+      loading.value = true
       try {
         const data = await readerApi.getById(props.readerId)
         records.value = data.borrowRecords || []
-      } catch { /* ignore */ }
+      } catch (e: unknown) {
+        console.error('加载借阅记录失败:', e)
+        records.value = []
+      } finally {
+        loading.value = false
+      }
     }
-    onMounted(() => { load() })
-    return () => records.value.length === 0
-      ? h('div', { style: 'padding:12px;color:var(--n-text-color-3);' }, '暂无借阅记录')
-      : h('div', { style: 'padding:8px 0;' },
-          records.value.map((r: any) =>
-            h('div', { style: 'display:flex;gap:16px;padding:6px 12px;font-size:13px;color:var(--n-text-color-2);' }, [
-              h('span', r.book?.title || '未知'),
-              h('span', { style: 'color:var(--n-text-color-3);' }, new Date(r.borrowDate).toLocaleDateString('zh-CN')),
-              h(NTag, { size: 'tiny', type: r.status === 'active' ? 'success' : 'default' }, () => r.status === 'active' ? '在借' : '已还')
-            ])
-          )
+
+    onMounted(load)
+
+    watch(() => props.readerId, () => {
+      records.value = []
+      load()
+    })
+
+    return () => {
+      if (loading.value) {
+        return h('div', { style: 'padding:12px;color:var(--lib-text-tertiary);text-align:center;' }, '加载中...')
+      }
+      if (records.value.length === 0) {
+        return h('div', { style: 'padding:12px;color:var(--lib-text-tertiary);' }, '暂无借阅记录')
+      }
+      return h('div', { style: 'padding:8px 0;' },
+        records.value.map((r: any) =>
+          h('div', { style: 'display:flex;gap:16px;padding:6px 12px;font-size:13px;' }, [
+            h('span', { style: 'color:var(--lib-text-secondary);' }, r.book?.title || '未知'),
+            h('span', { style: 'color:var(--lib-text-tertiary);' }, new Date(r.borrowDate).toLocaleDateString('zh-CN')),
+            h(NTag, { 
+              size: 'tiny', 
+              type: r.status === BorrowStatus.ACTIVE ? 'success' : 'default',
+              style: r.status === BorrowStatus.ACTIVE ? 'background-color:color-mix(in srgb, var(--lib-success) 15%, transparent);color:var(--lib-success);' : 'background-color:var(--lib-bg-hover);color:var(--lib-text-secondary);'
+            }, () => r.status === BorrowStatus.ACTIVE ? '在借' : '已还')
+          ])
         )
+      )
+    }
   }
-}
+})
 
 onMounted(() => {
   loadCategories()

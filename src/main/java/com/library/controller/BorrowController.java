@@ -1,5 +1,6 @@
 package com.library.controller;
 
+import com.library.annotation.RequireAdmin;
 import com.library.dto.request.BorrowRequest;
 import com.library.dto.response.ApiResponse;
 import com.library.entity.BorrowRecord;
@@ -31,17 +32,20 @@ public class BorrowController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<Map<String, Object>>> listBorrows(@RequestParam(defaultValue = "1") int page,
+    @RequireAdmin
+    public ResponseEntity<ApiResponse<Map<String, Object>>> listBorrows(
+                                          @RequestParam(defaultValue = "1") int page,
                                           @RequestParam(defaultValue = "20") int limit,
                                           @RequestParam(required = false) String search,
                                           @RequestParam(required = false) String status,
+                                          @RequestParam(required = false) Integer categoryId,
                                           @RequestParam(required = false) String export,
                                           HttpServletResponse response) {
         if ("csv".equals(export)) {
             borrowService.exportCsv(null, response);
             return ResponseEntity.ok().build();
         }
-        return ResponseEntity.ok(ApiResponse.success(borrowService.listBorrows(page, limit, search, status)));
+        return ResponseEntity.ok(ApiResponse.success(borrowService.listBorrows(page, limit, search, status, categoryId)));
     }
 
     @GetMapping("/history")

@@ -57,10 +57,10 @@ public class BorrowService {
         return result;
     }
 
-    public Map<String, Object> listBorrows(int page, int limit, String search, String status) {
+    public Map<String, Object> listBorrows(int page, int limit, String search, String status, Integer categoryId) {
         int offset = (page - 1) * limit;
-        List<BorrowRecord> records = borrowRecordMapper.findAllPage(offset, limit, search, status);
-        long total = borrowRecordMapper.countAll(search, status);
+        List<BorrowRecord> records = borrowRecordMapper.findAllPage(offset, limit, search, status, categoryId);
+        long total = borrowRecordMapper.countAll(search, status, categoryId);
 
         Map<String, Object> result = new HashMap<>();
         result.put("borrows", records);
@@ -100,13 +100,21 @@ public class BorrowService {
         }
 
         if (targetBookId == null) throw AppException.notFound("图书不存在");
+        if (targetItemId == null) throw AppException.badRequest("该书暂无可用复本");
 
         User user = userMapper.findById(userId);
+        if (user == null) {
+            throw AppException.notFound("用户不存在");
+        }
+
         BookItem item = targetItemId != null ? bookItemMapper.findById(targetItemId) : null;
-        Integer patronCatId = user != null ? user.getPatronCategoryId() : null;
+        Integer patronCatId = user.getPatronCategoryId();
         Integer itemTypeId = item != null ? item.getItemTypeId() : null;
 
         CirculationRule rule = ruleService.getRule(patronCatId, itemTypeId);
+        if (rule == null) {
+            throw AppException.badRequest("未找到借阅规则");
+        }
         LocalDateTime dueDate = LocalDateTime.now().plusDays(rule.getLoanDays());
 
         // Transaction-level checks: re-verify availability atomically
@@ -148,7 +156,10 @@ public class BorrowService {
         }
 
         if (targetItemId != null) {
-            bookItemMapper.updateStatus(targetItemId, "borrowed");
+            int itemUpdated = bookItemMapper.updateStatusIfAvailable(targetItemId, "borrowed");
+            if (itemUpdated == 0) {
+                throw AppException.badRequest("复本已被借出");
+            }
         }
 
         auditService.log("borrow", userId, "book:" + targetBookId, targetItemId != null ? "item:" + targetItemId : null);
@@ -159,7 +170,7 @@ public class BorrowService {
     public BorrowRecord returnBook(Integer borrowRecordId, Integer userId, boolean isAdmin) {
         BorrowRecord record = borrowRecordMapper.findById(borrowRecordId);
         if (record == null) throw AppException.notFound("借阅记录不存在");
-        if (!"active".equals(record.getStatus())) {
+        if (!"active".equals(record.getStatus()) && !"overdue".equals(record.getStatus())) {
             throw AppException.badRequest("已归还");
         }
         if (!record.getUserId().equals(userId) && !isAdmin) {
@@ -184,7 +195,7 @@ public class BorrowService {
         // Check for next hold in queue
         Hold nextHold = holdService.getNextPendingHold(record.getBookId());
 
-        // Update borrow record
+        // Update borrow record: overdue status means overdue return, returned means normal return
         borrowRecordMapper.returnBook(borrowRecordId, now, isOverdue ? "overdue" : "returned");
 
         if (nextHold != null && record.getBookItemId() != null) {

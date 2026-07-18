@@ -18,6 +18,10 @@
     SELECT * FROM holds WHERE id = #{id}
   </select>
 
+  <select id="findByIdForUpdate" resultMap="fullHold">
+    SELECT * FROM holds WHERE id = #{id} FOR UPDATE
+  </select>
+
   <select id="findByUserId" resultMap="holdWithBook">
     SELECT * FROM holds WHERE userId = #{userId} ORDER BY request_date DESC
   </select>
@@ -43,6 +47,10 @@
 
   <select id="countPendingByBookId" resultType="long">
     SELECT COUNT(*) FROM holds WHERE bookId = #{bookId} AND status = 'pending'
+  </select>
+
+  <select id="countAllPending" resultType="long">
+    SELECT COUNT(*) FROM holds WHERE status = 'pending'
   </select>
 
   <select id="findAllPage" resultMap="fullHold">

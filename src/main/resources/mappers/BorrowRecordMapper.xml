@@ -2,25 +2,106 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.library.mapper.BorrowRecordMapper">
 
+  <resultMap id="userResult" type="com.library.entity.User">
+    <id property="id" column="u_id"/>
+    <result property="username" column="u_username"/>
+    <result property="name" column="u_name"/>
+    <result property="role" column="u_role"/>
+    <result property="phone" column="u_phone"/>
+    <result property="email" column="u_email"/>
+    <result property="totalFines" column="u_total_fines"/>
+    <result property="patronCategoryId" column="u_patronCategoryId"/>
+    <result property="createdAt" column="u_created_at"/>
+    <result property="updatedAt" column="u_updated_at"/>
+  </resultMap>
+
+  <resultMap id="bookItemResult" type="com.library.entity.BookItem">
+    <id property="id" column="bi_id"/>
+    <result property="barcode" column="bi_barcode"/>
+    <result property="callNumber" column="bi_callNumber"/>
+    <result property="location" column="bi_location"/>
+    <result property="status" column="bi_status"/>
+    <result property="price" column="bi_price"/>
+    <result property="bookId" column="bi_bookId"/>
+    <result property="itemTypeId" column="bi_itemTypeId"/>
+  </resultMap>
+
+  <resultMap id="bookResult" type="com.library.entity.Book">
+    <id property="id" column="b_id"/>
+    <result property="isbn" column="b_isbn"/>
+    <result property="title" column="b_title"/>
+    <result property="author" column="b_author"/>
+    <result property="publisher" column="b_publisher"/>
+    <result property="year" column="b_year"/>
+    <result property="total" column="b_total"/>
+    <result property="available" column="b_available"/>
+    <result property="status" column="b_status"/>
+    <result property="cover" column="b_cover"/>
+    <result property="categoryId" column="b_categoryId"/>
+  </resultMap>
+
   <resultMap id="fullBorrow" type="com.library.entity.BorrowRecord">
     <id property="id" column="id"/>
-    <association property="book" column="bookId" select="com.library.mapper.BookMapper.findById"/>
-    <association property="bookItem" column="bookItemId" select="com.library.mapper.BookItemMapper.findById"/>
-    <association property="user" column="userId" select="com.library.mapper.UserMapper.findById"/>
+    <result property="userId" column="userId"/>
+    <result property="bookId" column="bookId"/>
+    <result property="bookItemId" column="bookItemId"/>
+    <result property="borrowDate" column="borrow_date"/>
+    <result property="dueDate" column="due_date"/>
+    <result property="returnDate" column="return_date"/>
+    <result property="status" column="status"/>
+    <result property="renewed" column="renewed"/>
+    <association property="book" resultMap="bookResult"/>
+    <association property="bookItem" resultMap="bookItemResult"/>
+    <association property="user" resultMap="userResult"/>
   </resultMap>
 
   <resultMap id="borrowWithBook" type="com.library.entity.BorrowRecord">
     <id property="id" column="id"/>
-    <association property="book" column="bookId" select="com.library.mapper.BookMapper.findById"/>
-    <association property="bookItem" column="bookItemId" select="com.library.mapper.BookItemMapper.findById"/>
+    <result property="userId" column="userId"/>
+    <result property="bookId" column="bookId"/>
+    <result property="bookItemId" column="bookItemId"/>
+    <result property="borrowDate" column="borrow_date"/>
+    <result property="dueDate" column="due_date"/>
+    <result property="returnDate" column="return_date"/>
+    <result property="status" column="status"/>
+    <result property="renewed" column="renewed"/>
+    <association property="book" resultMap="bookResult"/>
+    <association property="bookItem" resultMap="bookItemResult"/>
   </resultMap>
 
   <select id="findById" resultMap="fullBorrow">
-    SELECT * FROM borrow_records WHERE id = #{id}
+    SELECT br.*,
+           b.id as b_id, b.isbn as b_isbn, b.title as b_title, b.author as b_author,
+           b.publisher as b_publisher, b.year as b_year, b.total as b_total,
+           b.available as b_available, b.status as b_status, b.cover as b_cover,
+           b.categoryId as b_categoryId,
+           bi.id as bi_id, bi.barcode as bi_barcode, bi.callNumber as bi_callNumber,
+           bi.location as bi_location, bi.status as bi_status, bi.price as bi_price,
+           bi.bookId as bi_bookId, bi.itemTypeId as bi_itemTypeId,
+           u.id as u_id, u.username as u_username, u.name as u_name, u.role as u_role,
+           u.phone as u_phone, u.email as u_email, u.total_fines as u_total_fines,
+           u.patronCategoryId as u_patronCategoryId,
+           u.created_at as u_created_at, u.updated_at as u_updated_at
+    FROM borrow_records br
+    LEFT JOIN books b ON br.bookId = b.id
+    LEFT JOIN book_items bi ON br.bookItemId = bi.id
+    LEFT JOIN users u ON br.userId = u.id
+    WHERE br.id = #{id}
   </select>
 
   <select id="findByUserId" resultMap="borrowWithBook">
-    SELECT * FROM borrow_records WHERE userId = #{userId} ORDER BY borrow_date DESC
+    SELECT br.*,
+           b.id as b_id, b.isbn as b_isbn, b.title as b_title, b.author as b_author,
+           b.publisher as b_publisher, b.year as b_year, b.total as b_total,
+           b.available as b_available, b.status as b_status, b.cover as b_cover,
+           b.categoryId as b_categoryId,
+           bi.id as bi_id, bi.barcode as bi_barcode, bi.callNumber as bi_callNumber,
+           bi.location as bi_location, bi.status as bi_status, bi.price as bi_price,
+           bi.bookId as bi_bookId, bi.itemTypeId as bi_itemTypeId
+    FROM borrow_records br
+    LEFT JOIN books b ON br.bookId = b.id
+    LEFT JOIN book_items bi ON br.bookItemId = bi.id
+    WHERE br.userId = #{userId} ORDER BY br.borrow_date DESC
   </select>
 
   <select id="findActiveByUserId" resultType="com.library.entity.BorrowRecord">
@@ -40,25 +121,70 @@
   </select>
 
   <select id="findAll" resultMap="fullBorrow">
-    SELECT * FROM borrow_records ORDER BY borrow_date DESC
+    SELECT br.*,
+           b.id as b_id, b.isbn as b_isbn, b.title as b_title, b.author as b_author,
+           b.publisher as b_publisher, b.year as b_year, b.total as b_total,
+           b.available as b_available, b.status as b_status, b.cover as b_cover,
+           b.categoryId as b_categoryId,
+           bi.id as bi_id, bi.barcode as bi_barcode, bi.callNumber as bi_callNumber,
+           bi.location as bi_location, bi.status as bi_status, bi.price as bi_price,
+           bi.bookId as bi_bookId, bi.itemTypeId as bi_itemTypeId,
+           u.id as u_id, u.username as u_username, u.name as u_name, u.role as u_role,
+           u.phone as u_phone, u.email as u_email, u.total_fines as u_total_fines,
+           u.patronCategoryId as u_patronCategoryId,
+           u.created_at as u_created_at, u.updated_at as u_updated_at
+    FROM borrow_records br
+    LEFT JOIN books b ON br.bookId = b.id
+    LEFT JOIN book_items bi ON br.bookItemId = bi.id
+    LEFT JOIN users u ON br.userId = u.id
+    ORDER BY br.borrow_date DESC
   </select>
 
   <select id="findByUserIdPage" resultMap="borrowWithBook">
-    SELECT * FROM borrow_records WHERE userId = #{userId} ORDER BY borrow_date DESC LIMIT #{limit} OFFSET #{offset}
+    SELECT br.*,
+           b.id as b_id, b.isbn as b_isbn, b.title as b_title, b.author as b_author,
+           b.publisher as b_publisher, b.year as b_year, b.total as b_total,
+           b.available as b_available, b.status as b_status, b.cover as b_cover,
+           b.categoryId as b_categoryId,
+           bi.id as bi_id, bi.barcode as bi_barcode, bi.callNumber as bi_callNumber,
+           bi.location as bi_location, bi.status as bi_status, bi.price as bi_price,
+           bi.bookId as bi_bookId, bi.itemTypeId as bi_itemTypeId
+    FROM borrow_records br
+    LEFT JOIN books b ON br.bookId = b.id
+    LEFT JOIN book_items bi ON br.bookItemId = bi.id
+    WHERE br.userId = #{userId} ORDER BY br.borrow_date DESC LIMIT #{limit} OFFSET #{offset}
   </select>
 
   <select id="findAllPage" resultMap="fullBorrow">
-    SELECT * FROM borrow_records
+    SELECT br.*,
+           b.id as b_id, b.isbn as b_isbn, b.title as b_title, b.author as b_author,
+           b.publisher as b_publisher, b.year as b_year, b.total as b_total,
+           b.available as b_available, b.status as b_status, b.cover as b_cover,
+           b.categoryId as b_categoryId,
+           bi.id as bi_id, bi.barcode as bi_barcode, bi.callNumber as bi_callNumber,
+           bi.location as bi_location, bi.status as bi_status, bi.price as bi_price,
+           bi.bookId as bi_bookId, bi.itemTypeId as bi_itemTypeId,
+           u.id as u_id, u.username as u_username, u.name as u_name, u.role as u_role,
+           u.phone as u_phone, u.email as u_email, u.total_fines as u_total_fines,
+           u.patronCategoryId as u_patronCategoryId,
+           u.created_at as u_created_at, u.updated_at as u_updated_at
+    FROM borrow_records br
+    LEFT JOIN books b ON br.bookId = b.id
+    LEFT JOIN book_items bi ON br.bookItemId = bi.id
+    LEFT JOIN users u ON br.userId = u.id
     <where>
       <if test="status != null and status != ''">
-        AND status = #{status}
+        AND br.status = #{status}
+      </if>
+      <if test="categoryId != null">
+        AND b.categoryId = #{categoryId}
       </if>
       <if test="search != null and search != ''">
-        AND (userId IN (SELECT id FROM users WHERE name LIKE CONCAT('%', #{search}, '%') OR username LIKE CONCAT('%', #{search}, '%'))
-        OR bookId IN (SELECT id FROM books WHERE title LIKE CONCAT('%', #{search}, '%')))
+        AND (u.name LIKE CONCAT('%', #{search}, '%') OR u.username LIKE CONCAT('%', #{search}, '%')
+        OR b.title LIKE CONCAT('%', #{search}, '%'))
       </if>
     </where>
-    ORDER BY borrow_date DESC LIMIT #{limit} OFFSET #{offset}
+    ORDER BY br.borrow_date DESC LIMIT #{limit} OFFSET #{offset}
   </select>
 
   <select id="countByUserId" resultType="long">
@@ -66,14 +192,18 @@
   </select>
 
   <select id="countAll" resultType="long">
-    SELECT COUNT(*) FROM borrow_records
+    SELECT COUNT(*) FROM borrow_records br
+    LEFT JOIN books b ON br.bookId = b.id
     <where>
       <if test="status != null and status != ''">
-        AND status = #{status}
+        AND br.status = #{status}
+      </if>
+      <if test="categoryId != null">
+        AND b.categoryId = #{categoryId}
       </if>
       <if test="search != null and search != ''">
-        AND (userId IN (SELECT id FROM users WHERE name LIKE CONCAT('%', #{search}, '%') OR username LIKE CONCAT('%', #{search}, '%'))
-        OR bookId IN (SELECT id FROM books WHERE title LIKE CONCAT('%', #{search}, '%')))
+        AND (br.userId IN (SELECT id FROM users WHERE name LIKE CONCAT('%', #{search}, '%') OR username LIKE CONCAT('%', #{search}, '%'))
+        OR br.bookId IN (SELECT id FROM books WHERE title LIKE CONCAT('%', #{search}, '%')))
       </if>
     </where>
   </select>
@@ -89,6 +219,10 @@
 
   <update id="renew">
     UPDATE borrow_records SET due_date=#{dueDate}, renewed=true, updated_at=NOW() WHERE id=#{id}
+  </update>
+
+  <update id="updateStatus">
+    UPDATE borrow_records SET status=#{status}, updated_at=NOW() WHERE id=#{id}
   </update>
 
   <select id="monthlyStats" resultType="map">

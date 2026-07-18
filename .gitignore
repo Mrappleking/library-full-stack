@@ -23,6 +23,10 @@ frontend/.vite/
 ### Old backend (intermediate, never committed) ###
 backend/
 
+### Config ###
+application-dev.yml
+application-prod.yml
+
 ### OS ###
 .DS_Store
 Thumbs.db

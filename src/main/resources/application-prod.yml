@@ -15,7 +15,7 @@ mybatis:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:change-me-in-production}
+    secret: ${JWT_SECRET:}
 
 logging:
   level:

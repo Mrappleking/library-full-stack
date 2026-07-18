@@ -1,5 +1,6 @@
 package com.library.controller;
 
+import com.library.annotation.RequireAdmin;
 import com.library.dto.response.ApiResponse;
 import com.library.entity.Fine;
 import com.library.service.FineService;
@@ -20,6 +21,7 @@ public class FineController {
     }
 
     @GetMapping
+    @RequireAdmin
     public ResponseEntity<ApiResponse<List<Fine>>> list(
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String paid) {

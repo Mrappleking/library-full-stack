@@ -26,7 +26,7 @@
           <template #header>
             <div class="panel-header"><n-icon size="18"><TrendingUpOutline /></n-icon> 月度借阅趋势</div>
           </template>
-          <MonthlyBorrowChart :data="monthlyData" />
+          <MonthlyBorrowChart :data="monthlyData" :is-dark="isDark" />
         </n-card>
       </n-grid-item>
       <n-grid-item>
@@ -34,7 +34,7 @@
           <template #header>
             <div class="panel-header"><n-icon size="18"><PieChartOutline /></n-icon> 图书分类占比</div>
           </template>
-          <CategoryPieChart :data="categoryData" />
+          <CategoryPieChart :data="categoryData" :is-dark="isDark" />
         </n-card>
       </n-grid-item>
     </n-grid>
@@ -47,23 +47,23 @@
           </template>
           <div class="quick-actions">
             <div class="action-item" @click="$router.push('/admin/books')">
-              <div class="action-icon" style="background: #5e6ad222; color: #5e6ad2"><n-icon size="22"><BookOutline /></n-icon></div>
+              <div class="action-icon action-icon--primary"><n-icon size="22"><BookOutline /></n-icon></div>
               <div class="action-text"><span class="action-name">图书管理</span><span class="action-desc">增删改查图书信息</span></div>
             </div>
             <div class="action-item" @click="$router.push('/admin/borrows')">
-              <div class="action-icon" style="background: #f0a02022; color: #f0a020"><n-icon size="22"><SwapHorizontalOutline /></n-icon></div>
+              <div class="action-icon action-icon--warning"><n-icon size="22"><SwapHorizontalOutline /></n-icon></div>
               <div class="action-text"><span class="action-name">借阅管理</span><span class="action-desc">处理借书、还书、续借</span></div>
             </div>
             <div class="action-item" @click="$router.push('/admin/readers')">
-              <div class="action-icon" style="background: #18a05822; color: #18a058"><n-icon size="22"><PeopleOutline /></n-icon></div>
+              <div class="action-icon action-icon--success"><n-icon size="22"><PeopleOutline /></n-icon></div>
               <div class="action-text"><span class="action-name">读者管理</span><span class="action-desc">管理读者信息</span></div>
             </div>
             <div class="action-item" @click="$router.push('/admin/circulation')">
-              <div class="action-icon" style="background: #2080f022; color: #2080f0"><n-icon size="22"><ScanOutline /></n-icon></div>
+              <div class="action-icon action-icon--info"><n-icon size="22"><ScanOutline /></n-icon></div>
               <div class="action-text"><span class="action-name">流通台</span><span class="action-desc">扫码借还操作</span></div>
             </div>
             <div class="action-item" @click="$router.push('/admin/stats')">
-              <div class="action-icon" style="background: #d0305022; color: #d03050"><n-icon size="22"><BarChartOutline /></n-icon></div>
+              <div class="action-icon action-icon--error"><n-icon size="22"><BarChartOutline /></n-icon></div>
               <div class="action-text"><span class="action-name">统计报表</span><span class="action-desc">借阅量、热门图书</span></div>
             </div>
           </div>
@@ -100,8 +100,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { NIcon, NTag, NSpace } from 'naive-ui'
+import { useThemeStore } from '@/stores/theme'
 import {
   BookOutline, PeopleOutline, LibraryOutline, GridOutline, AlertCircleOutline,
   SwapHorizontalOutline, ScanOutline, BarChartOutline, FlashOutline,
@@ -115,6 +116,8 @@ import type { StatsOverviewResponse, MonthlyStat, CategoryResponse } from '@/typ
 const colors = ['#5e6ad2', '#f0a020', '#18a058', '#2080f0', '#d03050']
 const icons = [LibraryOutline, SwapHorizontalOutline, PeopleOutline, GridOutline, AlertCircleOutline]
 const apiCount = ref(0)
+const themeStore = useThemeStore()
+const isDark = computed(() => themeStore.isDark)
 const stats = ref([
   { label: '总藏书', value: '-' },
   { label: '在借数量', value: '-' },
@@ -131,11 +134,11 @@ onMounted(async () => {
     const data = await statsApi.getOverview()
 
     stats.value = [
-      { label: '总藏书', value: data.totalBooks || 0 },
-      { label: '在借数量', value: data.activeBorrows || 0 },
-      { label: '读者总数', value: data.totalReaders || 0 },
-      { label: '分类数', value: data.totalCategories || 0 },
-      { label: '逾期未还', value: data.overdueCount || 0 }
+      { label: '总藏书', value: String(data.totalBooks || 0) },
+      { label: '在借数量', value: String(data.activeBorrows || 0) },
+      { label: '读者总数', value: String(data.totalReaders || 0) },
+      { label: '分类数', value: String(data.totalCategories || 0) },
+      { label: '逾期未还', value: String(data.overdueCount || 0) }
     ]
   } catch (e) { console.error('fetchStats failed:', e) }
 
@@ -167,13 +170,13 @@ onMounted(async () => {
   display: flex; align-items: center; gap: 12px; margin-bottom: 4px;
 }
 .page-title {
-  font-size: 22px; font-weight: 700; color: var(--n-text-color); margin: 0;
+  font-size: 22px; font-weight: 700; color: var(--lib-text-primary); margin: 0;
 }
 .stat-card {
   position: relative; overflow: hidden;
-  background: var(--n-card-color); border-radius: 12px;
+  background: var(--lib-bg-card); border-radius: 12px;
   padding: 20px; display: flex; align-items: center; gap: 16px;
-  border: 1px solid var(--n-border-color);
+  border: 1px solid var(--lib-border);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .stat-card:hover {
@@ -183,12 +186,12 @@ onMounted(async () => {
 .stat-icon-wrap {
   width: 46px; height: 46px; border-radius: 12px;
   display: flex; align-items: center; justify-content: center;
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  background: color-mix(in srgb, var(--lib-primary) 12%, transparent);
   flex-shrink: 0;
 }
 .stat-body { display: flex; flex-direction: column; gap: 2px; }
-.stat-value { font-size: 26px; font-weight: 700; color: var(--n-text-color); line-height: 1.1; }
-.stat-label { font-size: 12px; color: var(--n-text-color-3); }
+.stat-value { font-size: 26px; font-weight: 700; color: var(--lib-text-primary); line-height: 1.1; }
+.stat-label { font-size: 12px; color: var(--lib-text-tertiary); }
 .stat-glow {
   position: absolute; top: -20px; right: -20px; width: 100px; height: 100px;
   pointer-events: none; border-radius: 50%;
@@ -201,12 +204,17 @@ onMounted(async () => {
   border-radius: 10px; cursor: pointer;
   transition: background 0.15s ease, transform 0.15s ease;
 }
-.action-item:hover { background: var(--n-color); transform: translateX(4px); }
+.action-item:hover { background: var(--lib-bg-hover); transform: translateX(4px); }
 .action-icon {
   width: 42px; height: 42px; border-radius: 10px;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
+.action-icon--primary { background: color-mix(in srgb, var(--lib-primary) 15%, transparent); color: var(--lib-primary); }
+.action-icon--success { background: color-mix(in srgb, var(--lib-success) 15%, transparent); color: var(--lib-success); }
+.action-icon--warning { background: color-mix(in srgb, var(--lib-warning) 15%, transparent); color: var(--lib-warning); }
+.action-icon--info { background: color-mix(in srgb, var(--lib-info) 15%, transparent); color: var(--lib-info); }
+.action-icon--error { background: color-mix(in srgb, var(--lib-error) 15%, transparent); color: var(--lib-error); }
 .action-text { display: flex; flex-direction: column; gap: 1px; }
-.action-name { font-size: 14px; font-weight: 600; color: var(--n-text-color); }
-.action-desc { font-size: 12px; color: var(--n-text-color-3); }
+.action-name { font-size: 14px; font-weight: 600; color: var(--lib-text-primary); }
+.action-desc { font-size: 12px; color: var(--lib-text-tertiary); }
 </style>

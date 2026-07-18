@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,7 +34,13 @@ public class BookService {
     private final CacheService cacheService;
     
     private static final String BOOK_CACHE_PREFIX = "book:";
-    private static final int BOOK_CACHE_TTL_SECONDS = 300;
+    private static final String BOOK_SEARCH_CACHE_PREFIX = "book_search:";
+    
+    @Value("${app.cache.book-ttl-seconds:300}")
+    private int bookCacheTtlSeconds;
+    
+    @Value("${app.cache.search-ttl-seconds:60}")
+    private int searchCacheTtlSeconds;
     
     // Status transition validation
     private static final Map<String, List<String>> STATUS_TRANSITIONS = new HashMap<>();
@@ -73,9 +80,22 @@ public class BookService {
         queryParams.put("sortBy", params.getSortBy());
         queryParams.put("sortOrder", params.getSortOrder());
 
+        String cacheKey = BOOK_SEARCH_CACHE_PREFIX + generateCacheKey(queryParams);
+        Map<String, Object> cached = cacheService.get(cacheKey);
+        if (cached != null) {
+            return cached;
+        }
+
         List<Book> books = bookMapper.searchBooks(queryParams);
         long total = bookMapper.countBooks(queryParams);
         int pages = (int) Math.ceil((double) total / limit);
+
+        for (Book book : books) {
+            if (book.getCategoryId() != null) {
+                book.setCategory(categoryMapper.findById(book.getCategoryId()));
+            }
+            book.setItemsCount((int) bookItemMapper.countByBookId(book.getId()));
+        }
 
         Map<String, Object> result = new HashMap<>();
         result.put("books", books);
@@ -83,7 +103,25 @@ public class BookService {
         result.put("page", page);
         result.put("limit", limit);
         result.put("pages", pages);
+
+        cacheService.set(cacheKey, result, searchCacheTtlSeconds, java.util.concurrent.TimeUnit.SECONDS);
         return result;
+    }
+
+    private String generateCacheKey(Map<String, Object> params) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(params.get("search")).append(":");
+        sb.append(params.get("categoryId")).append(":");
+        sb.append(params.get("language")).append(":");
+        sb.append(params.get("yearMin")).append(":");
+        sb.append(params.get("yearMax")).append(":");
+        sb.append(params.get("campus")).append(":");
+        sb.append(params.get("location")).append(":");
+        sb.append(params.get("sortBy")).append(":");
+        sb.append(params.get("sortOrder")).append(":");
+        sb.append(params.get("page")).append(":");
+        sb.append(params.get("limit"));
+        return sb.toString().replace("null", "");
     }
 
     public BookDetailResponse getById(Integer id) {
@@ -128,7 +166,7 @@ public class BookService {
         resp.setItems(itemResponses);
         resp.setItemsCount((int) bookItemMapper.countByBookId(id));
 
-        cacheService.set(cacheKey, resp, BOOK_CACHE_TTL_SECONDS, java.util.concurrent.TimeUnit.SECONDS);
+        cacheService.set(cacheKey, resp, bookCacheTtlSeconds, java.util.concurrent.TimeUnit.SECONDS);
         return resp;
     }
 
@@ -182,6 +220,7 @@ public class BookService {
         bookMapper.insert(book);
         auditService.log("create", null, "book:" + book.getId(), "Created book: " + book.getTitle());
         cacheService.deletePattern(BOOK_CACHE_PREFIX + "*");
+        cacheService.deletePattern(BOOK_SEARCH_CACHE_PREFIX + "*");
         return book;
     }
 
@@ -224,6 +263,7 @@ public class BookService {
         Book updated = bookMapper.findById(id);
         auditService.log("update", null, "book:" + id, "Updated book: " + (updated != null ? updated.getTitle() : id));
         cacheService.delete(BOOK_CACHE_PREFIX + id);
+        cacheService.deletePattern(BOOK_SEARCH_CACHE_PREFIX + "*");
         return updated;
     }
 
@@ -234,6 +274,7 @@ public class BookService {
         bookMapper.deleteById(id);
         auditService.log("delete", null, "book:" + id, "Deleted book id: " + id);
         cacheService.delete(BOOK_CACHE_PREFIX + id);
+        cacheService.deletePattern(BOOK_SEARCH_CACHE_PREFIX + "*");
     }
 
     public Map<String, Object> getFacets(Map<String, Object> params) {
@@ -277,7 +318,36 @@ public class BookService {
         return result;
     }
 
-     private void removeOldCoverIfChanged(String oldCover,String newCover){
+     @Transactional
+    public BookItem addCopy(Integer bookId, String barcode, String callNumber, String location, java.math.BigDecimal price) {
+        Book book = bookMapper.findById(bookId);
+        if (book == null) throw AppException.notFound("图书不存在");
+        
+        BookItem existing = bookItemMapper.findByBarcode(barcode);
+        if (existing != null) throw AppException.conflict("条码号已存在");
+        
+        BookItem item = new BookItem();
+        item.setBarcode(barcode);
+        item.setCallNumber(callNumber);
+        item.setLocation(location);
+        item.setPrice(price);
+        item.setBookId(bookId);
+        item.setStatus("available");
+        item.setCondition("normal");
+        item.setRequests(0);
+        item.setAcquiredAt(java.time.LocalDateTime.now());
+        
+        bookItemMapper.insert(item);
+        bookMapper.incrementTotal(bookId);
+        bookMapper.incrementAvailable(bookId);
+        
+        auditService.log("create", null, "book-item:" + item.getId(), "Added copy for book: " + book.getTitle());
+        cacheService.delete(BOOK_CACHE_PREFIX + bookId);
+        cacheService.deletePattern(BOOK_SEARCH_CACHE_PREFIX + "*");
+        return item;
+    }
+
+    private void removeOldCoverIfChanged(String oldCover,String newCover){
         if(oldCover!=null&&oldCover.startsWith("/covers/")&&!oldCover.equals(newCover)){
             try{
                 Path oldFile =Paths.get("src/main/resources/static"+oldCover);

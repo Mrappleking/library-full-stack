@@ -1,5 +1,6 @@
 package com.library.controller;
 
+import com.library.annotation.RequireAdmin;
 import com.library.dto.request.ReaderUpdateRequest;
 import com.library.dto.response.ApiResponse;
 import com.library.dto.response.UserProfile;
@@ -10,7 +11,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/readers")
@@ -23,12 +24,15 @@ public class ReaderController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<UserProfile>>> list(HttpServletRequest request) {
-        String role = (String) request.getAttribute("userRole");
-        if (!"admin".equals(role)) {
-            throw AppException.forbidden("仅管理员可查看读者列表");
-        }
-        return ResponseEntity.ok(ApiResponse.success(userService.findAll()));
+    @RequireAdmin
+    public ResponseEntity<ApiResponse<Map<String, Object>>> list(
+                                                                 @RequestParam(defaultValue = "1") int page,
+                                                                 @RequestParam(defaultValue = "10") int limit,
+                                                                 @RequestParam(required = false) String keyword,
+                                                                 @RequestParam(required = false) Integer patronCategoryId,
+                                                                 @RequestParam(defaultValue = "createdAt") String sortBy,
+                                                                 @RequestParam(defaultValue = "desc") String sortDir) {
+        return ResponseEntity.ok(ApiResponse.success(userService.searchReaders(keyword, patronCategoryId, page, limit, sortBy, sortDir)));
     }
 
     @GetMapping("/{id}")
@@ -42,11 +46,8 @@ public class ReaderController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<UserProfile>> update(@PathVariable Integer id, @Valid @RequestBody ReaderUpdateRequest data, HttpServletRequest request) {
-        String role = (String) request.getAttribute("userRole");
-        if (!"admin".equals(role)) {
-            throw AppException.forbidden("仅管理员可修改读者信息");
-        }
+    @RequireAdmin
+    public ResponseEntity<ApiResponse<UserProfile>> update(@PathVariable Integer id, @Valid @RequestBody ReaderUpdateRequest data) {
         return ResponseEntity.ok(ApiResponse.success("读者信息更新成功", userService.update(id, data.getName(), data.getPhone(), data.getEmail())));
     }
 
