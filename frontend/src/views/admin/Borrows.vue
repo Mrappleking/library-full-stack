@@ -155,8 +155,8 @@ async function exportCsv() {
 
 async function loadCategories() {
   try {
-    const res = await categoryApi.getCategories()
-    categories.value = res.categories || []
+    const res = await categoryApi.getAll()
+    categories.value = res || []
   } catch {
     categories.value = []
   }
