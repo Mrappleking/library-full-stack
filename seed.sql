@@ -50,7 +50,7 @@ INSERT INTO circulation_rules (patronCategoryId, itemTypeId, maxBorrows, loanDay
 -- bcrypt hashes: reader123 / admin123
 INSERT INTO users (id, username, password, name, role, phone, email, patronCategoryId, total_fines, created_at, updated_at) VALUES
 (1,  'admin',       '$2a$10$YU3G2ym8V91HTnjEx4rZgeA8bOawPIH0.O3mIioRsuIJ/P8F4olD6', '系统管理员', 'admin', NULL, NULL, NULL, 0.00, NOW(), NOW()),
-(2,  '2023110101',  '$2a$10$bQhPxd4J2c629Tw9S/1zGuwEG3e.7Cj/xNtntoK3waGU3KsxevI5G', '李四',   'reader', '13800000001', '2023110101@sdust.edu.cn', 1, 0.70, NOW(), NOW()),
+(2,  '2023110101',  '$2a$10$bQhPxd4J2c629Tw9S/1zGuwEG3e.7Cj/xNtntoK3waGU3KsxevI5G', '张三',   'reader', '13800000001', '2023110101@sdust.edu.cn', 1, 0.70, NOW(), NOW()),
 (3,  '2022110201',  '$2a$10$bQhPxd4J2c629Tw9S/1zGuwEG3e.7Cj/xNtntoK3waGU3KsxevI5G', '李四',   'reader', '13800000002', '2022110201@sdust.edu.cn', 2, 60.00, NOW(), NOW()),
 (4,  'T2023001',    '$2a$10$bQhPxd4J2c629Tw9S/1zGuwEG3e.7Cj/xNtntoK3waGU3KsxevI5G', '王五',   'reader', '13800000003', 'wangwu@sdust.edu.cn', 3, 0.00, NOW(), NOW()),
 (5,  '2024110301',  '$2a$10$bQhPxd4J2c629Tw9S/1zGuwEG3e.7Cj/xNtntoK3waGU3KsxevI5G', '赵六',   'reader', '13800000004', '2024110301@sdust.edu.cn', 1, 1.10, NOW(), NOW()),

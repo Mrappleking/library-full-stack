@@ -150,6 +150,11 @@ Spring Boot auto-serves via `:8080/covers/...`. Frontend renders via `<img :src=
 | GET | /me | auth | Current user profile |
 | GET | /users | admin | All users |
 | POST | /admin/create | admin | Create admin |
+| PUT | /password | auth | Change password |
+| POST | /logout | auth | Logout (increment token_version) |
+| POST | /cancel-account | auth | Cancel own account |
+| POST | /admin/force-logout/{userId} | admin | Force logout another user |
+| POST | /admin/delete-user/{userId} | admin | Delete user account |
 
 ### Books (`/api/books`)
 
@@ -240,6 +245,11 @@ Spring Boot auto-serves via `:8080/covers/...`. Frontend renders via `<img :src=
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | /api/health | public | `{ status: 'ok' }` |
+| POST | /api/system/logs | public | Receive frontend error logs |
+| GET | /api/system/logs | admin | Query logs (filter by type/userId) |
+| GET | /api/system/logs/stats | admin | Log count by type (vue/api/global/unhandled/alert) |
+| GET | /api/system/monitor/stats | admin | API monitoring statistics |
+| POST | /api/system/monitor/reset | admin | Reset monitoring stats |
 | POST | /api/system/clear-cache | admin | Clear all Redis cache |
 | POST | /api/system/clear-cache/{key} | admin | Clear specific cache key |
 
