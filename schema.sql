@@ -218,15 +218,15 @@ CREATE TABLE `error_logs` (
 -- Migration SQL (for existing databases)
 -- ============================================================
 -- P2-17: books表加categoryId索引
-ALTER TABLE books ADD INDEX IF NOT EXISTS idx_categoryId (categoryId);
+ALTER TABLE books ADD INDEX  idx_categoryId (categoryId);
 
 -- P2-18: holds表加复合索引
-ALTER TABLE holds ADD INDEX IF NOT EXISTS idx_bookId_status (bookId, status);
-ALTER TABLE holds ADD INDEX IF NOT EXISTS idx_userId_status (userId, status);
+ALTER TABLE holds ADD INDEX  idx_bookId_status (bookId, status);
+ALTER TABLE holds ADD INDEX  idx_userId_status (userId, status);
 
 -- P2-19: fines表加索引
-ALTER TABLE fines ADD INDEX IF NOT EXISTS idx_userId (userId);
-ALTER TABLE fines ADD INDEX IF NOT EXISTS idx_borrowRecordId (borrowRecordId);
+ALTER TABLE fines ADD INDEX  idx_userId (userId);
+ALTER TABLE fines ADD INDEX  idx_borrowRecordId (borrowRecordId);
 
 -- ============================================================
 -- P2-25: Foreign Key Constraints
