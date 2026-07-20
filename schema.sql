@@ -210,6 +210,7 @@ CREATE TABLE `error_logs` (
   `created_at` DATETIME NOT NULL DEFAULT NOW(),
   PRIMARY KEY (`id`),
   INDEX `idx_type` (`type`),
+  //55662584455
   INDEX `idx_user_id` (`user_id`),
   //sdadwadsadawd
   INDEX `idx_created_at` (`created_at`)
