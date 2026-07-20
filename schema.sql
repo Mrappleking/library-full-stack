@@ -211,6 +211,7 @@ CREATE TABLE `error_logs` (
   PRIMARY KEY (`id`),
   INDEX `idx_type` (`type`),
   INDEX `idx_user_id` (`user_id`),
+  //sdadwadsadawd
   INDEX `idx_created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
